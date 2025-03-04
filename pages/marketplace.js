@@ -91,11 +91,11 @@ export default function Marketplace() {
       </Parallax>
 
       <div className={classNames(classes.main, classes.mainRaised)}>
-        <div className={classes.searchContainer}>
+        <div className={classNames(classes.searchContainer, classes.searchPadding)}> {/* Added padding class */}
           <SearchBar onSearch={handleSearch} onFilter={handleFilter} />
         </div>
         <div className={classes.grid}>
-          <GridContainer spacing={3}>
+          <GridContainer spacing={3} justifyContent="center"> {/* Added justifyContent="center" */}
             {filteredSellers.map((seller) => (
               <GridItem key={seller.id} xs={12} sm={6} md={2}>
                 <SellerCard seller={seller} />
@@ -107,7 +107,7 @@ export default function Marketplace() {
 
       <Footer
         theme="dark"
-        content={<div />} // Added empty content prop to satisfy propTypes
+        content={<div />} // Added to satisfy propTypes
       />
     </div>
   );

@@ -28,8 +28,8 @@ export default function SellerCard({ seller, className }) {
             product
             className={classes.card}
             image={`/img/examples/${seller.image}`} // Corrected path for images
-            title={seller.name}
-            description={seller.description}
+            title={seller.name} // Ensure title is passed
+            description={seller.description} // Ensure description is passed
           >
             <Button color="rose" round className={classes.button}>
               Visit Store

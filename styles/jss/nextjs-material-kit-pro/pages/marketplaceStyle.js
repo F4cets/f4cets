@@ -95,6 +95,9 @@ const marketplaceStyle = {
     justifyContent: "center",
     alignItems: "center",
   },
+  searchPadding: { // New style for padding above/below search
+    padding: "20px 0", // Adds 20px padding top and bottom
+  },
   search: {
     flexGrow: 1,
     maxWidth: "500px",
