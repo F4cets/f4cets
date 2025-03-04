@@ -42,15 +42,17 @@ const marketplaceStyle = {
     color: blackColor,
     borderRadius: "8px",
     overflow: "hidden",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)", // Minimal default shadow
-    "&:hover": {
-      boxShadow: "0 8px 12px -4px rgba(0, 0, 0, 0.1)", // Reduced shadow intensity
-    },
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.03)", // Minimal default shadow
+    position: "relative", // Ensure positioning for z-index
+    zIndex: 1, // Prevent overlap with other elements
   },
   cardAnimated: {
     transformOrigin: "center", // Ensure rotation pivots from center
     perspective: "1000px", // Add 3D perspective for rotation
     overflow: "hidden", // Ensure shadow stays within bounds
+    position: "relative", // Ensure positioning for z-index
+    zIndex: 1, // Prevent overlap with adjacent cards
+    backgroundColor: whiteColor, // Explicitly set background to prevent transparency
   },
   cardHeaderImageNoMargin: {
     marginTop: "0 !important", // Remove negative margin to prevent cutoff
@@ -127,6 +129,8 @@ const marketplaceStyle = {
     padding: "0 16px",
     marginTop: "20px",
     marginBottom: "40px", // Padding below cards
+    position: "relative", // Ensure positioning for z-index
+    zIndex: 0, // Lower z-index to prevent interference with cards
   },
   button: {
     marginTop: "15px", // Ensure button is spaced below description

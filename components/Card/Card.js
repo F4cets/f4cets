@@ -43,7 +43,7 @@ export default function Card(props) {
   });
 
   return (
-    <div className={cardClasses} {...rest}>
+    <div className={cardClasses} style={{ overflow: "hidden" }} {...rest}>
       {children}
       {buttonText && (
         <div className={classes.buttonContainer}> {/* Optional: Add styling for button positioning */}
