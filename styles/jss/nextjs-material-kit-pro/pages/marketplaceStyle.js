@@ -36,35 +36,22 @@ const marketplaceStyle = {
   card: {
     margin: "0 auto",
     width: "100%",
-    maxWidth: "240px", // Reduced width for more cards horizontally (e.g., 4-5 per row on desktop)
-    transition: "all 0.3s ease", // Base transition for Framer Motion
+    maxWidth: "300px",
+    transition: "all 0.3s ease",
+    "&:hover": {
+      transform: "scale(1.05) rotate(10deg)",
+      boxShadow: `0 12px 20px -10px rgba(${hexToRgb(blackColor)}, 0.28)`,
+    },
     backgroundColor: whiteColor,
     color: blackColor,
     borderRadius: "8px",
     overflow: "hidden",
-    boxShadow: "none", // No default shadow to prevent expansion
-    position: "relative", // Ensure positioning for z-index
-    zIndex: 1, // Prevent overlap with other elements
-    padding: "0", // Remove any unintended padding
   },
-  cardAnimated: {
-    transformOrigin: "center", // Ensure rotation pivots from center
-    perspective: "1000px", // Add 3D perspective for rotation
-    overflow: "hidden", // Ensure effects stay within bounds
-    position: "relative", // Ensure positioning for z-index
-    zIndex: 1, // Prevent overlap with adjacent cards
-    backgroundColor: whiteColor, // Explicitly set background to prevent transparency
-  },
-  cardHeaderImageNoMargin: {
-    marginTop: "0 !important", // Remove negative margin to prevent cutoff
-  },
-  cardHeaderImageContainer: {
-    padding: "8px", // Ensure 8px padding around the image
-    "& img": {
-      width: "100%",
-      height: "auto", // Maintain aspect ratio
-      borderRadius: "6px", // Match card radius
-      objectFit: "cover", // Ensure image covers the area without stretching
+  button: {
+    marginTop: "16px",
+    backgroundColor: "#e91e63", // Rose color from Material-UI
+    "&:hover": {
+      backgroundColor: "#d81b60",
     },
   },
   subscribeLine: {
@@ -101,8 +88,7 @@ const marketplaceStyle = {
     },
   },
   searchContainer: {
-    marginTop: "40px", // Increased spacing above search bar
-    marginBottom: "40px", // Increased spacing below search bar
+    marginBottom: "20px",
     padding: "0 16px",
     display: "flex",
     gap: "16px",
@@ -129,15 +115,6 @@ const marketplaceStyle = {
   grid: {
     padding: "0 16px",
     marginTop: "20px",
-    marginBottom: "40px", // Padding below cards
-    position: "relative", // Ensure positioning for z-index
-    zIndex: 0, // Lower z-index to prevent interference with cards
-    backgroundColor: "transparent", // Ensure no background causes expansion
-    display: "flex",
-    justifyContent: "center", // Center cards horizontally
-  },
-  button: {
-    marginTop: "15px", // Ensure button is spaced below description
   },
 };
 

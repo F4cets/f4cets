@@ -1,24 +1,15 @@
 /*eslint-disable*/
 import React, { useState, useEffect } from "react";
-// nodejs library that concatenates classes
 import classNames from "classnames";
 import makeStyles from '@mui/styles/makeStyles';
-// core components
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import Footer from "/components/Footer/Footer.js";
 import Parallax from "/components/Parallax/Parallax.js";
 import GridContainer from "/components/Grid/GridContainer.js";
 import GridItem from "/components/Grid/GridItem.js";
-
-// Import SearchBar and SellerCard
 import SearchBar from "/components/SearchBar/SearchBar.js";
 import SellerCard from "/components/Card/SellerCard.js";
-
-// Assuming Firestore for data fetching (to be implemented)
-import { db } from "/lib/firebase"; // Placeholder for Firestore config
-import { collection, getDocs } from "firebase/firestore";
-
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.js";
 
 const useStyles = makeStyles(styles);
@@ -33,14 +24,14 @@ export default function Marketplace() {
   const [sellers, setSellers] = useState([]);
   const [filteredSellers, setFilteredSellers] = useState([]);
 
-  // Placeholder for Firestore data fetching (replace with real implementation)
   useEffect(() => {
     console.log("Setting fake sellers...");
     const fakeSellers = [
-      { id: 1, name: "Seller1", image: "/img/seller1.jpg", description: "Art & Crafts", price: 100, category: "art", designer: "seller1" },
-      { id: 2, name: "Seller2", image: "/img/seller2.jpg", description: "Jewelry", price: 200, category: "jewelry", designer: "seller2" },
-      { id: 3, name: "Seller3", image: "/img/seller3.jpg", description: "Crafts", price: 150, category: "crafts", designer: "seller3" },
-      // Add more sellers as needed (up to 20 as noted in console)
+      { id: 1, name: "Seller1", image: "seller1.jpg", description: "Art & Crafts" },
+      { id: 2, name: "Seller2", image: "seller2.jpg", description: "Jewelry" },
+      { id: 3, name: "Seller3", image: "seller3.jpg", description: "Handmade Goods" },
+      { id: 4, name: "Seller4", image: "seller4.jpg", description: "Furniture" },
+      { id: 5, name: "Seller5", image: "seller5.jpg", description: "Electronics" },
     ];
     setSellers(fakeSellers);
     setFilteredSellers(fakeSellers);
@@ -106,7 +97,7 @@ export default function Marketplace() {
         <div className={classes.grid}>
           <GridContainer spacing={3}>
             {filteredSellers.map((seller) => (
-              <GridItem key={seller.id} xs={12} sm={6} md={4}>
+              <GridItem key={seller.id} xs={12} sm={6} md={2}>
                 <SellerCard seller={seller} />
               </GridItem>
             ))}
@@ -116,13 +107,7 @@ export default function Marketplace() {
 
       <Footer
         theme="dark"
-        content={
-          <div>
-            <div className={classes.left}>
-              <p>© {new Date().getFullYear()} F4cets. All rights reserved.</p>
-            </div>
-          </div>
-        }
+        content={<div />} // Added empty content prop to satisfy propTypes
       />
     </div>
   );
