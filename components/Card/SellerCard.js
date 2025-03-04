@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import classNames from "classnames"; // Import for classNames
+import { whiteColor } from "/styles/jss/nextjs-material-kit-pro.js"; // Added import for whiteColor
 import Card from "./Card.js"; // Relative import from same folder
 import CardBody from "./CardBody.js"; // Import CardBody to structure content
 import CardHeader from "./CardHeader.js"; // Import CardHeader for image

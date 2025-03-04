@@ -131,6 +131,7 @@ const marketplaceStyle = {
     marginBottom: "40px", // Padding below cards
     position: "relative", // Ensure positioning for z-index
     zIndex: 0, // Lower z-index to prevent interference with cards
+    backgroundColor: "transparent", // Ensure no background causes ghosting
   },
   button: {
     marginTop: "15px", // Ensure button is spaced below description
