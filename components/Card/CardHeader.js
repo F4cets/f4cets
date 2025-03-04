@@ -4,8 +4,6 @@ import classNames from "classnames";
 // nodejs library to set properties for components
 import PropTypes from "prop-types";
 import makeStyles from '@mui/styles/makeStyles';
-// @mui/icons-material
-
 // core components
 import styles from "/styles/jss/nextjs-material-kit-pro/components/cardHeaderStyle.js";
 

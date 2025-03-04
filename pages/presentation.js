@@ -9,7 +9,6 @@ import ListItem from "@mui/material/ListItem";
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import Parallax from "/components/Parallax/Parallax.js";
-import Footer from "/components/Footer/Footer.js";
 import GridContainer from "/components/Grid/GridContainer.js";
 import GridItem from "/components/Grid/GridItem.js";
 import Button from "/components/CustomButtons/Button.js";
@@ -85,98 +84,6 @@ export default function PresentationPage() {
         <SectionOverview />
       </div>
       <SectionPricing />
-      <Footer
-        theme="white"
-        content={
-          <div>
-            <div className={classes.left}>
-              <a
-                href="https://www.f4cets.market/"
-                target="_blank"
-                className={classes.footerBrand}
-              >
-                F4cet MarketPlace PRO
-              </a>
-            </div>
-            <div className={classes.pullCenter}>
-              <List className={classes.list}>
-                <ListItem className={classes.inlineBlock}>
-                  <a
-                    href="https://www.f4cets.com/"
-                    target="_blank"
-                    className={classes.block}
-                  >
-                    F4cets
-                  </a>
-                </ListItem>
-                <ListItem className={classes.inlineBlock}>
-                  <a
-                    href="https://www.f4cets.com/"
-                    target="_blank"
-                    className={classes.block}
-                  >
-                    About us
-                  </a>
-                </ListItem>
-                <ListItem className={classes.inlineBlock}>
-                  <a
-                    href="https://www.f4cets.com/"
-                    className={classes.block}
-                  >
-                    Mint
-                  </a>
-                </ListItem>
-                <ListItem className={classes.inlineBlock}>
-                  <a
-                    href="https://www.f4cets.com/"
-                    target="_blank"
-                    className={classes.block}
-                  >
-                    Licenses
-                  </a>
-                </ListItem>
-              </List>
-            </div>
-            <div className={classes.rightLinks}>
-              <ul>
-                <li>
-                  <Button
-                    href="https://x.com/f4cetsofficial"
-                    target="_blank"
-                    color="twitter"
-                    justIcon
-                    simple
-                  >
-                    <i className="fab fa-twitter" />
-                  </Button>
-                </li>
-                <li>
-                  <Button
-                    href="https://x.com/f4cetsofficial"
-                    target="_blank"
-                    color="dribbble"
-                    justIcon
-                    simple
-                  >
-                    <i className="fab fa-dribbble" />
-                  </Button>
-                </li>
-                <li>
-                  <Button
-                    href="https://x.com/f4cetsofficial"
-                    target="_blank"
-                    color="instagram"
-                    justIcon
-                    simple
-                  >
-                    <i className="fab fa-instagram" />
-                  </Button>
-                </li>
-              </ul>
-            </div>
-          </div>
-        }
-      />
     </div>
   );
 }

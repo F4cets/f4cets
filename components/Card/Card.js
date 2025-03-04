@@ -4,9 +4,8 @@ import classNames from "classnames";
 // nodejs library to set properties for components
 import PropTypes from "prop-types";
 import makeStyles from '@mui/styles/makeStyles';
-// @mui/icons-material
-
 // core components
+import Button from "/components/CustomButtons/Button.js"; // Import Button for buttonText
 import styles from "/styles/jss/nextjs-material-kit-pro/components/cardStyle.js";
 
 const useStyles = makeStyles(styles);
@@ -24,6 +23,7 @@ export default function Card(props) {
     color,
     product,
     testimonial,
+    buttonText, // Add buttonText to props
     ...rest
   } = props;
   const classes = useStyles();
@@ -41,9 +41,17 @@ export default function Card(props) {
     [classes.cardProduct]: product,
     [className]: className !== undefined
   });
+
   return (
     <div className={cardClasses} {...rest}>
       {children}
+      {buttonText && (
+        <div className={classes.buttonContainer}> {/* Optional: Add styling for button positioning */}
+          <Button color="rose" round>
+            {buttonText}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -66,5 +74,15 @@ Card.propTypes = {
     "rose"
   ]),
   product: PropTypes.bool,
-  children: PropTypes.node
+  children: PropTypes.node,
+  buttonText: PropTypes.string, // Add buttonText to PropTypes
 };
+
+const useAdditionalStyles = makeStyles({
+  buttonContainer: {
+    padding: "15px",
+    textAlign: "center",
+  },
+});
+
+export { useAdditionalStyles }; // Optional: Export for custom styling if needed
