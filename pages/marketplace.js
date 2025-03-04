@@ -35,7 +35,7 @@ export default function Marketplace() {
       { 
         id: 1, 
         name: "Artisan Alice", 
-        image: "/img/examples/seller1.jpg", // Existing image
+        image: "/img/seller1.jpg", // Updated to match your files
         description: "Unique handcrafted art pieces", 
         price: 150, 
         category: "art", 
@@ -44,7 +44,7 @@ export default function Marketplace() {
       { 
         id: 2, 
         name: "Jeweler Jack", 
-        image: "/img/examples/seller2.jpg", // Existing image
+        image: "/img/seller2.jpg", // Updated to match your files
         description: "Custom jewelry designs", 
         price: 200, 
         category: "jewelry", 
@@ -53,7 +53,7 @@ export default function Marketplace() {
       { 
         id: 3, 
         name: "Crafter Claire", 
-        image: "/img/examples/seller3.jpg", // Existing image
+        image: "/img/seller3.jpg", // Updated to match your files
         description: "Eco-friendly crafts", 
         price: 120, 
         category: "crafts", 
@@ -126,10 +126,10 @@ export default function Marketplace() {
           <SearchBar onSearch={handleSearch} onFilter={handleFilter} />
         </div>
         <div className={classes.grid}>
-          <GridContainer spacing={3}>
+          <GridContainer spacing={2}> {/* Reduced spacing for tighter layout */}
             {filteredSellers.length > 0 ? (
               filteredSellers.map((seller) => (
-                <GridItem key={seller.id} xs={12} sm={6} md={4}>
+                <GridItem key={seller.id} xs={12} sm={6} md={3}> {/* Reduced to md={3} for 4 cards per row */}
                   <SellerCard seller={seller} />
                 </GridItem>
               ))

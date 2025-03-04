@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import classNames from "classnames"; // Import for classNames
-import { whiteColor } from "/styles/jss/nextjs-material-kit-pro.js"; // Added import for whiteColor
+import { whiteColor } from "/styles/jss/nextjs-material-kit-pro.js"; // Import for whiteColor (used in marketplaceStyle.js)
 import Card from "./Card.js"; // Relative import from same folder
 import CardBody from "./CardBody.js"; // Import CardBody to structure content
 import CardHeader from "./CardHeader.js"; // Import CardHeader for image
@@ -21,18 +21,18 @@ export default function SellerCard({ seller, className }) {
     <motion.div
       initial={{ 
         rotate: 0, 
-        scale: 0.9, 
+        scale: 1, // No initial scaling down for compact size
         opacity: 0, 
         y: 20 // Slight upward translation for entrance effect
       }}
       whileHover={{ 
-        rotate: 6, // Further reduced rotation to minimize overlap
-        scale: 1.02, // Further reduced scale to minimize ghosting
-        boxShadow: "0 2px 6px -1px rgba(0, 0, 0, 0.06)" // Minimal shadow for subtle effect
+        rotate: 4, // Even smaller rotation for minimal effect
+        scale: 1.005, // Very subtle scale increase to maintain compactness
+        boxShadow: "none" // No hover shadow to keep sleek
       }}
       whileInView={{ 
         rotate: 0, 
-        scale: 1, 
+        scale: 1, // Reset to default scale for compactness
         opacity: 1, 
         y: 0 
       }}
@@ -46,8 +46,7 @@ export default function SellerCard({ seller, className }) {
         borderRadius: "8px", 
         position: "relative", 
         zIndex: 1, // Ensure each card has a higher z-index to prevent overlap
-        backgroundColor: whiteColor, // Explicitly set background to prevent transparency
-      }} // Ensure shadow stays within bounds and manage layering
+      }} // Ensure effects stay within bounds and manage layering
     >
       <Link href={`/seller/${seller.id}`} passHref>
         <a>

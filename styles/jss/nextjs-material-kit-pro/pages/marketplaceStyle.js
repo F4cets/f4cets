@@ -36,20 +36,21 @@ const marketplaceStyle = {
   card: {
     margin: "0 auto",
     width: "100%",
-    maxWidth: "300px",
+    maxWidth: "240px", // Reduced width for more cards horizontally (e.g., 4-5 per row on desktop)
     transition: "all 0.3s ease", // Base transition for Framer Motion
     backgroundColor: whiteColor,
     color: blackColor,
     borderRadius: "8px",
     overflow: "hidden",
-    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.03)", // Minimal default shadow
+    boxShadow: "none", // No default shadow to prevent expansion
     position: "relative", // Ensure positioning for z-index
     zIndex: 1, // Prevent overlap with other elements
+    padding: "0", // Remove any unintended padding
   },
   cardAnimated: {
     transformOrigin: "center", // Ensure rotation pivots from center
     perspective: "1000px", // Add 3D perspective for rotation
-    overflow: "hidden", // Ensure shadow stays within bounds
+    overflow: "hidden", // Ensure effects stay within bounds
     position: "relative", // Ensure positioning for z-index
     zIndex: 1, // Prevent overlap with adjacent cards
     backgroundColor: whiteColor, // Explicitly set background to prevent transparency
@@ -131,7 +132,9 @@ const marketplaceStyle = {
     marginBottom: "40px", // Padding below cards
     position: "relative", // Ensure positioning for z-index
     zIndex: 0, // Lower z-index to prevent interference with cards
-    backgroundColor: "transparent", // Ensure no background causes ghosting
+    backgroundColor: "transparent", // Ensure no background causes expansion
+    display: "flex",
+    justifyContent: "center", // Center cards horizontally
   },
   button: {
     marginTop: "15px", // Ensure button is spaced below description
