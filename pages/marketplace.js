@@ -1,15 +1,25 @@
-import React, { useState, useEffect, useCallback } from "react";
+/*eslint-disable*/
+import React, { useState, useEffect } from "react";
+// nodejs library that concatenates classes
 import classNames from "classnames";
 import makeStyles from '@mui/styles/makeStyles';
+// core components
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
+import Footer from "/components/Footer/Footer.js";
 import Parallax from "/components/Parallax/Parallax.js";
 import GridContainer from "/components/Grid/GridContainer.js";
 import GridItem from "/components/Grid/GridItem.js";
+
+// Import SearchBar and SellerCard
 import SearchBar from "/components/SearchBar/SearchBar.js";
 import SellerCard from "/components/Card/SellerCard.js";
+
+// Assuming Firestore for data fetching (to be implemented)
+import { db } from "/lib/firebase"; // Placeholder for Firestore config
+import { collection, getDocs } from "firebase/firestore";
+
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.js";
-import InfiniteScroll from 'react-infinite-scroll-component'; // Install with: npm install react-infinite-scroll-component
 
 const useStyles = makeStyles(styles);
 
@@ -22,54 +32,36 @@ export default function Marketplace() {
   const classes = useStyles();
   const [sellers, setSellers] = useState([]);
   const [filteredSellers, setFilteredSellers] = useState([]);
-  const [hasMore, setHasMore] = useState(true);
-  const [currentItems, setCurrentItems] = useState(20); // Initial load of 20 sellers
 
-  const fetchMoreData = useCallback(() => {
-    if (currentItems >= 10000) { // Total number of fake sellers
-      setHasMore(false);
-      return;
-    }
-    setTimeout(() => {
-      setCurrentItems(prev => prev + 20); // Load 20 more sellers
-    }, 500);
-  }, [currentItems]);
-
+  // Placeholder for Firestore data fetching (replace with real implementation)
   useEffect(() => {
     console.log("Setting fake sellers...");
-    const fakeSellers = Array.from({ length: 10000 }, (_, i) => ({
-      id: i + 1,
-      name: `Seller ${i + 1}`,
-      image: `/img/seller${(i % 3) + 1}.jpg`, // Cycle through seller1.jpg, seller2.jpg, seller3.jpg
-      description: `Description for Seller ${i + 1}`,
-      price: Math.floor(Math.random() * 300) + 100, // Random price between 100 and 400
-      category: ["art", "jewelry", "crafts"][i % 3],
-      designer: `designer${i % 3}`,
-    }));
+    const fakeSellers = [
+      { id: 1, name: "Seller1", image: "/img/seller1.jpg", description: "Art & Crafts", price: 100, category: "art", designer: "seller1" },
+      { id: 2, name: "Seller2", image: "/img/seller2.jpg", description: "Jewelry", price: 200, category: "jewelry", designer: "seller2" },
+      { id: 3, name: "Seller3", image: "/img/seller3.jpg", description: "Crafts", price: 150, category: "crafts", designer: "seller3" },
+      // Add more sellers as needed (up to 20 as noted in console)
+    ];
     setSellers(fakeSellers);
-    setFilteredSellers(fakeSellers.slice(0, currentItems));
-    console.log("Sellers set:", fakeSellers.slice(0, currentItems));
+    setFilteredSellers(fakeSellers);
+    console.log("Sellers set:", fakeSellers);
   }, []);
 
   const handleSearch = (query) => {
-    console.log("Searching for:", query);
     const filtered = sellers.filter(seller =>
       seller.name.toLowerCase().includes(query.toLowerCase()) ||
       seller.description.toLowerCase().includes(query.toLowerCase())
     );
-    setFilteredSellers(filtered.slice(0, currentItems));
-    setHasMore(currentItems < filtered.length);
+    setFilteredSellers(filtered);
   };
 
   const handleFilter = (filters) => {
-    console.log("Filtering with:", filters);
     let filtered = [...sellers];
     if (filters.priceMin) filtered = filtered.filter(seller => seller.price >= filters.priceMin);
     if (filters.priceMax) filtered = filtered.filter(seller => seller.price <= filters.priceMax);
     if (filters.categories.length) filtered = filtered.filter(seller => filters.categories.includes(seller.category));
     if (filters.designers.length) filtered = filtered.filter(seller => filters.designers.includes(seller.designer));
-    setFilteredSellers(filtered.slice(0, currentItems));
-    setHasMore(currentItems < filtered.length);
+    setFilteredSellers(filtered);
   };
 
   return (
@@ -111,31 +103,27 @@ export default function Marketplace() {
         <div className={classes.searchContainer}>
           <SearchBar onSearch={handleSearch} onFilter={handleFilter} />
         </div>
-        <div className={classes.grid} id="scrollableDiv">
-          <InfiniteScroll
-            dataLength={filteredSellers.length}
-            next={fetchMoreData}
-            hasMore={hasMore}
-            loader={<h4>Loading...</h4>}
-            endMessage={<p>No more sellers to load.</p>}
-            scrollableTarget="scrollableDiv"
-          >
-            <GridContainer spacing={2}> {/* Reduced spacing for tighter layout */}
-              {filteredSellers.length > 0 ? (
-                filteredSellers.map((seller) => (
-                  <GridItem key={seller.id} xs={12} sm={6} md={3}> {/* 4 cards per row */}
-                    <SellerCard seller={seller} />
-                  </GridItem>
-                ))
-              ) : (
-                <GridItem>
-                  <p>No sellers found.</p>
-                </GridItem>
-              )}
-            </GridContainer>
-          </InfiniteScroll>
+        <div className={classes.grid}>
+          <GridContainer spacing={3}>
+            {filteredSellers.map((seller) => (
+              <GridItem key={seller.id} xs={12} sm={6} md={4}>
+                <SellerCard seller={seller} />
+              </GridItem>
+            ))}
+          </GridContainer>
         </div>
       </div>
+
+      <Footer
+        theme="dark"
+        content={
+          <div>
+            <div className={classes.left}>
+              <p>© {new Date().getFullYear()} F4cets. All rights reserved.</p>
+            </div>
+          </div>
+        }
+      />
     </div>
   );
 }
