@@ -42,20 +42,21 @@ const marketplaceStyle = {
     color: blackColor,
     borderRadius: "8px",
     overflow: "hidden",
-    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)", // Default shadow
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)", // Minimal default shadow
     "&:hover": {
-      boxShadow: "0 8px 15px -5px rgba(0, 0, 0, 0.15)", // Reduced shadow intensity
+      boxShadow: "0 8px 12px -4px rgba(0, 0, 0, 0.1)", // Reduced shadow intensity
     },
   },
   cardAnimated: {
     transformOrigin: "center", // Ensure rotation pivots from center
     perspective: "1000px", // Add 3D perspective for rotation
+    overflow: "hidden", // Ensure shadow stays within bounds
   },
   cardHeaderImageNoMargin: {
     marginTop: "0 !important", // Remove negative margin to prevent cutoff
   },
   cardHeaderImageContainer: {
-    padding: "8px", // Add 8px padding around the image
+    padding: "8px", // Ensure 8px padding around the image
     "& img": {
       width: "100%",
       height: "auto", // Maintain aspect ratio

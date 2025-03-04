@@ -27,7 +27,7 @@ export default function SellerCard({ seller, className }) {
       whileHover={{ 
         rotate: 10, 
         scale: 1.05, // Reduced scale to minimize ghosting
-        boxShadow: "0 8px 15px -5px rgba(0, 0, 0, 0.15)" // Reduced shadow intensity and spread
+        boxShadow: "0 8px 12px -4px rgba(0, 0, 0, 0.1)" // Further reduced shadow intensity and spread
       }}
       whileInView={{ 
         rotate: 0, 
@@ -40,7 +40,7 @@ export default function SellerCard({ seller, className }) {
         ease: "anticipate" // Smoother, more dynamic easing for morphing
       }}
       className={classNames(className, classes.cardAnimated)} // Use classNames for dynamic classes
-      style={{ overflow: "hidden" }} // Ensure shadow stays within bounds
+      style={{ overflow: "hidden", borderRadius: "8px" }} // Ensure shadow stays within bounds and matches card radius
     >
       <Link href={`/seller/${seller.id}`} passHref>
         <a>
