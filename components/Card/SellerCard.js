@@ -7,6 +7,7 @@ import Button from "/components/CustomButtons/Button.js"; // Import Button compo
 import styles from "/styles/jss/nextjs-material-kit-pro/components/cardStyle.js";
 import marketplaceStyles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.js";
 import makeStyles from "@mui/styles/makeStyles"; // Ensure correct import
+import classNames from "classnames"; // Ensure correct import
 
 const useStyles = makeStyles({ ...styles, ...marketplaceStyles });
 
@@ -26,10 +27,10 @@ export default function SellerCard({ seller, className }) {
           <Card
             plain
             product
-            className={classes.card}
+            className={classNames(classes.card, classes.cardContent)} // Ensure cardContent is applied
             image={`/img/examples/${seller.image}`} // Corrected path for images
-            title={seller.name} // Ensure title is passed
-            description={seller.description} // Ensure description is passed
+            title={seller.name} // Ensure title is passed and visible
+            description={seller.description} // Ensure description is passed and visible
           >
             <Button color="rose" round className={classes.button}>
               Visit Store

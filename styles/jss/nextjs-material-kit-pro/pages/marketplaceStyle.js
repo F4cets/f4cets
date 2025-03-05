@@ -45,7 +45,37 @@ const marketplaceStyle = {
     backgroundColor: whiteColor,
     color: blackColor,
     borderRadius: "8px",
-    overflow: "hidden",
+    overflow: "visible", // Ensure content isn’t hidden
+    display: "flex", // Use flex to ensure content layout
+    flexDirection: "column", // Stack content vertically
+  },
+  cardContent: {
+    display: "flex",
+    flexDirection: "column",
+    flexGrow: 1, // Allow content to fill the card
+    "& .MuiCardHeader-root": {
+      padding: "16px 0", // Adjust padding for header (image)
+    },
+    "& .MuiCardContent-root": {
+      padding: "16px", // Ensure title and description have space
+      flexGrow: 1, // Allow content to expand
+    },
+    "& img": {
+      width: "100%", // Ensure images fill the card
+      height: "auto", // Maintain aspect ratio
+      borderRadius: "8px 8px 0 0", // Match card rounding
+      objectFit: "cover", // Ensure images scale properly
+    },
+    "& h4": {
+      margin: "0 0 8px", // Space below title
+      fontSize: "1.1rem", // Ensure title is readable
+      color: blackColor, // Ensure title is visible
+    },
+    "& p": {
+      margin: "0", // Ensure description fits
+      fontSize: "0.9rem", // Ensure description is readable
+      color: grayColor[0], // Match Material-UI description color
+    },
   },
   button: {
     marginTop: "16px",
@@ -95,8 +125,8 @@ const marketplaceStyle = {
     justifyContent: "center",
     alignItems: "center",
   },
-  searchPadding: { // New style for padding above/below search
-    padding: "20px 0", // Adds 20px padding top and bottom
+  searchPadding: {
+    padding: "20px 0", // Maintain padding above/below search
   },
   search: {
     flexGrow: 1,
@@ -118,6 +148,7 @@ const marketplaceStyle = {
   grid: {
     padding: "0 16px",
     marginTop: "20px",
+    marginBottom: "40px", // Maintain buffer below cards
   },
 };
 

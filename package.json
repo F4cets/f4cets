@@ -13,7 +13,7 @@
     "@solana/wallet-adapter-wallets": "^0.19.32",
     "@solana/web3.js": "^1.98.0",
     "animate.css": "4.1.1",
-    "classnames": "2.3.2",
+    "classnames": "^2.3.2",
     "firebase": "^11.4.0",
     "framer-motion": "^12.4.10",
     "moment": "2.29.4",
