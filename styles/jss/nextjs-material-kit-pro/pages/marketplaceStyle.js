@@ -48,23 +48,25 @@ const marketplaceStyle = {
     overflow: "visible", // Ensure content isn’t hidden
     display: "flex", // Use flex to ensure content layout
     flexDirection: "column", // Stack content vertically
+    padding: "10px", // Add equal padding inside the card
   },
   cardContent: {
     display: "flex",
     flexDirection: "column",
     flexGrow: 1, // Allow content to fill the card
     "& .MuiCardHeader-root": {
-      padding: "16px 0", // Adjust padding for header (image)
+      padding: "0", // Remove default padding, use card padding
     },
     "& .MuiCardContent-root": {
-      padding: "16px", // Ensure title and description have space
+      padding: "0", // Remove default padding, use card padding
       flexGrow: 1, // Allow content to expand
     },
     "& img": {
-      width: "100%", // Ensure images fill the card
-      height: "200px", // Fixed height to prevent overflow
+      width: "100%", // Ensure images fill the card width
+      height: "150px", // Reduced height to fit inside with padding
       borderRadius: "8px 8px 0 0", // Match card rounding
       objectFit: "cover", // Ensure images scale properly
+      marginBottom: "10px", // Add padding below image
     },
     "& h4": {
       margin: "0 0 8px", // Space below title
@@ -78,8 +80,8 @@ const marketplaceStyle = {
     },
   },
   cardImage: {
-    width: "100%", // Ensure images fill the card
-    height: "200px", // Fixed height to prevent overflow
+    width: "100%", // Ensure images fill the card width
+    height: "150px", // Reduced height to fit inside with padding
     borderRadius: "8px 8px 0 0", // Match card rounding
     objectFit: "cover", // Ensure images scale properly
   },
@@ -89,7 +91,7 @@ const marketplaceStyle = {
     color: blackColor, // Ensure title is visible
   },
   cardFooter: {
-    padding: "16px", // Ensure footer has space
+    padding: "0", // Remove default padding, use card padding
     display: "flex",
     justifyContent: "center", // Center the button
   },
@@ -162,9 +164,9 @@ const marketplaceStyle = {
     },
   },
   grid: {
-    padding: "0 16px",
+    padding: "0 20px", // Ensure consistent padding with search bar
     marginTop: "20px",
-    marginBottom: "20px", // Reduced buffer below cards to 20px
+    marginBottom: "20px", // Match padding above search bar (20px)
   },
 };
 
