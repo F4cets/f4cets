@@ -91,11 +91,11 @@ export default function Marketplace() {
       </Parallax>
 
       <div className={classNames(classes.main, classes.mainRaised)}>
-        <div className={classNames(classes.searchContainer, classes.searchPadding)}> {/* Added padding class */}
+        <div className={classNames(classes.searchContainer, classes.searchPadding)}>
           <SearchBar onSearch={handleSearch} onFilter={handleFilter} />
         </div>
         <div className={classes.grid}>
-          <GridContainer spacing={3} justifyContent="center"> {/* Added justifyContent="center" */}
+          <GridContainer spacing={3} justifyContent="center">
             {filteredSellers.map((seller) => (
               <GridItem key={seller.id} xs={12} sm={6} md={2}>
                 <SellerCard seller={seller} />

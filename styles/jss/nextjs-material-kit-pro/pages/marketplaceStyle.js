@@ -39,50 +39,59 @@ const marketplaceStyle = {
     maxWidth: "300px",
     transition: "all 0.3s ease",
     "&:hover": {
-      transform: "scale(1.05) rotate(10deg)",
+      transform: "scale(1.05) rotate(5deg)",
       boxShadow: `0 12px 20px -10px rgba(${hexToRgb(blackColor)}, 0.28)`,
     },
     backgroundColor: whiteColor,
     color: blackColor,
     borderRadius: "8px",
-    overflow: "visible !important", // Ensure content isn’t hidden
-    display: "block !important", // Override any flex issues
-    height: "auto", // Ensure height adjusts to content
-    position: "relative", // Ensure proper stacking
-    paddingTop: "30px", // Add padding to offset the image overhang
+    overflow: "visible", // Ensure content isn’t hidden
+    display: "flex", // Use flex to ensure content layout
+    flexDirection: "column", // Stack content vertically
   },
   cardContent: {
-    display: "block !important", // Force block display
+    display: "flex",
+    flexDirection: "column",
+    flexGrow: 1, // Allow content to fill the card
     "& .MuiCardHeader-root": {
-      padding: "0", // Remove default padding to align image correctly
-      marginTop: "-30px", // Pull the image up to align with the card top
-      position: "relative",
-      zIndex: 1, // Ensure image stays within card
+      padding: "16px 0", // Adjust padding for header (image)
     },
     "& .MuiCardContent-root": {
-      padding: "16px",
-      display: "block !important", // Ensure body is visible
+      padding: "16px", // Ensure title and description have space
+      flexGrow: 1, // Allow content to expand
     },
     "& img": {
-      width: "100% !important", // Force image width
-      height: "auto !important", // Maintain aspect ratio
+      width: "100%", // Ensure images fill the card
+      height: "200px", // Fixed height to prevent overflow
       borderRadius: "8px 8px 0 0", // Match card rounding
-      objectFit: "cover !important", // Ensure images scale properly
-      display: "block !important", // Ensure image is visible
-      marginTop: "0", // Remove any margin to align with card
+      objectFit: "cover", // Ensure images scale properly
     },
     "& h4": {
-      margin: "0 0 8px !important", // Force spacing
-      fontSize: "1.1rem !important", // Ensure title is readable
+      margin: "0 0 8px", // Space below title
+      fontSize: "1.1rem", // Ensure title is readable
       color: blackColor, // Ensure title is visible
-      display: "block !important", // Ensure title is visible
     },
     "& p": {
-      margin: "0 !important", // Ensure description fits
-      fontSize: "0.9rem !important", // Ensure description is readable
+      margin: "0", // Ensure description fits
+      fontSize: "0.9rem", // Ensure description is readable
       color: grayColor[0], // Match Material-UI description color
-      display: "block !important", // Ensure description is visible
     },
+  },
+  cardImage: {
+    width: "100%", // Ensure images fill the card
+    height: "200px", // Fixed height to prevent overflow
+    borderRadius: "8px 8px 0 0", // Match card rounding
+    objectFit: "cover", // Ensure images scale properly
+  },
+  cardTitle: {
+    margin: "0 0 8px", // Space below title
+    fontSize: "1.1rem", // Ensure title is readable
+    color: blackColor, // Ensure title is visible
+  },
+  cardFooter: {
+    padding: "16px", // Ensure footer has space
+    display: "flex",
+    justifyContent: "center", // Center the button
   },
   button: {
     marginTop: "16px",
@@ -99,12 +108,12 @@ const marketplaceStyle = {
     "& form": { margin: "0px" },
     "&$subscribeLineImage:after": {
       position: "absolute",
-      zIndex: 1,
+      zIndex: "1",
       width: "100%",
       height: "100%",
       display: "block",
-      left: 0,
-      top: 0,
+      left: "0",
+      top: "0",
       content: "''",
       backgroundColor: "rgba(" + hexToRgb(blackColor) + ",0.66)",
     },
@@ -114,7 +123,7 @@ const marketplaceStyle = {
     backgroundPosition: "top center",
     backgroundSize: "cover",
     "& $container": {
-      zIndex: 2,
+      zIndex: "2",
       position: "relative",
     },
     "& $title": {
@@ -136,7 +145,7 @@ const marketplaceStyle = {
     padding: "20px 0", // Maintain padding above/below search
   },
   search: {
-    flexGrow: 1,
+    flexGrow: "1",
     maxWidth: "500px",
     backgroundColor: whiteColor,
     borderRadius: "4px",
@@ -155,7 +164,7 @@ const marketplaceStyle = {
   grid: {
     padding: "0 16px",
     marginTop: "20px",
-    marginBottom: "60px", // Increase buffer below cards to 60px (20px more than current 40px)
+    marginBottom: "20px", // Reduced buffer below cards to 20px
   },
 };
 
