@@ -137,18 +137,21 @@ const marketplaceStyle = {
   },
   searchContainer: {
     marginBottom: "20px",
-    padding: "0 16px",
+    paddingLeft: "20px",
+    paddingRight: "20px",
     display: "flex",
     gap: "16px",
-    justifyContent: "center",
     alignItems: "center",
+    maxWidth: "1200px",
+    margin: "0 auto",
   },
   searchPadding: {
     padding: "20px 0", // Maintain padding above/below search
   },
   search: {
-    flexGrow: "1",
+    flexGrow: 0, // Remove expansion to respect padding
     maxWidth: "500px",
+    margin: "0 10px", // Add small margins for spacing within searchContainer
     backgroundColor: whiteColor,
     borderRadius: "4px",
     "& .MuiInputBase-root": {
