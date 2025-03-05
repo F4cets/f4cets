@@ -45,30 +45,44 @@ const marketplaceStyle = {
     backgroundColor: whiteColor,
     color: blackColor,
     borderRadius: "8px",
-    overflow: "visible", // Ensure content isn’t hidden
-    display: "flex", // Use flex to ensure content layout
-    flexDirection: "column", // Stack content vertically
+    overflow: "visible !important", // Ensure content isn’t hidden
+    display: "block !important", // Override any flex issues
+    height: "auto", // Ensure height adjusts to content
+    position: "relative", // Ensure proper stacking
+    paddingTop: "30px", // Add padding to offset the image overhang
   },
   cardContent: {
-    display: "flex",
-    flexDirection: "column",
-    flexGrow: 1, // Allow content to fill the card
-  },
-  cardImage: {
-    width: "100%", // Ensure images fill the card
-    height: "auto", // Maintain aspect ratio
-    borderRadius: "8px 8px 0 0", // Match card rounding
-    objectFit: "cover", // Ensure images scale properly
-  },
-  cardTitle: {
-    margin: "0 0 8px", // Space below title
-    fontSize: "1.1rem", // Ensure title is readable
-    color: blackColor, // Ensure title is visible
-  },
-  cardFooter: {
-    padding: "16px", // Ensure footer has space
-    display: "flex",
-    justifyContent: "center", // Center the button
+    display: "block !important", // Force block display
+    "& .MuiCardHeader-root": {
+      padding: "0", // Remove default padding to align image correctly
+      marginTop: "-30px", // Pull the image up to align with the card top
+      position: "relative",
+      zIndex: 1, // Ensure image stays within card
+    },
+    "& .MuiCardContent-root": {
+      padding: "16px",
+      display: "block !important", // Ensure body is visible
+    },
+    "& img": {
+      width: "100% !important", // Force image width
+      height: "auto !important", // Maintain aspect ratio
+      borderRadius: "8px 8px 0 0", // Match card rounding
+      objectFit: "cover !important", // Ensure images scale properly
+      display: "block !important", // Ensure image is visible
+      marginTop: "0", // Remove any margin to align with card
+    },
+    "& h4": {
+      margin: "0 0 8px !important", // Force spacing
+      fontSize: "1.1rem !important", // Ensure title is readable
+      color: blackColor, // Ensure title is visible
+      display: "block !important", // Ensure title is visible
+    },
+    "& p": {
+      margin: "0 !important", // Ensure description fits
+      fontSize: "0.9rem !important", // Ensure description is readable
+      color: grayColor[0], // Match Material-UI description color
+      display: "block !important", // Ensure description is visible
+    },
   },
   button: {
     marginTop: "16px",
@@ -139,9 +153,9 @@ const marketplaceStyle = {
     },
   },
   grid: {
-   padding: "0 16px",
+    padding: "0 16px",
     marginTop: "20px",
-    marginBottom: "40px", // Maintain buffer below cards
+    marginBottom: "60px", // Increase buffer below cards to 60px (20px more than current 40px)
   },
 };
 

@@ -20,7 +20,7 @@ export default function SellerCard({ seller, className }) {
   return (
     <motion.div
       initial={{ rotate: 0, scale: 0.9 }}
-      whileHover={{ rotate: 10, scale: 1.1 }}
+      whileHover={{ rotate: 5, scale: 1.1 }} // Reduced rotate to 5 degrees (50% less)
       whileInView={{ rotate: 0, scale: 1 }}
       transition={{ duration: 0.5 }}
       className={className}
