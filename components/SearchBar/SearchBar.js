@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
@@ -28,30 +28,37 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function SearchBar({ onSearch, onFilter, categories = [] }) {
+export default function SearchBar({ onSearch, onFilter, searchQuery, filters, categories = [] }) {
   const classes = useStyles(); // Use makeStyles to generate classes
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery || "");
+  const [localFilters, setLocalFilters] = useState(filters || {
     priceMin: 0,
     priceMax: 900,
     categories: [],
     designers: [],
   });
 
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
+
   const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
-    onSearch(event.target.value);
+    const query = event.target.value;
+    setLocalSearchQuery(query);
+    onSearch(query, localFilters); // Pass search query and current filters
   };
 
   const handleFilterChange = (field) => (event) => {
     const value = field === "categories" || field === "designers" 
       ? event.target.value 
       : parseFloat(event.target.value) || 0;
-    setFilters(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-    onFilter({ ...filters, [field]: value });
+    const newFilters = { ...localFilters, [field]: value };
+    setLocalFilters(newFilters);
+    onFilter(newFilters);
   };
 
   return (
@@ -61,7 +68,7 @@ export default function SearchBar({ onSearch, onFilter, categories = [] }) {
           fullWidth
           variant="outlined"
           placeholder="Search sellers..."
-          value={searchQuery}
+          value={localSearchQuery}
           onChange={handleSearchChange}
           className={classes.search} // Now defined with maxWidth and margin
         />
@@ -71,7 +78,7 @@ export default function SearchBar({ onSearch, onFilter, categories = [] }) {
           <InputLabel>Categories</InputLabel>
           <Select
             multiple
-            value={filters.categories}
+            value={localFilters.categories}
             onChange={handleFilterChange("categories")}
             label="Categories"
           >
@@ -89,7 +96,7 @@ export default function SearchBar({ onSearch, onFilter, categories = [] }) {
           variant="outlined"
           label="Min Price (SOL)"
           type="number"
-          value={filters.priceMin}
+          value={localFilters.priceMin}
           onChange={handleFilterChange("priceMin")}
           className={classes.filter} // Now defined
         />
@@ -100,7 +107,7 @@ export default function SearchBar({ onSearch, onFilter, categories = [] }) {
           variant="outlined"
           label="Max Price (SOL)"
           type="number"
-          value={filters.priceMax}
+          value={localFilters.priceMax}
           onChange={handleFilterChange("priceMax")}
           className={classes.filter} // Now defined
         />
@@ -112,9 +119,23 @@ export default function SearchBar({ onSearch, onFilter, categories = [] }) {
 SearchBar.propTypes = {
   onSearch: PropTypes.func.isRequired,
   onFilter: PropTypes.func.isRequired,
+  searchQuery: PropTypes.string,
+  filters: PropTypes.shape({
+    priceMin: PropTypes.number,
+    priceMax: PropTypes.number,
+    categories: PropTypes.arrayOf(PropTypes.string),
+    designers: PropTypes.arrayOf(PropTypes.string),
+  }),
   categories: PropTypes.arrayOf(PropTypes.string),
 };
 
 SearchBar.defaultProps = {
   categories: [],
+  searchQuery: "",
+  filters: {
+    priceMin: 0,
+    priceMax: 900,
+    categories: [],
+    designers: [],
+  },
 };

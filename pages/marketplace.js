@@ -25,45 +25,70 @@ export default function Marketplace() {
   const [filteredSellers, setFilteredSellers] = useState([]);
   const [visibleSellers, setVisibleSellers] = useState([]);
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState({
+    priceMin: 0,
+    priceMax: 900,
+    categories: [],
+    designers: [],
+  });
   const loader = useRef(null);
 
-  // Generate 100 fake sellers with categories and prices
+  // Generate 100 fake sellers with varied descriptions
   useEffect(() => {
     console.log("Setting fake sellers...");
     const categories = ["Art & Crafts", "Jewelry", "Handmade Goods", "Furniture", "Electronics"];
-    const fakeSellers = Array.from({ length: 100 }, (_, index) => ({
-      id: index + 1,
-      name: `Seller${index + 1}`,
-      image: `seller${((index % 5) + 1)}.jpg`, // Reuse 5 images (1-5)
-      description: `${categories[index % 5]} - Item ${index + 1}`,
-      category: categories[index % 5],
-      price: Math.floor(Math.random() * 900) + 1, // Random price between 1 and 900 SOL
-    }));
+    const materials = ["Gold Plated", "Silver Plated", "Handcrafted", "Vintage", ""];
+    const fakeSellers = Array.from({ length: 100 }, (_, index) => {
+      const category = categories[index % 5];
+      const material = materials[Math.floor(Math.random() * materials.length)]; // Random material or none
+      const description = `${category} - Item ${index + 1}${material ? ` - ${material}` : ""}`;
+      return {
+        id: index + 1,
+        name: `Seller${index + 1}`,
+        image: `seller${((index % 5) + 1)}.jpg`, // Reuse 5 images (1-5)
+        description: description,
+        category: category,
+        price: Math.floor(Math.random() * 900) + 1, // Random price between 1 and 900 SOL
+      };
+    });
     setSellers(fakeSellers);
     setFilteredSellers(fakeSellers);
     setVisibleSellers(fakeSellers.slice(0, 20)); // Load first 20
     console.log("Sellers set:", fakeSellers);
   }, []);
 
-  const handleSearch = (query) => {
-    const filtered = sellers.filter(seller =>
-      seller.name.toLowerCase().includes(query.toLowerCase()) ||
-      seller.description.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredSellers(filtered);
-    setVisibleSellers(filtered.slice(0, 20)); // Reset to first 20 on search
-    setPage(1);
-  };
-
-  const handleFilter = (filters) => {
+  const applyFilters = useCallback(() => {
     let filtered = [...sellers];
+    // Parse search query into terms and search across name, category, description
+    if (searchQuery.trim()) {
+      const terms = searchQuery.toLowerCase().split(/\s+/).filter(term => term); // Split by whitespace, remove empty
+      filtered = filtered.filter(seller => {
+        const nameMatch = terms.some(term => seller.name.toLowerCase().includes(term));
+        const categoryMatch = terms.some(term => seller.category.toLowerCase().includes(term));
+        const descriptionMatch = terms.some(term => seller.description.toLowerCase().includes(term));
+        return nameMatch || categoryMatch || descriptionMatch;
+      });
+    }
+    // Apply filters (preserve existing filters)
     if (filters.priceMin) filtered = filtered.filter(seller => seller.price >= filters.priceMin);
     if (filters.priceMax) filtered = filtered.filter(seller => seller.price <= filters.priceMax);
     if (filters.categories.length) filtered = filtered.filter(seller => filters.categories.includes(seller.category));
     if (filters.designers.length) filtered = filtered.filter(seller => filters.designers.includes(seller.designer));
     setFilteredSellers(filtered);
-    setVisibleSellers(filtered.slice(0, 20)); // Reset to first 20 on filter
+    setVisibleSellers(filtered.slice(0, 20)); // Reset to first 20 on filter change
     setPage(1);
+  }, [sellers, searchQuery, filters]);
+
+  const handleSearch = (query, currentFilters) => {
+    setSearchQuery(query);
+    setFilters(currentFilters || filters); // Preserve existing filters
+    applyFilters();
+  };
+
+  const handleFilter = (newFilters) => {
+    setFilters(newFilters);
+    applyFilters();
   };
 
   const loadMore = useCallback(() => {
@@ -133,6 +158,8 @@ export default function Marketplace() {
           <SearchBar 
             onSearch={handleSearch} 
             onFilter={handleFilter} 
+            searchQuery={searchQuery}
+            filters={filters}
             categories={["Art & Crafts", "Jewelry", "Handmade Goods", "Furniture", "Electronics"]} // Pass categories
           />
         </div>
