@@ -3,6 +3,9 @@ import PropTypes from "prop-types";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Card from "./Card.js"; // Relative import from same folder
+import CardHeader from "./CardHeader.js"; // Import stock CardHeader
+import CardBody from "./CardBody.js"; // Import stock CardBody
+import CardFooter from "./CardFooter.js"; // Import stock CardFooter
 import Button from "/components/CustomButtons/Button.js"; // Import Button component
 import styles from "/styles/jss/nextjs-material-kit-pro/components/cardStyle.js";
 import marketplaceStyles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.js";
@@ -28,13 +31,23 @@ export default function SellerCard({ seller, className }) {
             plain
             product
             className={classNames(classes.card, classes.cardContent)} // Ensure cardContent is applied
-            image={`/img/examples/${seller.image}`} // Corrected path for images
-            title={seller.name} // Ensure title is passed and visible
-            description={seller.description} // Ensure description is passed and visible
           >
-            <Button color="rose" round className={classes.button}>
-              Visit Store
-            </Button>
+            <CardHeader image>
+              <img
+                src={`/img/examples/${seller.image}`} // Direct image rendering
+                alt={seller.name}
+                className={classes.cardImage}
+              />
+            </CardHeader>
+            <CardBody>
+              <h4 className={classes.cardTitle}>{seller.name}</h4>
+              <p className={classes.description}>{seller.description}</p>
+            </CardBody>
+            <CardFooter className={classes.cardFooter}>
+              <Button color="rose" round className={classes.button}>
+                Visit Store
+              </Button>
+            </CardFooter>
           </Card>
         </a>
       </Link>
