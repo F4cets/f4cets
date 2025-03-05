@@ -1,5 +1,5 @@
 /*eslint-disable*/
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import classNames from "classnames";
 import makeStyles from '@mui/styles/makeStyles';
 import Header from "/components/Header/Header.js";
@@ -23,18 +23,25 @@ export default function Marketplace() {
   const classes = useStyles();
   const [sellers, setSellers] = useState([]);
   const [filteredSellers, setFilteredSellers] = useState([]);
+  const [visibleSellers, setVisibleSellers] = useState([]);
+  const [page, setPage] = useState(1);
+  const loader = useRef(null);
 
+  // Generate 100 fake sellers with categories and prices
   useEffect(() => {
     console.log("Setting fake sellers...");
-    const fakeSellers = [
-      { id: 1, name: "Seller1", image: "seller1.jpg", description: "Art & Crafts" },
-      { id: 2, name: "Seller2", image: "seller2.jpg", description: "Jewelry" },
-      { id: 3, name: "Seller3", image: "seller3.jpg", description: "Handmade Goods" },
-      { id: 4, name: "Seller4", image: "seller4.jpg", description: "Furniture" },
-      { id: 5, name: "Seller5", image: "seller5.jpg", description: "Electronics" },
-    ];
+    const categories = ["Art & Crafts", "Jewelry", "Handmade Goods", "Furniture", "Electronics"];
+    const fakeSellers = Array.from({ length: 100 }, (_, index) => ({
+      id: index + 1,
+      name: `Seller${index + 1}`,
+      image: `seller${((index % 5) + 1)}.jpg`, // Reuse 5 images (1-5)
+      description: `${categories[index % 5]} - Item ${index + 1}`,
+      category: categories[index % 5],
+      price: Math.floor(Math.random() * 900) + 1, // Random price between 1 and 900 SOL
+    }));
     setSellers(fakeSellers);
     setFilteredSellers(fakeSellers);
+    setVisibleSellers(fakeSellers.slice(0, 20)); // Load first 20
     console.log("Sellers set:", fakeSellers);
   }, []);
 
@@ -44,6 +51,8 @@ export default function Marketplace() {
       seller.description.toLowerCase().includes(query.toLowerCase())
     );
     setFilteredSellers(filtered);
+    setVisibleSellers(filtered.slice(0, 20)); // Reset to first 20 on search
+    setPage(1);
   };
 
   const handleFilter = (filters) => {
@@ -53,7 +62,36 @@ export default function Marketplace() {
     if (filters.categories.length) filtered = filtered.filter(seller => filters.categories.includes(seller.category));
     if (filters.designers.length) filtered = filtered.filter(seller => filters.designers.includes(seller.designer));
     setFilteredSellers(filtered);
+    setVisibleSellers(filtered.slice(0, 20)); // Reset to first 20 on filter
+    setPage(1);
   };
+
+  const loadMore = useCallback(() => {
+    if (visibleSellers.length < filteredSellers.length) {
+      const nextPage = page + 1;
+      const newVisibleSellers = filteredSellers.slice(0, nextPage * 20);
+      setVisibleSellers(newVisibleSellers);
+      setPage(nextPage);
+    }
+  }, [page, filteredSellers, visibleSellers]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        loadMore();
+      }
+    }, { threshold: 0.1 });
+
+    if (loader.current) {
+      observer.observe(loader.current);
+    }
+
+    return () => {
+      if (loader.current) {
+        observer.unobserve(loader.current);
+      }
+    };
+  }, [loadMore]);
 
   return (
     <div>
@@ -92,16 +130,21 @@ export default function Marketplace() {
 
       <div className={classNames(classes.main, classes.mainRaised)}>
         <div className={classNames(classes.searchContainer, classes.searchPadding)}>
-          <SearchBar onSearch={handleSearch} onFilter={handleFilter} />
+          <SearchBar 
+            onSearch={handleSearch} 
+            onFilter={handleFilter} 
+            categories={["Art & Crafts", "Jewelry", "Handmade Goods", "Furniture", "Electronics"]} // Pass categories
+          />
         </div>
         <div className={classes.grid}>
           <GridContainer spacing={3} justifyContent="center">
-            {filteredSellers.map((seller) => (
+            {visibleSellers.map((seller) => (
               <GridItem key={seller.id} xs={12} sm={6} md={2}>
                 <SellerCard seller={seller} />
               </GridItem>
             ))}
           </GridContainer>
+          <div ref={loader} style={{ height: "20px" }} /> {/* Loader for infinite scroll */}
         </div>
       </div>
 
