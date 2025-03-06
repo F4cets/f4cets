@@ -8,11 +8,11 @@ import Footer from "/components/Footer/Footer.js";
 import Parallax from "/components/Parallax/Parallax.js";
 import GridContainer from "/components/Grid/GridContainer.js";
 import GridItem from "/components/Grid/GridItem.js";
-import AffiliateSearchBar from "/components/AffiliateSearchBar/AffiliateSearchBar.js"; // Updated import
+import AffiliateSearchBar from "/components/AffiliateSearchBar/AffiliateSearchBar.js";
 import AffiliateCard from "/components/Card/AffiliateCard.js";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/affiliateStyle.js";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const useStyles = makeStyles(styles);
 
@@ -28,24 +28,13 @@ export default function Affiliate() {
   const [visibleAffiliates, setVisibleAffiliates] = useState([]);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
-    priceMin: 0,
-    priceMax: 900,
-    categories: [],
-    designers: [],
-  });
   const loader = useRef(null);
 
   useEffect(() => {
     const fetchAffiliates = async () => {
       try {
         console.log("Starting Firestore fetch for affiliates...");
-
-        // Fetch affiliates (placeholder query, replace with actual affiliates collection)
-        const affiliatesQuery = query(
-          collection(db, "affiliates"),
-          where("isActive", "==", true)
-        );
+        const affiliatesQuery = query(collection(db, "affiliates"), where("isActive", "==", true));
         console.log("Executing affiliates query...");
         const affiliatesSnapshot = await getDocs(affiliatesQuery);
         console.log("Affiliates fetched:", affiliatesSnapshot.docs.length, "documents");
@@ -53,19 +42,11 @@ export default function Affiliate() {
         const affiliatesData = affiliatesSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
-          type: "affiliate",
-          price: doc.data().commissionRate || 0,
         }));
 
-        const combined = [...affiliatesData].sort((a, b) => {
-          const priceDiff = (a.price || 0) - (b.price || 0);
-          if (priceDiff !== 0) return priceDiff;
-          return (a.name || "").localeCompare(b.name || "");
-        });
-
-        setAffiliates(combined);
-        setFilteredAffiliates(combined);
-        setVisibleAffiliates(combined.slice(0, 20));
+        setAffiliates(affiliatesData);
+        setFilteredAffiliates(affiliatesData);
+        setVisibleAffiliates(affiliatesData.slice(0, 20));
       } catch (error) {
         console.error("Detailed Firestore error for affiliates:", error);
         console.error("Error code:", error.code);
@@ -77,80 +58,32 @@ export default function Affiliate() {
 
   const applyFilters = useCallback(async () => {
     try {
-      let affiliatesQuery = query(
-        collection(db, "affiliates"),
-        where("isActive", "==", true)
-      );
-
-      if (filters.categories.length) {
-        affiliatesQuery = query(
-          affiliatesQuery,
-          where("categories", "array-contains-any", filters.categories)
-        );
-      }
-      if (filters.priceMin) {
-        affiliatesQuery = query(affiliatesQuery, where("commissionRate", ">=", filters.priceMin));
-      }
-      if (filters.priceMax) {
-        affiliatesQuery = query(affiliatesQuery, where("commissionRate", "<=", filters.priceMax));
-      }
-
-      console.log("Fetching filtered affiliates...");
-      const affiliatesSnapshot = await getDocs(affiliatesQuery);
-      console.log("Filtered affiliates fetched:", affiliatesSnapshot.docs.length, "documents");
-
-      const affiliatesData = affiliatesSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        type: "affiliate",
-        price: doc.data().commissionRate || 0,
-      }));
-
-      let filtered = [...affiliatesData];
+      let filtered = [...affiliates];
       if (searchQuery.trim()) {
         const terms = searchQuery.toLowerCase().split(/\s+/).filter((term) => term);
         filtered = filtered.filter((affiliate) => {
           const nameMatch = terms.some((term) =>
             (affiliate.name || "").toLowerCase().includes(term)
           );
-          const categoryMatch = terms.some((term) =>
-            (affiliate.category || "").toLowerCase().includes(term)
-          );
-          const descriptionMatch = terms.some((term) =>
-            (affiliate.description || "").toLowerCase().includes(term)
-          );
-          return nameMatch || categoryMatch || descriptionMatch;
+          return nameMatch;
         });
       }
-
-      filtered.sort((a, b) => {
-        const priceDiff = (a.price || 0) - (b.price || 0);
-        if (priceDiff !== 0) return priceDiff;
-        return (a.name || "").localeCompare(b.name || "");
-      });
 
       setFilteredAffiliates(filtered);
       setVisibleAffiliates(filtered.slice(0, 20));
       setPage(1);
     } catch (error) {
       console.error("Error applying filters for affiliates:", error);
-      console.error("Error code:", error.code);
-      console.error("Error message:", error.message);
     }
-  }, [searchQuery, filters]);
+  }, [searchQuery, affiliates]);
 
   const handleSearch = (query) => {
     setSearchQuery(query);
-    // Removed filters handling since AffiliateSearchBar doesn't use filters
-  };
-
-  const handleFilter = (newFilters) => {
-    setFilters(newFilters);
   };
 
   useEffect(() => {
     applyFilters();
-  }, [searchQuery, filters, applyFilters]);
+  }, [searchQuery, applyFilters]);
 
   const loadMore = useCallback(() => {
     if (visibleAffiliates.length < filteredAffiliates.length) {
@@ -194,7 +127,7 @@ export default function Affiliate() {
           color: "info",
         }}
       />
-      <Parallax image="/img/examples/affiliate.jpg" filter="dark" small>
+      <Parallax image="/img/examples/clark-street-merc.jpg" filter="dark" small>
         <div className={classes.container}>
           <GridContainer>
             <GridItem
@@ -208,7 +141,7 @@ export default function Affiliate() {
             >
               <div className={classes.brand}>
                 <h1 className={classes.title}>Affiliate Partners!</h1>
-                <h4>Earn Upto 45% Crypto Cashback with Our Links – (Cookies Enabled)</h4>
+                <h4>Earn 15% WNDO Cashback with Our Links – Use Our Link for Rewards (Cookies Enabled)</h4>
               </div>
             </GridItem>
           </GridContainer>
