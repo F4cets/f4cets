@@ -1,9 +1,8 @@
 import React from "react";
-import { motion } from "framer-motion";
 import Card from "../Card/Card.js";
 import CardActionArea from "@mui/material/CardActionArea";
 import makeStyles from "@mui/styles/makeStyles";
-import styles from "/styles/jss/nextjs-material-kit-pro/components/cardStyle.js";
+import styles from "/styles/jss/nextjs-material-kit-pro/rotatingCards.js";
 
 const useStyles = makeStyles(styles);
 
@@ -11,22 +10,27 @@ export default function AffiliateCard({ affiliate }) {
   const classes = useStyles();
 
   return (
-    <motion.div
-      initial={{ rotate: 0, scale: 0.9 }}
-      whileHover={{ rotate: 10, scale: 1.1 }}
-      whileInView={{ rotate: 0, scale: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <CardActionArea href={affiliate.affiliateLink} target="_blank" rel="noopener noreferrer">
-        <Card
-          plain
-          className={classes.card}
-          image={affiliate.logoUrl} // Already fixed to handle logourl
-          title={affiliate.name}
-          description={affiliate.cryptoBackOffer}
-          footer={<small className={classes.cardFooter}>Use our link for rewards (cookies enabled)</small>}
-        />
-      </CardActionArea>
-    </motion.div>
+    <div className={classes.card}>
+      <div className={classes.cardItem}>
+        <CardActionArea href={affiliate.affiliateLink} target="_blank" rel="noopener noreferrer">
+          <div className={classes.front}>
+            <Card
+              plain
+              className={classes.card}
+              image={affiliate.logoUrl}
+              title={affiliate.name}
+            />
+          </div>
+          <div className={classes.back}>
+            <Card
+              plain
+              className={classes.card}
+              description={affiliate.cryptoBackOffer}
+              footer={<small className={classes.cardFooter}>Use our link for rewards (cookies enabled)</small>}
+            />
+          </div>
+        </CardActionArea>
+      </div>
+    </div>
   );
 }
