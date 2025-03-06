@@ -42,6 +42,7 @@ export default function Affiliate() {
         const affiliatesData = affiliatesSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
+          logoUrl: doc.data().logourl || doc.data().logoUrl, // Handle typo in field name
         }));
 
         setAffiliates(affiliatesData);
@@ -127,7 +128,7 @@ export default function Affiliate() {
           color: "info",
         }}
       />
-      <Parallax image="/img/examples/clark-street-merc.jpg" filter="dark" small>
+      <Parallax image="/img/examples/affiliate.jpg" filter="dark" small>
         <div className={classes.container}>
           <GridContainer>
             <GridItem
@@ -157,11 +158,17 @@ export default function Affiliate() {
         </div>
         <div className={classes.grid}>
           <GridContainer spacing={3} justifyContent="center">
-            {visibleAffiliates.map((affiliate) => (
-              <GridItem key={affiliate.id} xs={12} sm={6} md={2}>
-                <AffiliateCard affiliate={affiliate} />
+            {visibleAffiliates.length > 0 ? (
+              visibleAffiliates.map((affiliate) => (
+                <GridItem key={affiliate.id} xs={12} sm={6} md={2}>
+                  <AffiliateCard affiliate={affiliate} />
+                </GridItem>
+              ))
+            ) : (
+              <GridItem>
+                <p>No affiliates found.</p>
               </GridItem>
-            ))}
+            )}
           </GridContainer>
           <div ref={loader} style={{ height: "20px" }} />
         </div>

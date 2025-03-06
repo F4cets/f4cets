@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Card from "../Card/Card.js";
-import CardActionArea from "@mui/material/CardActionArea"; // For making the card clickable
+import CardActionArea from "@mui/material/CardActionArea";
 import makeStyles from "@mui/styles/makeStyles";
 import styles from "/styles/jss/nextjs-material-kit-pro/components/cardStyle.js";
 
@@ -21,9 +21,9 @@ export default function AffiliateCard({ affiliate }) {
         <Card
           plain
           className={classes.card}
-          image={affiliate.logoUrl} // Use logoUrl instead of image
+          image={affiliate.logoUrl} // Already fixed to handle logourl
           title={affiliate.name}
-          description={affiliate.cryptoBackOffer} // Use cryptoBackOffer instead of description
+          description={affiliate.cryptoBackOffer}
           footer={<small className={classes.cardFooter}>Use our link for rewards (cookies enabled)</small>}
         />
       </CardActionArea>
