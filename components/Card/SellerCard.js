@@ -43,7 +43,7 @@ export default function SellerCard({ seller, className }) {
           >
             <CardHeader image>
               <img
-                src={`/img/examples/${seller.image}`} // Direct image rendering
+                src={seller.selectedImage} // Changed to use Firebase Storage URL
                 alt={seller.name}
                 className={classes.cardImage}
               />

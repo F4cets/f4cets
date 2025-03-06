@@ -5,6 +5,7 @@
   "dependencies": {
     "@emotion/react": "11.11.0",
     "@emotion/styled": "11.11.0",
+    "@firebase/firestore": "^4.7.9",
     "@mui/icons-material": "5.11.16",
     "@mui/material": "5.13.0",
     "@mui/styles": "^5.16.14",
@@ -14,6 +15,7 @@
     "@solana/web3.js": "^1.98.0",
     "animate.css": "4.1.1",
     "classnames": "^2.3.2",
+    "dotenv": "^16.4.7",
     "firebase": "^11.4.0",
     "framer-motion": "^12.4.10",
     "moment": "2.29.4",

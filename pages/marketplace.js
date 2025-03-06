@@ -1,7 +1,7 @@
 /*eslint-disable*/
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import classNames from "classnames";
-import makeStyles from '@mui/styles/makeStyles';
+import makeStyles from "@mui/styles/makeStyles";
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import Footer from "/components/Footer/Footer.js";
@@ -11,6 +11,8 @@ import GridItem from "/components/Grid/GridItem.js";
 import SearchBar from "/components/SearchBar/SearchBar.js";
 import SellerCard from "/components/Card/SellerCard.js";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.js";
+import { db } from "../firebase";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 
 const useStyles = makeStyles(styles);
 
@@ -34,62 +36,174 @@ export default function Marketplace() {
   });
   const loader = useRef(null);
 
-  // Generate 100 fake sellers with varied descriptions
   useEffect(() => {
-    console.log("Setting fake sellers...");
-    const categories = ["Art & Crafts", "Jewelry", "Handmade Goods", "Furniture", "Electronics"];
-    const materials = ["Gold Plated", "Silver Plated", "Handcrafted", "Vintage", ""];
-    const fakeSellers = Array.from({ length: 100 }, (_, index) => {
-      const category = categories[index % 5];
-      const material = materials[Math.floor(Math.random() * materials.length)]; // Random material or none
-      const description = `${category} - Item ${index + 1}${material ? ` - ${material}` : ""}`;
-      return {
-        id: index + 1,
-        name: `Seller${index + 1}`,
-        image: `seller${((index % 5) + 1)}.jpg`, // Reuse 5 images (1-5)
-        description: description,
-        category: category,
-        price: Math.floor(Math.random() * 900) + 1, // Random price between 1 and 900 SOL
-      };
-    });
-    setSellers(fakeSellers);
-    setFilteredSellers(fakeSellers);
-    setVisibleSellers(fakeSellers.slice(0, 20)); // Load first 20
-    console.log("Sellers set:", fakeSellers);
+    const fetchSellers = async () => {
+      try {
+        console.log("Starting Firestore fetch...");
+
+        // Fetch stores
+        const storesQuery = query(
+          collection(db, "stores"),
+          where("isActive", "==", true)
+        );
+        console.log("Executing stores query...");
+        const storesSnapshot = await getDocs(storesQuery);
+        console.log("Stores fetched:", storesSnapshot.docs.length, "documents");
+
+        // Fetch products
+        const productsQuery = query(
+          collection(db, "products"),
+          where("isActive", "==", true),
+          where("quantity", ">", 0) // Changed from inventory.total to quantity
+        );
+        console.log("Executing products query...");
+        const productsSnapshot = await getDocs(productsQuery);
+        console.log("Products fetched:", productsSnapshot.docs.length, "documents");
+
+        const stores = storesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          type: "store",
+          price: doc.data().minPrice || 0,
+        }));
+        const products = productsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          type: "product",
+          price: doc.data().price || 0,
+        }));
+
+        // Combine and sort
+        const combined = [...stores, ...products].sort((a, b) => {
+          const priceDiff = (a.price || 0) - (b.price || 0);
+          if (priceDiff !== 0) return priceDiff;
+          return (a.name || "").localeCompare(b.name || "");
+        });
+
+        setSellers(combined);
+        setFilteredSellers(combined);
+        setVisibleSellers(combined.slice(0, 20));
+      } catch (error) {
+        console.error("Detailed Firestore error:", error);
+        console.error("Error code:", error.code);
+        console.error("Error message:", error.message);
+      }
+    };
+    fetchSellers();
   }, []);
 
-  const applyFilters = useCallback(() => {
-    let filtered = [...sellers];
-    // Parse search query into terms and search across name, category, description
-    if (searchQuery.trim()) {
-      const terms = searchQuery.toLowerCase().split(/\s+/).filter(term => term); // Split by whitespace, remove empty
-      filtered = filtered.filter(seller => {
-        const nameMatch = terms.some(term => seller.name.toLowerCase().includes(term));
-        const categoryMatch = terms.some(term => seller.category.toLowerCase().includes(term));
-        const descriptionMatch = terms.some(term => seller.description.toLowerCase().includes(term));
-        return nameMatch || categoryMatch || descriptionMatch;
+  const applyFilters = useCallback(async () => {
+    try {
+      // Base queries
+      let storesQuery = query(
+        collection(db, "stores"),
+        where("isActive", "==", true)
+      );
+      let productsQuery = query(
+        collection(db, "products"),
+        where("isActive", "==", true),
+        where("quantity", ">", 0) // Changed from inventory.total to quantity
+      );
+
+      // Apply filters to stores
+      if (filters.categories.length) {
+        storesQuery = query(
+          storesQuery,
+          where("categories", "array-contains-any", filters.categories)
+        );
+      }
+      if (filters.priceMin) {
+        storesQuery = query(storesQuery, where("minPrice", ">=", filters.priceMin));
+      }
+      if (filters.priceMax) {
+        storesQuery = query(storesQuery, where("maxPrice", "<=", filters.priceMax));
+      }
+
+      // Apply filters to products
+      if (filters.categories.length) {
+        productsQuery = query(productsQuery, where("category", "in", filters.categories));
+      }
+      if (filters.priceMin) {
+        productsQuery = query(productsQuery, where("price", ">=", filters.priceMin));
+      }
+      if (filters.priceMax) {
+        productsQuery = query(productsQuery, where("price", "<=", filters.priceMax));
+      }
+
+      // Fetch data
+      console.log("Fetching filtered stores...");
+      const storesSnapshot = await getDocs(storesQuery);
+      console.log("Filtered stores fetched:", storesSnapshot.docs.length, "documents");
+
+      console.log("Fetching filtered products...");
+      const productsSnapshot = await getDocs(productsQuery);
+      console.log("Filtered products fetched:", productsSnapshot.docs.length, "documents");
+
+      const stores = storesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        type: "store",
+        price: doc.data().minPrice || 0,
+      }));
+      const products = productsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        type: "product",
+        price: doc.data().price || 0,
+      }));
+
+      // Combine and apply search
+      let filtered = [...stores, ...products];
+      if (searchQuery.trim()) {
+        const terms = searchQuery.toLowerCase().split(/\s+/).filter((term) => term);
+        filtered = filtered.filter((seller) => {
+          const nameMatch = terms.some((term) =>
+            (seller.name || "").toLowerCase().includes(term)
+          );
+          const categoryMatch = terms.some((term) =>
+            (seller.category || "").toLowerCase().includes(term)
+          );
+          const descriptionMatch = terms.some((term) =>
+            (seller.description || "").toLowerCase().includes(term)
+          );
+          const tagsMatch =
+            seller.tags &&
+            terms.some((term) =>
+              seller.tags.some((tag) => (tag.value || "").toLowerCase().includes(term))
+            );
+          return nameMatch || categoryMatch || descriptionMatch || tagsMatch;
+        });
+      }
+
+      // Sort
+      filtered.sort((a, b) => {
+        const priceDiff = (a.price || 0) - (b.price || 0);
+        if (priceDiff !== 0) return priceDiff;
+        return (a.name || "").localeCompare(b.name || "");
       });
+
+      setFilteredSellers(filtered);
+      setVisibleSellers(filtered.slice(0, 20));
+      setPage(1);
+    } catch (error) {
+      console.error("Error applying filters:", error);
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
     }
-    // Apply filters (preserve existing filters)
-    if (filters.priceMin) filtered = filtered.filter(seller => seller.price >= filters.priceMin);
-    if (filters.priceMax) filtered = filtered.filter(seller => seller.price <= filters.priceMax);
-    if (filters.categories.length) filtered = filtered.filter(seller => filters.categories.includes(seller.category));
-    if (filters.designers.length) filtered = filtered.filter(seller => filters.designers.includes(seller.designer));
-    setFilteredSellers(filtered);
-    setVisibleSellers(filtered.slice(0, 20)); // Reset to first 20 on filter change
-    setPage(1);
-  }, [sellers, searchQuery, filters]);
+  }, [searchQuery, filters]);
 
   const handleSearch = (query, currentFilters) => {
     setSearchQuery(query);
-    setFilters(currentFilters || filters); // Preserve existing filters
-    applyFilters();
+    setFilters(currentFilters || filters);
   };
 
   const handleFilter = (newFilters) => {
     setFilters(newFilters);
-    applyFilters();
   };
+
+  useEffect(() => {
+    applyFilters();
+  }, [searchQuery, filters, applyFilters]);
 
   const loadMore = useCallback(() => {
     if (visibleSellers.length < filteredSellers.length) {
@@ -101,11 +215,14 @@ export default function Marketplace() {
   }, [page, filteredSellers, visibleSellers]);
 
   useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        loadMore();
-      }
-    }, { threshold: 0.1 });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
 
     if (loader.current) {
       observer.observe(loader.current);
@@ -127,7 +244,7 @@ export default function Marketplace() {
         color="transparent"
         changeColorOnScroll={{
           height: 300,
-          color: "info"
+          color: "info",
         }}
       />
       <Parallax image="/img/examples/clark-street-merc.jpg" filter="dark" small>
@@ -144,9 +261,7 @@ export default function Marketplace() {
             >
               <div className={classes.brand}>
                 <h1 className={classes.title}>Marketplace!</h1>
-                <h4>
-                  Buy, Mint, Sell RWA NFTs with the touch of a button
-                </h4>
+                <h4>Buy, Mint, Sell RWA NFTs with the touch of a button</h4>
               </div>
             </GridItem>
           </GridContainer>
@@ -155,12 +270,12 @@ export default function Marketplace() {
 
       <div className={classNames(classes.main, classes.mainRaised)}>
         <div className={classNames(classes.searchContainer, classes.searchPadding)}>
-          <SearchBar 
-            onSearch={handleSearch} 
-            onFilter={handleFilter} 
+          <SearchBar
+            onSearch={handleSearch}
+            onFilter={handleFilter}
             searchQuery={searchQuery}
             filters={filters}
-            categories={["Art & Crafts", "Jewelry", "Handmade Goods", "Furniture", "Electronics"]} // Pass categories
+            categories={["Art & Crafts", "Jewelry", "Handmade Goods", "Furniture", "Electronics"]}
           />
         </div>
         <div className={classes.grid}>
@@ -171,14 +286,11 @@ export default function Marketplace() {
               </GridItem>
             ))}
           </GridContainer>
-          <div ref={loader} style={{ height: "20px" }} /> {/* Loader for infinite scroll */}
+          <div ref={loader} style={{ height: "20px" }} />
         </div>
       </div>
 
-      <Footer
-        theme="dark"
-        content={<div />} // Added to satisfy propTypes
-      />
+      <Footer theme="dark" content={<div />} />
     </div>
   );
 }
