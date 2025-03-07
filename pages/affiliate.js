@@ -131,21 +131,21 @@ export default function Affiliate() {
           color: "info",
         }}
       />
-      <Parallax image="/img/examples/clark-street-merc.jpg" filter="dark" small>
-        <div className={classNames(classes.container, classes.textCenter)} style={{ textAlign: "center" }}>
-          <GridContainer justifyContent="center">
-            <GridItem
-              md={10} // Increased from 8 to give more centering flexibility
-              sm={10} // Increased from 8
-              className={classNames(classes.mlAuto, classes.mrAuto)}
-              style={{ textAlign: "center" }}
-            >
-              <div className={classes.brand} style={{ margin: "0 auto", maxWidth: "800px", textAlign: "center" }}>
-                <h1 className={classes.title}>Affiliate Partners!</h1>
-                <h4>Earn 15% WNDO Cashback with Our Links – Use Our Link for Rewards (Cookies Enabled)</h4>
-              </div>
-            </GridItem>
-          </GridContainer>
+      <Parallax image="/img/examples/affiliate.jpg" filter="dark" small>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100%",
+            height: "100%",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ maxWidth: "800px" }}>
+            <h1 className={classes.title}>Affiliate Partners!</h1>
+            <h4>Earn 15% WNDO Cashback with Our Links – Use Our Link for Rewards (Cookies Enabled)</h4>
+          </div>
         </div>
       </Parallax>
 
