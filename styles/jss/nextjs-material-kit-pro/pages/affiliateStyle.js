@@ -36,7 +36,7 @@ import {
     card: {
       margin: "0 auto",
       width: "100%",
-      maxWidth: "300px",
+      maxWidth: "180px", // Reduced from 300px
       transition: "all 0.3s ease",
       "&:hover": {
         transform: "scale(1.05) rotate(5deg)",
@@ -47,29 +47,29 @@ import {
       borderRadius: "8px",
       overflow: "hidden",
       display: "block",
-      padding: "10px",
-      minHeight: "300px",
+      padding: "6px", // Reduced from 10px
+      minHeight: "180px", // Reduced from 300px
       position: "relative",
       zIndex: 0,
       boxShadow: `0 4px 6px rgba(${hexToRgb(blackColor)}, 0.1)`,
-      cursor: "pointer", // Add pointer cursor for clickable effect
+      cursor: "pointer",
     },
     cardImage: {
       width: "100%",
-      height: "150px",
+      height: "90px", // Reduced from 150px
       borderRadius: "8px 8px 0 0",
       objectFit: "cover",
     },
     cardTitle: {
-      margin: "10px 0 5px",
-      fontSize: "1.2rem",
+      margin: "6px 0 3px", // Reduced from 10px 0 5px
+      fontSize: "0.8rem", // Reduced from 1.2rem
       fontWeight: "500",
       color: blackColor,
       textAlign: "center",
     },
     description: {
-      margin: "0 0 10px",
-      fontSize: "0.9rem",
+      margin: "0 0 6px", // Reduced from 0 0 10px
+      fontSize: "0.6rem", // Reduced from 0.9rem
       color: grayColor[0],
       textAlign: "center",
     },

@@ -44,7 +44,6 @@ export default function Affiliate() {
           ...doc.data(),
         }));
 
-        // Log full logoUrl to verify
         affiliatesData.forEach((affiliate) => {
           console.log("Full logoUrl:", affiliate.logoUrl);
         });
@@ -132,7 +131,7 @@ export default function Affiliate() {
           color: "info",
         }}
       />
-      <Parallax image="/img/examples/clark-street-merc.jpg" filter="dark" small>
+      <Parallax image="/img/examples/affiliate.jpg" filter="dark" small>
         <div className={classes.container}>
           <GridContainer>
             <GridItem
@@ -154,10 +153,10 @@ export default function Affiliate() {
           <AffiliateSearchBar onSearch={handleSearch} searchQuery={searchQuery} />
         </div>
         <div className={classes.grid}>
-          <GridContainer spacing={3} justifyContent="center">
+          <GridContainer spacing={2} justifyContent="center">
             {visibleAffiliates.length > 0 ? (
               visibleAffiliates.map((affiliate) => (
-                <GridItem key={affiliate.id} xs={12} sm={6} md={4}>
+                <GridItem key={affiliate.id} xs={12} sm={6} md={4} lg={2}>
                   <AffiliateCard affiliate={affiliate} />
                 </GridItem>
               ))
