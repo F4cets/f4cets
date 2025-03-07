@@ -45,43 +45,14 @@ import {
       backgroundColor: whiteColor,
       color: blackColor,
       borderRadius: "8px",
-      overflow: "visible",
-      display: "flex",
-      flexDirection: "column",
+      overflow: "hidden",
+      display: "block",
       padding: "10px",
-      minHeight: "300px", // Increased for visibility
+      minHeight: "300px",
       position: "relative",
       zIndex: 0,
-      border: "2px solid red", // Debugging border
-    },
-    cardContent: {
-      display: "flex",
-      flexDirection: "column",
-      flexGrow: 1,
-      "& .MuiCardHeader-root": {
-        padding: "0",
-      },
-      "& .MuiCardContent-root": {
-        padding: "0",
-        flexGrow: 1,
-      },
-      "& img": {
-        width: "100%",
-        height: "150px",
-        borderRadius: "8px 8px 0 0",
-        objectFit: "cover",
-        marginBottom: "10px",
-      },
-      "& h4": {
-        margin: "0 0 8px",
-        fontSize: "1.1rem",
-        color: blackColor,
-      },
-      "& p": {
-        margin: "0",
-        fontSize: "0.9rem",
-        color: grayColor[0],
-      },
+      boxShadow: `0 4px 6px rgba(${hexToRgb(blackColor)}, 0.1)`,
+      cursor: "pointer", // Add pointer cursor for clickable effect
     },
     cardImage: {
       width: "100%",
@@ -90,23 +61,17 @@ import {
       objectFit: "cover",
     },
     cardTitle: {
-      margin: "0 0 8px",
-      fontSize: "1.1rem",
+      margin: "10px 0 5px",
+      fontSize: "1.2rem",
+      fontWeight: "500",
       color: blackColor,
+      textAlign: "center",
     },
-    cardFooter: {
-      padding: "0",
-      display: "flex",
-      justifyContent: "center",
-      fontSize: "0.75rem",
+    description: {
+      margin: "0 0 10px",
+      fontSize: "0.9rem",
       color: grayColor[0],
-    },
-    button: {
-      marginTop: "16px",
-      backgroundColor: "#e91e63",
-      "&:hover": {
-        backgroundColor: "#d81b60",
-      },
+      textAlign: "center",
     },
     subscribeLine: {
       padding: "1.875rem 0px",
@@ -186,7 +151,7 @@ import {
       marginBottom: "20px",
       position: "relative",
       zIndex: 0,
-      minHeight: "300px", // Ensure grid has space
+      minHeight: "300px",
     },
   };
   

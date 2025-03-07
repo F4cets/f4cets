@@ -44,8 +44,13 @@ export default function Affiliate() {
           ...doc.data(),
         }));
 
+        // Log full logoUrl to verify
+        affiliatesData.forEach((affiliate) => {
+          console.log("Full logoUrl:", affiliate.logoUrl);
+        });
+
         console.log("Affiliates data:", affiliatesData);
-        setAffiliates(affiliatesData); // Fixed typo
+        setAffiliates(affiliatesData);
         setFilteredAffiliates(affiliatesData);
         setVisibleAffiliates(affiliatesData.slice(0, 20));
       } catch (error) {
