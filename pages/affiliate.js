@@ -13,6 +13,7 @@ import AffiliateCard from "/components/Card/AffiliateCard.js";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/affiliateStyle.js";
 import { db } from "../firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
+import { useWallet } from "@solana/wallet-adapter-react"; // Import useWallet hook
 
 const useStyles = makeStyles(styles);
 
@@ -23,6 +24,7 @@ export default function Affiliate() {
   }, []);
 
   const classes = useStyles();
+  const { connected } = useWallet(); // Check wallet connection status
   const [affiliates, setAffiliates] = useState([]);
   const [filteredAffiliates, setFilteredAffiliates] = useState([]);
   const [visibleAffiliates, setVisibleAffiliates] = useState([]);
@@ -30,34 +32,37 @@ export default function Affiliate() {
   const [searchQuery, setSearchQuery] = useState("");
   const loader = useRef(null);
 
+  // Fetch affiliates only when wallet is connected
   useEffect(() => {
-    const fetchAffiliates = async () => {
-      try {
-        console.log("Starting Firestore fetch for affiliates...");
-        const affiliatesQuery = query(collection(db, "affiliates"), where("isActive", "==", true));
-        console.log("Executing affiliates query...");
-        const affiliatesSnapshot = await getDocs(affiliatesQuery);
-        console.log("Affiliates fetched:", affiliatesSnapshot.docs.length, "documents");
+    if (connected) {
+      const fetchAffiliates = async () => {
+        try {
+          console.log("Starting Firestore fetch for affiliates...");
+          const affiliatesQuery = query(collection(db, "affiliates"), where("isActive", "==", true));
+          console.log("Executing affiliates query...");
+          const affiliatesSnapshot = await getDocs(affiliatesQuery);
+          console.log("Affiliates fetched:", affiliatesSnapshot.docs.length, "documents");
 
-        const affiliatesData = affiliatesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+          const affiliatesData = affiliatesSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
 
-        affiliatesData.forEach((affiliate) => {
-          console.log("Full logoUrl:", affiliate.logoUrl);
-        });
+          affiliatesData.forEach((affiliate) => {
+            console.log("Full logoUrl:", affiliate.logoUrl);
+          });
 
-        console.log("Affiliates data:", affiliatesData);
-        setAffiliates(affiliatesData);
-        setFilteredAffiliates(affiliatesData);
-        setVisibleAffiliates(affiliatesData.slice(0, 30));
-      } catch (error) {
-        console.error("Detailed Firestore error for affiliates:", error);
-      }
-    };
-    fetchAffiliates();
-  }, []);
+          console.log("Affiliates data:", affiliatesData);
+          setAffiliates(affiliatesData);
+          setFilteredAffiliates(affiliatesData);
+          setVisibleAffiliates(affiliatesData.slice(0, 30));
+        } catch (error) {
+          console.error("Detailed Firestore error for affiliates:", error);
+        }
+      };
+      fetchAffiliates();
+    }
+  }, [connected]); // Trigger on wallet connection change
 
   const applyFilters = useCallback(async () => {
     try {
@@ -90,18 +95,18 @@ export default function Affiliate() {
   }, [searchQuery, applyFilters]);
 
   const loadMore = useCallback(() => {
-    if (visibleAffiliates.length < filteredAffiliates.length) {
+    if (connected && visibleAffiliates.length < filteredAffiliates.length) {
       const nextPage = page + 1;
       const newVisibleAffiliates = filteredAffiliates.slice(0, nextPage * 30);
       setVisibleAffiliates(newVisibleAffiliates);
       setPage(nextPage);
     }
-  }, [page, filteredAffiliates, visibleAffiliates]);
+  }, [page, filteredAffiliates, visibleAffiliates, connected]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0].isIntersecting && connected) {
           loadMore();
         }
       },
@@ -117,7 +122,7 @@ export default function Affiliate() {
         observer.unobserve(loader.current);
       }
     };
-  }, [loadMore]);
+  }, [loadMore, connected]);
 
   return (
     <div>
@@ -131,7 +136,7 @@ export default function Affiliate() {
           color: "info",
         }}
       />
-      <Parallax image="/img/examples/affiliate.jpg" filter="light" small> {/* Changed filter to "light" */}
+      <Parallax image="/img/examples/affiliate.jpg" filter="light" small>
         <div
           style={{
             display: "flex",
@@ -140,12 +145,12 @@ export default function Affiliate() {
             width: "100%",
             height: "100%",
             textAlign: "center",
-            background: "rgba(0, 0, 0, 0.3)", /* Add a subtle overlay to enhance text contrast */
+            background: "rgba(0, 0, 0, 0.3)",
           }}
         >
           <div className={classes.brand} style={{ maxWidth: "800px" }}>
             <h1 className={classes.title}>Affiliate Partners!</h1>
-            <h4>Earn 15% Crypto Cashback with Our Links – (Cookies Enabled)</h4>
+            <h4>Earn 15% WNDO Cashback with Our Links – Use Our Link for Rewards (Cookies Enabled)</h4>
           </div>
         </div>
       </Parallax>
@@ -155,20 +160,26 @@ export default function Affiliate() {
           <AffiliateSearchBar onSearch={handleSearch} searchQuery={searchQuery} />
         </div>
         <div className={classes.grid}>
-          <GridContainer spacing={2} justifyContent="center">
-            {visibleAffiliates.length > 0 ? (
-              visibleAffiliates.map((affiliate) => (
-                <GridItem key={affiliate.id} xs={12} sm={6} md={4} lg={2}>
-                  <AffiliateCard affiliate={affiliate} />
+          {connected ? (
+            <GridContainer spacing={2} justifyContent="center">
+              {visibleAffiliates.length > 0 ? (
+                visibleAffiliates.map((affiliate) => (
+                  <GridItem key={affiliate.id} xs={12} sm={6} md={4} lg={2}>
+                    <AffiliateCard affiliate={affiliate} />
+                  </GridItem>
+                ))
+              ) : (
+                <GridItem>
+                  <p>No affiliates found.</p>
                 </GridItem>
-              ))
-            ) : (
-              <GridItem>
-                <p>No affiliates found.</p>
-              </GridItem>
-            )}
-          </GridContainer>
-          <div ref={loader} style={{ height: "20px" }} />
+              )}
+              <div ref={loader} style={{ height: "20px" }} />
+            </GridContainer>
+          ) : (
+            <div style={{ textAlign: "center", padding: "20px", color: "#212121" }}>
+              <h2>Please Connect Your Wallet to View Affiliates</h2>
+            </div>
+          )}
         </div>
       </div>
 
