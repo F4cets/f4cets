@@ -17,6 +17,7 @@
 import React from "react";
 import App from "next/app";
 import Head from "next/head";
+import Script from "next/script"; // Import next/script for adding external scripts
 import { ThemeProvider, createTheme, StyledEngineProvider } from "@mui/material/styles";
 import { makeStyles } from "@mui/styles"; // Import for JSS
 
@@ -104,8 +105,6 @@ function MyApp({ Component, pageProps }) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
-        {/* Note: Remove or replace this script with next/script for Google Maps integration */}
-        {/* <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE" /> */}
         <title>F4cets Marketplace PRO</title>
       </Head>
       <ConnectionProvider endpoint={endpoint}>
@@ -205,6 +204,23 @@ function MyApp({ Component, pageProps }) {
                       </div>
                     </div>
                   }
+                />
+                {/* Add VigLink Commerce Script */}
+                <Script
+                  strategy="afterInteractive" // Load after the page is interactive
+                  dangerouslySetInnerHTML={{
+                    __html: `
+                      var vglnk = {key: '470d208414494e10832300d5b64a9924'};
+                      (function(d, t) {
+                        var s = d.createElement(t);
+                        s.type = 'text/javascript';
+                        s.async = true;
+                        s.src = '//cdn.viglink.com/api/vglnk.js';
+                        var r = d.getElementsByTagName(t)[0];
+                        r.parentNode.insertBefore(s, r);
+                      }(document, 'script'));
+                    `,
+                  }}
                 />
               </StyledEngineProvider>
             </ThemeProvider>
