@@ -150,7 +150,7 @@ export default function Affiliate() {
         >
           <div className={classes.brand} style={{ maxWidth: "800px" }}>
             <h1 className={classes.title}>Affiliate Partners!</h1>
-            <h4>Earn 15% WNDO Cashback with Our Links – Use Our Link for Rewards (Cookies Enabled)</h4>
+            <h4>Earn 45% Crypto Cashback with Our Links – (Cookies Enabled)</h4>
           </div>
         </div>
       </Parallax>
