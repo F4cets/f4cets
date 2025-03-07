@@ -1,14 +1,15 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Card from "../Card/Card.js";
-import CardActionArea from "@mui/material/CardActionArea"; // For making the card clickable
+import Button from "@mui/material/Button";
 import makeStyles from "@mui/styles/makeStyles";
-import styles from "/styles/jss/nextjs-material-kit-pro/components/cardStyle.js";
+import styles from "/styles/jss/nextjs-material-kit-pro/pages/affiliateStyle.js"; // Use affiliateStyle.js
 
 const useStyles = makeStyles(styles);
 
 export default function AffiliateCard({ affiliate }) {
   const classes = useStyles();
+  console.log("Rendering AffiliateCard:", affiliate);
 
   return (
     <motion.div
@@ -17,16 +18,24 @@ export default function AffiliateCard({ affiliate }) {
       whileInView={{ rotate: 0, scale: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <CardActionArea href={affiliate.affiliateLink} target="_blank" rel="noopener noreferrer">
-        <Card
-          plain
-          className={classes.card}
-          image={affiliate.logoUrl} // Use logoUrl instead of image
-          title={affiliate.name}
-          description={affiliate.cryptoBackOffer} // Use cryptoBackOffer instead of description
-          footer={<small className={classes.cardFooter}>Use our link for rewards (cookies enabled)</small>}
-        />
-      </CardActionArea>
+      <Card
+        plain
+        className={classes.card}
+        image={affiliate.logourl}
+        title={affiliate.name || "Unnamed Affiliate"}
+        description={affiliate.cryptoBackOffer || "No Offer"}
+        footer={
+          <Button
+            className={classes.button}
+            href={affiliate.affiliateLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            fullWidth
+          >
+            Visit Affiliate
+          </Button>
+        }
+      />
     </motion.div>
   );
 }

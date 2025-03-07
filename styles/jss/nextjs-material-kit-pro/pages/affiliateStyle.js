@@ -45,61 +45,65 @@ import {
       backgroundColor: whiteColor,
       color: blackColor,
       borderRadius: "8px",
-      overflow: "visible", // Ensure content isn’t hidden
-      display: "flex", // Use flex to ensure content layout
-      flexDirection: "column", // Stack content vertically
-      padding: "10px", // Add equal padding inside the card
+      overflow: "visible",
+      display: "flex",
+      flexDirection: "column",
+      padding: "10px",
+      minHeight: "300px", // Increased for visibility
+      position: "relative",
+      zIndex: 0,
+      border: "2px solid red", // Debugging border
     },
     cardContent: {
       display: "flex",
       flexDirection: "column",
-      flexGrow: 1, // Allow content to fill the card
+      flexGrow: 1,
       "& .MuiCardHeader-root": {
-        padding: "0", // Remove default padding, use card padding
+        padding: "0",
       },
       "& .MuiCardContent-root": {
-        padding: "0", // Remove default padding, use card padding
-        flexGrow: 1, // Allow content to expand
+        padding: "0",
+        flexGrow: 1,
       },
       "& img": {
-        width: "100%", // Ensure images fill the card width
-        height: "150px", // Reduced height to fit inside with padding
-        borderRadius: "8px 8px 0 0", // Match card rounding
-        objectFit: "cover", // Ensure images scale properly
-        marginBottom: "10px", // Add padding below image
+        width: "100%",
+        height: "150px",
+        borderRadius: "8px 8px 0 0",
+        objectFit: "cover",
+        marginBottom: "10px",
       },
       "& h4": {
-        margin: "0 0 8px", // Space below title
-        fontSize: "1.1rem", // Ensure title is readable
-        color: blackColor, // Ensure title is visible
+        margin: "0 0 8px",
+        fontSize: "1.1rem",
+        color: blackColor,
       },
       "& p": {
-        margin: "0", // Ensure description fits
-        fontSize: "0.9rem", // Ensure description is readable
-        color: grayColor[0], // Match Material-UI description color
+        margin: "0",
+        fontSize: "0.9rem",
+        color: grayColor[0],
       },
     },
     cardImage: {
-      width: "100%", // Ensure images fill the card width
-      height: "150px", // Reduced height to fit inside with padding
-      borderRadius: "8px 8px 0 0", // Match card rounding
-      objectFit: "cover", // Ensure images scale properly
+      width: "100%",
+      height: "150px",
+      borderRadius: "8px 8px 0 0",
+      objectFit: "cover",
     },
     cardTitle: {
-      margin: "0 0 8px", // Space below title
-      fontSize: "1.1rem", // Ensure title is readable
-      color: blackColor, // Ensure title is visible
+      margin: "0 0 8px",
+      fontSize: "1.1rem",
+      color: blackColor,
     },
     cardFooter: {
-      padding: "0", // Remove default padding, use card padding
+      padding: "0",
       display: "flex",
-      justifyContent: "center", // Center the content
-      fontSize: "0.75rem", // Small font for footer text
-      color: grayColor[0], // Match description color for consistency
+      justifyContent: "center",
+      fontSize: "0.75rem",
+      color: grayColor[0],
     },
     button: {
       marginTop: "16px",
-      backgroundColor: "#e91e63", // Rose color from Material-UI
+      backgroundColor: "#e91e63",
       "&:hover": {
         backgroundColor: "#d81b60",
       },
@@ -148,16 +152,24 @@ import {
       margin: "0 auto",
     },
     searchPadding: {
-      padding: "20px 0", // Maintain padding above/below search
+      padding: "20px 0",
     },
     search: {
-      flexGrow: 0, // Remove expansion to respect padding
-      maxWidth: "500px",
-      margin: "0 10px", // Add small margins for spacing within searchContainer
+      flexGrow: 0,
+      width: "100%",
+      maxWidth: "600px",
+      margin: "0 10px",
       backgroundColor: whiteColor,
       borderRadius: "4px",
       "& .MuiInputBase-root": {
         backgroundColor: whiteColor,
+        height: "48px",
+      },
+      "& .MuiInputBase-input": {
+        padding: "10px 14px",
+      },
+      "@media (min-width: 600px)": {
+        width: "600px",
       },
     },
     filter: {
@@ -169,9 +181,12 @@ import {
       },
     },
     grid: {
-      padding: "0 20px", // Ensure consistent padding with search bar
+      padding: "0 20px",
       marginTop: "20px",
-      marginBottom: "20px", // Match padding above search bar (20px)
+      marginBottom: "20px",
+      position: "relative",
+      zIndex: 0,
+      minHeight: "300px", // Ensure grid has space
     },
   };
   

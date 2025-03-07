@@ -44,13 +44,12 @@ export default function Affiliate() {
           ...doc.data(),
         }));
 
-        setAffiliates(affiliatesData);
+        console.log("Affiliates data:", affiliatesData);
+        setAffiliates(affiliatesData); // Fixed typo
         setFilteredAffiliates(affiliatesData);
         setVisibleAffiliates(affiliatesData.slice(0, 20));
       } catch (error) {
         console.error("Detailed Firestore error for affiliates:", error);
-        console.error("Error code:", error.code);
-        console.error("Error message:", error.message);
       }
     };
     fetchAffiliates();
@@ -69,6 +68,7 @@ export default function Affiliate() {
         });
       }
 
+      console.log("Filtered affiliates:", filtered);
       setFilteredAffiliates(filtered);
       setVisibleAffiliates(filtered.slice(0, 20));
       setPage(1);
@@ -133,11 +133,7 @@ export default function Affiliate() {
             <GridItem
               md={8}
               sm={8}
-              className={classNames(
-                classes.mlAuto,
-                classes.mrAuto,
-                classes.textCenter
-              )}
+              className={classNames(classes.mlAuto, classes.mrAuto, classes.textCenter)}
             >
               <div className={classes.brand}>
                 <h1 className={classes.title}>Affiliate Partners!</h1>
@@ -150,18 +146,21 @@ export default function Affiliate() {
 
       <div className={classNames(classes.main, classes.mainRaised)}>
         <div className={classNames(classes.searchContainer, classes.searchPadding)}>
-          <AffiliateSearchBar
-            onSearch={handleSearch}
-            searchQuery={searchQuery}
-          />
+          <AffiliateSearchBar onSearch={handleSearch} searchQuery={searchQuery} />
         </div>
         <div className={classes.grid}>
           <GridContainer spacing={3} justifyContent="center">
-            {visibleAffiliates.map((affiliate) => (
-              <GridItem key={affiliate.id} xs={12} sm={6} md={2}>
-                <AffiliateCard affiliate={affiliate} />
+            {visibleAffiliates.length > 0 ? (
+              visibleAffiliates.map((affiliate) => (
+                <GridItem key={affiliate.id} xs={12} sm={6} md={4}>
+                  <AffiliateCard affiliate={affiliate} />
+                </GridItem>
+              ))
+            ) : (
+              <GridItem>
+                <p>No affiliates found.</p>
               </GridItem>
-            ))}
+            )}
           </GridContainer>
           <div ref={loader} style={{ height: "20px" }} />
         </div>
