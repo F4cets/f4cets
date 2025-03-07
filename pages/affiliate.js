@@ -51,7 +51,7 @@ export default function Affiliate() {
         console.log("Affiliates data:", affiliatesData);
         setAffiliates(affiliatesData);
         setFilteredAffiliates(affiliatesData);
-        setVisibleAffiliates(affiliatesData.slice(0, 20));
+        setVisibleAffiliates(affiliatesData.slice(0, 30));
       } catch (error) {
         console.error("Detailed Firestore error for affiliates:", error);
       }
@@ -74,7 +74,7 @@ export default function Affiliate() {
 
       console.log("Filtered affiliates:", filtered);
       setFilteredAffiliates(filtered);
-      setVisibleAffiliates(filtered.slice(0, 20));
+      setVisibleAffiliates(filtered.slice(0, 30));
       setPage(1);
     } catch (error) {
       console.error("Error applying filters for affiliates:", error);
@@ -92,7 +92,7 @@ export default function Affiliate() {
   const loadMore = useCallback(() => {
     if (visibleAffiliates.length < filteredAffiliates.length) {
       const nextPage = page + 1;
-      const newVisibleAffiliates = filteredAffiliates.slice(0, nextPage * 20);
+      const newVisibleAffiliates = filteredAffiliates.slice(0, nextPage * 30);
       setVisibleAffiliates(newVisibleAffiliates);
       setPage(nextPage);
     }
@@ -131,13 +131,13 @@ export default function Affiliate() {
           color: "info",
         }}
       />
-      <Parallax image="/img/examples/affiliate.jpg" filter="dark" small>
-        <div className={classes.container}>
-          <GridContainer>
+      <Parallax image="/img/examples/clark-street-merc.jpg" filter="dark" small>
+        <div className={classNames(classes.container, classes.textCenter)}>
+          <GridContainer justifyContent="center">
             <GridItem
               md={8}
               sm={8}
-              className={classNames(classes.mlAuto, classes.mrAuto, classes.textCenter)}
+              className={classNames(classes.mlAuto, classes.mrAuto)}
             >
               <div className={classes.brand}>
                 <h1 className={classes.title}>Affiliate Partners!</h1>
