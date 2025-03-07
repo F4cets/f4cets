@@ -131,7 +131,7 @@ export default function Affiliate() {
           color: "info",
         }}
       />
-      <Parallax image="/img/examples/affiliate.jpg" filter="dark" small>
+      <Parallax image="/img/examples/affiliate.jpg" filter="light" small> {/* Changed filter to "light" */}
         <div
           style={{
             display: "flex",
@@ -140,11 +140,12 @@ export default function Affiliate() {
             width: "100%",
             height: "100%",
             textAlign: "center",
+            background: "rgba(0, 0, 0, 0.3)", /* Add a subtle overlay to enhance text contrast */
           }}
         >
-          <div style={{ maxWidth: "800px" }}>
+          <div className={classes.brand} style={{ maxWidth: "800px" }}>
             <h1 className={classes.title}>Affiliate Partners!</h1>
-            <h4>Earn 15% WNDO Cashback with Our Links – Use Our Link for Rewards (Cookies Enabled)</h4>
+            <h4>Earn 15% Crypto Cashback with Our Links – (Cookies Enabled)</h4>
           </div>
         </div>
       </Parallax>
