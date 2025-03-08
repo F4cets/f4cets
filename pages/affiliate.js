@@ -136,7 +136,7 @@ export default function Affiliate() {
           color: "info",
         }}
       />
-      <Parallax image="/img/examples/affiliate.jpg" filter="light" small>
+      <Parallax image="/img/examples/affiliate.jpg" filter="null" small>
         <div
           style={{
             display: "flex",
@@ -150,7 +150,7 @@ export default function Affiliate() {
         >
           <div className={classes.brand} style={{ maxWidth: "800px" }}>
             <h1 className={classes.title}>Affiliate Partners!</h1>
-            <h4>Earn 45% Crypto Cashback with Our Links – (Cookies Enabled)</h4>
+            <h4>Earn Upto 45% Crypto Cashback with Our Links – (Cookies Enabled)</h4>
           </div>
         </div>
       </Parallax>

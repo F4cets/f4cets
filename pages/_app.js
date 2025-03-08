@@ -17,9 +17,9 @@
 import React from "react";
 import App from "next/app";
 import Head from "next/head";
-import Script from "next/script"; // Import next/script for adding external scripts
+import Script from "next/script";
 import { ThemeProvider, createTheme, StyledEngineProvider } from "@mui/material/styles";
-import { makeStyles } from "@mui/styles"; // Import for JSS
+import { makeStyles } from "@mui/styles";
 
 import "/styles/scss/nextjs-material-kit-pro.scss";
 import "/styles/css/react-demo.css";
@@ -31,15 +31,13 @@ import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
 
-// Default styles for wallet modal
 import '@solana/wallet-adapter-react-ui/styles.css';
 
-// Import Footer, List, ListItem, and Button components
 import Footer from "/components/Footer/Footer.js";
 import presentationStyle from "/styles/jss/nextjs-material-kit-pro/pages/presentationStyle.js";
-import List from "@mui/material/List"; // Import for List
-import ListItem from "@mui/material/ListItem"; // Import for ListItem
-import Button from "/components/CustomButtons/Button.js"; // Added import for Button
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import Button from "/components/CustomButtons/Button.js";
 
 const theme = createTheme({
   components: {
@@ -60,14 +58,11 @@ const theme = createTheme({
   },
 });
 
-// Create styles for footer content (matching presentation.js)
 const useFooterStyles = makeStyles(presentationStyle);
 
 function MyApp({ Component, pageProps }) {
-  // Add componentDidMount effect as useEffect for function component
   React.useEffect(() => {
     const comment = document.createComment(`
-
 =========================================================
 * NextJS Material Kit PRO v1.3.1 based on Material Kit PRO - v2.0.2 (Bootstrap 4.0.0 Final Edition) and Material Kit PRO React v1.8.0
 =========================================================
@@ -80,22 +75,17 @@ function MyApp({ Component, pageProps }) {
 =========================================================
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
     `);
     document.insertBefore(comment, document.documentElement);
   }, []);
 
-  // Configure Solana network (e.g., mainnet, devnet, testnet)
   const network = WalletAdapterNetwork.Mainnet;
   const endpoint = clusterApiUrl(network);
-
-  // Initialize wallets
   const wallets = [
     new PhantomWalletAdapter(),
     new SolflareWalletAdapter(),
   ];
 
-  // Use footer styles
   const footerClasses = useFooterStyles();
 
   return (
@@ -205,9 +195,8 @@ function MyApp({ Component, pageProps }) {
                     </div>
                   }
                 />
-                {/* Add VigLink Commerce Script */}
                 <Script
-                  strategy="afterInteractive" // Load after the page is interactive
+                  strategy="lazyOnload"
                   dangerouslySetInnerHTML={{
                     __html: `
                       var vglnk = {key: '470d208414494e10832300d5b64a9924'};
@@ -231,14 +220,11 @@ function MyApp({ Component, pageProps }) {
   );
 }
 
-// If you need getInitialProps for class component compatibility, use getServerSideProps or getStaticProps in pages
 MyApp.getInitialProps = async ({ Component, ctx }) => {
   let pageProps = {};
-
   if (Component.getInitialProps) {
     pageProps = await Component.getInitialProps(ctx);
   }
-
   return { pageProps };
 };
 
