@@ -148,7 +148,7 @@ import {
     grid: {
       padding: "0 20px",
       marginTop: "20px",
-      marginBottom: "20px",
+      marginBottom: "40px",
       position: "relative",
       zIndex: 0,
       minHeight: "300px",

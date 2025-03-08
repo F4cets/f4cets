@@ -180,6 +180,8 @@ export default function Affiliate() {
               <h2>Please Connect Your Wallet to View Affiliates</h2>
             </div>
           )}
+          {/* Add wrapper div with padding below the last row */}
+          <div style={{ paddingBottom: "20px" }}></div>
         </div>
       </div>
 
