@@ -1,13 +1,15 @@
 /* eslint-disable */
 import React from "react";
-// nodejs library to set properties for components
 import PropTypes from "prop-types";
-// react components for routing our app without refresh
 import Link from "next/link";
+import dynamic from "next/dynamic"; // Add dynamic import
 
 // Solana Wallet Adapter imports
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+const WalletMultiButton = dynamic(
+  () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
+  { ssr: false } // Disable SSR for this component
+);
 
 import makeStyles from "@mui/styles/makeStyles";
 import List from "@mui/material/List";

@@ -50,7 +50,8 @@ const headerLinksStyle = (theme) => ({
           height: "1px",
           marginLeft: "15px",
           backgroundColor: grayColor[14]
-        }
+        },
+        marginBottom: "10px" // Padding between mobile items
       }
     }
   },
@@ -78,6 +79,9 @@ const headerLinksStyle = (theme) => ({
       marginRight: "4px",
       marginBottom: "0px",
       fontSize: "1.25rem"
+    },
+    [theme.breakpoints.up('lg')]: {
+      marginRight: "15px" // Space between Affiliate and Cart on desktop
     },
     [theme.breakpoints.down('md')]: {
       width: "calc(100% - 30px)",
@@ -113,16 +117,17 @@ const headerLinksStyle = (theme) => ({
     margin: "0px",
     display: "inline-flex",
     [theme.breakpoints.up('lg')]: {
-      marginRight: "10px", // Retain 10px spacing for desktop only
+      marginRight: "10px", // Desktop Cart spacing
     },
     [theme.breakpoints.down('md')]: {
       width: "calc(100% - 30px)",
-      marginLeft: "15px",
+      marginLeft: "auto",
+      marginRight: "auto", // Center buttons on mobile
       marginBottom: "5px",
       marginTop: "5px",
-      textAlign: "left",
+      textAlign: "center",
       "& > span:first-child": {
-        justifyContent: "flex-start"
+        justifyContent: "center"
       }
     },
     "& $icons": {
@@ -212,9 +217,9 @@ const headerLinksStyle = (theme) => ({
   },
   mlAuto,
   logo: {
-    width: "30vw", // 30% of viewport width
-    height: "auto", // Maintain aspect ratio
-    maxWidth: "100%", // Ensure it doesn’t overflow on small screens
+    width: "30vw",
+    height: "auto",
+    maxWidth: "100%",
   },
 });
 
