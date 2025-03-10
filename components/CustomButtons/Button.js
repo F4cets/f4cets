@@ -1,7 +1,5 @@
 import React from "react";
-// nodejs library that concatenates classes
 import classNames from "classnames";
-// nodejs library to set properties for components
 import PropTypes from "prop-types";
 
 import makeStyles from '@mui/styles/makeStyles';
@@ -59,6 +57,8 @@ RegularButton.propTypes = {
     "danger",
     "rose",
     "white",
+    "x", // Added X
+    "discord", // Added Discord
     "twitter",
     "facebook",
     "google",

@@ -161,33 +161,22 @@ function MyApp({ Component, pageProps }) {
                             <Button
                               href="https://x.com/f4cetsofficial"
                               target="_blank"
-                              color="twitter"
+                              color="x" // Updated to new "x" color
                               justIcon
                               simple
                             >
-                              <i className="fab fa-twitter" />
+                              <i className="fab fa-x-twitter" />
                             </Button>
                           </li>
                           <li>
                             <Button
-                              href="https://x.com/f4cetsofficial"
+                              href="https://discord.gg/GAd75fa7" // Replace with your actual Discord link
                               target="_blank"
-                              color="dribbble"
+                              color="discord" // New "discord" color
                               justIcon
                               simple
                             >
-                              <i className="fab fa-dribbble" />
-                            </Button>
-                          </li>
-                          <li>
-                            <Button
-                              href="https://x.com/f4cetsofficial"
-                              target="_blank"
-                              color="instagram"
-                              justIcon
-                              simple
-                            >
-                              <i className="fab fa-instagram" />
+                              <i className="fab fa-discord" />
                             </Button>
                           </li>
                         </ul>
