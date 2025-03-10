@@ -65,9 +65,9 @@ export default function PresentationPage() {
                   F4cets MarketPlace
                   <span className={classes.proBadge}>PRO</span>
                 </h1>
-                <h3 className={classes.title}>
-                  Buy, Mint, Sell RWA NFTs with the touch of a button.
-                </h3>
+                <h4 className={classes.title}>
+                  Buy, Mint, Sell RWA NFTs at the touch of a button.
+                </h4>
               </div>
             </GridItem>
           </GridContainer>
