@@ -28,7 +28,7 @@ import styles from "/styles/jss/nextjs-material-kit-pro/components/headerLinksSt
 const useStyles = makeStyles(styles);
 
 export default function HeaderLinks(props) {
-  const { publicKey, disconnect } = useWallet(); // Add disconnect for cleanup
+  const { publicKey, connecting, connected } = useWallet(); // Add connecting and connected
 
   const easeInOutQuad = (t, b, c, d) => {
     t /= d / 2;
@@ -69,24 +69,19 @@ export default function HeaderLinks(props) {
   };
   var onClickSections = {};
 
-  // Refresh page on wallet connect (mobile only, once per connection)
+  // Refresh page on wallet connect (mobile only, once per session)
   useEffect(() => {
     const isMobile = navigator.userAgent.match(
       /(iPad)|(iPhone)|(iPod)|(android)|(webOS)/i
     );
-    const hasRefreshed = localStorage.getItem('walletConnectedRefreshed');
-    const isConnected = publicKey !== null;
+    const hasRefreshed = sessionStorage.getItem('walletConnectedRefreshed');
 
-    if (isMobile && isConnected && !hasRefreshed) {
-      localStorage.setItem('walletConnectedRefreshed', 'true');
+    // Trigger refresh when wallet finishes connecting, but only once
+    if (isMobile && connected && !connecting && !hasRefreshed && publicKey) {
+      sessionStorage.setItem('walletConnectedRefreshed', 'true');
       window.location.reload();
     }
-
-    // Cleanup: Clear flag when wallet disconnects
-    if (!isConnected && hasRefreshed) {
-      localStorage.removeItem('walletConnectedRefreshed');
-    }
-  }, [publicKey]);
+  }, [connected, connecting, publicKey]); // Depend on connection states
 
   const { dropdownHoverColor } = props;
   const classes = useStyles();
