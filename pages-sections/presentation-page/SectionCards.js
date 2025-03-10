@@ -15,13 +15,13 @@ export default function SectionCards() {
   return (
     <div className={classNames(classes.section, classes.sectionDark)}>
       <div className={classes.container}>
-        <GridContainer justifyContent="center">
-          <GridItem md={7} sm={7}>
+        <GridContainer justifyContent="center" direction="column" className={classes.gridContainer}>
+          <GridItem md={7} sm={7} xs={12} className={classes.imageGridItem}>
             <div className={classes.imageContainer}>
               <img src="/img/assets-for-demo/cards-test.png" alt="views" />
             </div>
           </GridItem>
-          <GridItem md={4} sm={5} className={classes.mlAuto}>
+          <GridItem md={4} sm={5} xs={12} className={classes.textGridItem}>
             <div className={classes.sectionDescription}>
               <h3 className={classes.title}>Unconventional NFTs</h3>
               <h6 className={classes.description}>
