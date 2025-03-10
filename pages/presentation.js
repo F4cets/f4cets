@@ -62,12 +62,12 @@ export default function PresentationPage() {
             <GridItem>
               <div className={classes.brand}>
                 <h1>
-                  F4cets MarketPlace
+                  MarketPlace
                   <span className={classes.proBadge}>PRO</span>
                 </h1>
-                <h4 className={classes.title}>
-                  Buy, Mint, Sell RWA NFTs at the touch of a button.
-                </h4>
+                <h3 className={classes.title}>
+                  Buy, Mint, Sell RWA & RWI NFTs
+                </h3>
               </div>
             </GridItem>
           </GridContainer>
