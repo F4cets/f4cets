@@ -13,6 +13,7 @@ import SellerCard from "/components/Card/SellerCard.js";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.js";
 import { db } from "../firebase";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { useWallet } from '@solana/wallet-adapter-react';
 
 const useStyles = makeStyles(styles);
 
@@ -23,14 +24,15 @@ export default function Marketplace() {
   }, []);
 
   const classes = useStyles();
+  const { publicKey } = useWallet();
   const [sellers, setSellers] = useState([]);
   const [filteredSellers, setFilteredSellers] = useState([]);
   const [visibleSellers, setVisibleSellers] = useState([]);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
-    priceMin: undefined, // Changed from 0 to undefined
-    priceMax: undefined, // Changed from 900 to undefined
+    priceMin: undefined,
+    priceMax: undefined,
     categories: [],
     designers: [],
   });
@@ -112,10 +114,10 @@ export default function Marketplace() {
           where("categories", "array-contains-any", filters.categories)
         );
       }
-      if (filters.priceMin !== undefined) { // Check for undefined instead of falsy
+      if (filters.priceMin !== undefined) {
         storesQuery = query(storesQuery, where("minPrice", ">=", filters.priceMin));
       }
-      if (filters.priceMax !== undefined) { // Check for undefined instead of falsy
+      if (filters.priceMax !== undefined) {
         storesQuery = query(storesQuery, where("maxPrice", "<=", filters.priceMax));
       }
 
@@ -123,10 +125,10 @@ export default function Marketplace() {
       if (filters.categories.length) {
         productsQuery = query(productsQuery, where("category", "in", filters.categories));
       }
-      if (filters.priceMin !== undefined) { // Check for undefined instead of falsy
+      if (filters.priceMin !== undefined) {
         productsQuery = query(productsQuery, where("price", ">=", filters.priceMin));
       }
-      if (filters.priceMax !== undefined) { // Check for undefined instead of falsy
+      if (filters.priceMax !== undefined) {
         productsQuery = query(productsQuery, where("price", "<=", filters.priceMax));
       }
 
@@ -261,7 +263,7 @@ export default function Marketplace() {
             >
               <div className={classes.brand}>
                 <h1 className={classes.title}>Marketplace!</h1>
-                <h4>Buy, Mint, Sell RWA NFTs</h4>
+                <h4>Buy, Mint, Sell RWA & RWI NFTs</h4>
               </div>
             </GridItem>
           </GridContainer>
@@ -279,14 +281,20 @@ export default function Marketplace() {
           />
         </div>
         <div className={classes.grid}>
-          <GridContainer spacing={3} justifyContent="center">
-            {visibleSellers.map((seller) => (
-              <GridItem key={seller.id} xs={12} sm={6} md={2}>
-                <SellerCard seller={seller} />
-              </GridItem>
-            ))}
-          </GridContainer>
-          <div ref={loader} style={{ height: "20px" }} />
+          {publicKey ? (
+            <GridContainer spacing={3} justifyContent="center">
+              {visibleSellers.map((seller) => (
+                <GridItem key={seller.id} xs={12} sm={6} md={2}>
+                  <SellerCard seller={seller} />
+                </GridItem>
+              ))}
+            </GridContainer>
+          ) : (
+            <div style={{ textAlign: "center", padding: "20px", color: "#212121" }}>
+              <h2>Please Connect Your Wallet to View Marketplace</h2>
+            </div>
+          )}
+          {publicKey && <div ref={loader} style={{ height: "20px" }} />}
         </div>
       </div>
 
