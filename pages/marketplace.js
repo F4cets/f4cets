@@ -29,8 +29,8 @@ export default function Marketplace() {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
-    priceMin: 0,
-    priceMax: 900,
+    priceMin: undefined, // Changed from 0 to undefined
+    priceMax: undefined, // Changed from 900 to undefined
     categories: [],
     designers: [],
   });
@@ -54,7 +54,7 @@ export default function Marketplace() {
         const productsQuery = query(
           collection(db, "products"),
           where("isActive", "==", true),
-          where("quantity", ">", 0) // Changed from inventory.total to quantity
+          where("quantity", ">", 0)
         );
         console.log("Executing products query...");
         const productsSnapshot = await getDocs(productsQuery);
@@ -102,7 +102,7 @@ export default function Marketplace() {
       let productsQuery = query(
         collection(db, "products"),
         where("isActive", "==", true),
-        where("quantity", ">", 0) // Changed from inventory.total to quantity
+        where("quantity", ">", 0)
       );
 
       // Apply filters to stores
@@ -112,10 +112,10 @@ export default function Marketplace() {
           where("categories", "array-contains-any", filters.categories)
         );
       }
-      if (filters.priceMin) {
+      if (filters.priceMin !== undefined) { // Check for undefined instead of falsy
         storesQuery = query(storesQuery, where("minPrice", ">=", filters.priceMin));
       }
-      if (filters.priceMax) {
+      if (filters.priceMax !== undefined) { // Check for undefined instead of falsy
         storesQuery = query(storesQuery, where("maxPrice", "<=", filters.priceMax));
       }
 
@@ -123,10 +123,10 @@ export default function Marketplace() {
       if (filters.categories.length) {
         productsQuery = query(productsQuery, where("category", "in", filters.categories));
       }
-      if (filters.priceMin) {
+      if (filters.priceMin !== undefined) { // Check for undefined instead of falsy
         productsQuery = query(productsQuery, where("price", ">=", filters.priceMin));
       }
-      if (filters.priceMax) {
+      if (filters.priceMax !== undefined) { // Check for undefined instead of falsy
         productsQuery = query(productsQuery, where("price", "<=", filters.priceMax));
       }
 

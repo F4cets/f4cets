@@ -6,16 +6,20 @@ import Select from "@mui/material/Select";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
 import Grid from "@mui/material/Grid";
-import makeStyles from "@mui/styles/makeStyles"; // Import makeStyles for styling
+import makeStyles from "@mui/styles/makeStyles";
 
 const useStyles = makeStyles((theme) => ({
   search: {
     backgroundColor: theme.palette.common.white,
     borderRadius: "4px",
-    maxWidth: "500px", // Match marketplaceStyle.js search maxWidth
-    margin: "0 auto", // Center within the Grid item
+    maxWidth: "500px",
+    margin: "0 auto",
     "& .MuiInputBase-root": {
       backgroundColor: theme.palette.common.white,
+    },
+    [theme.breakpoints.down('sm')]: { // Stack on mobile
+      maxWidth: "100%", // Full width on mobile
+      margin: "0",
     },
   },
   filter: {
@@ -25,15 +29,25 @@ const useStyles = makeStyles((theme) => ({
     "& .MuiSelect-select": {
       backgroundColor: theme.palette.common.white,
     },
+    [theme.breakpoints.down('sm')]: { // Stack on mobile
+      minWidth: "100%", // Full width on mobile
+    },
+  },
+  gridContainer: {
+    [theme.breakpoints.down('sm')]: { // Stack vertically on mobile
+      flexDirection: "column",
+      alignItems: "stretch",
+      padding: "0 10px", // Add padding for mobile
+    },
   },
 }));
 
 export default function SearchBar({ onSearch, onFilter, searchQuery, filters, categories = [] }) {
-  const classes = useStyles(); // Use makeStyles to generate classes
+  const classes = useStyles();
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery || "");
   const [localFilters, setLocalFilters] = useState(filters || {
-    priceMin: 0,
-    priceMax: 900,
+    priceMin: undefined, // Changed from 0 to undefined
+    priceMax: undefined, // Changed from 900 to undefined
     categories: [],
     designers: [],
   });
@@ -49,20 +63,22 @@ export default function SearchBar({ onSearch, onFilter, searchQuery, filters, ca
   const handleSearchChange = (event) => {
     const query = event.target.value;
     setLocalSearchQuery(query);
-    onSearch(query, localFilters); // Pass search query and current filters
+    onSearch(query, localFilters);
   };
 
   const handleFilterChange = (field) => (event) => {
-    const value = field === "categories" || field === "designers" 
-      ? event.target.value 
-      : parseFloat(event.target.value) || 0;
+    const value = event.target.value === "" 
+      ? undefined // Allow clearing to undefined
+      : field === "categories" || field === "designers" 
+        ? event.target.value 
+        : parseFloat(event.target.value) || 0;
     const newFilters = { ...localFilters, [field]: value };
     setLocalFilters(newFilters);
     onFilter(newFilters);
   };
 
   return (
-    <Grid container spacing={2} alignItems="center">
+    <Grid container spacing={2} alignItems="center" className={classes.gridContainer}>
       <Grid item xs={12} sm={4}>
         <TextField
           fullWidth
@@ -70,7 +86,7 @@ export default function SearchBar({ onSearch, onFilter, searchQuery, filters, ca
           placeholder="Search sellers..."
           value={localSearchQuery}
           onChange={handleSearchChange}
-          className={classes.search} // Now defined with maxWidth and margin
+          className={classes.search}
         />
       </Grid>
       <Grid item xs={12} sm={3}>
@@ -96,9 +112,9 @@ export default function SearchBar({ onSearch, onFilter, searchQuery, filters, ca
           variant="outlined"
           label="Min Price (SOL)"
           type="number"
-          value={localFilters.priceMin}
+          value={localFilters.priceMin === undefined ? "" : localFilters.priceMin} // Show empty if undefined
           onChange={handleFilterChange("priceMin")}
-          className={classes.filter} // Now defined
+          className={classes.filter}
         />
       </Grid>
       <Grid item xs={12} sm={3}>
@@ -107,9 +123,9 @@ export default function SearchBar({ onSearch, onFilter, searchQuery, filters, ca
           variant="outlined"
           label="Max Price (SOL)"
           type="number"
-          value={localFilters.priceMax}
+          value={localFilters.priceMax === undefined ? "" : localFilters.priceMax} // Show empty if undefined
           onChange={handleFilterChange("priceMax")}
-          className={classes.filter} // Now defined
+          className={classes.filter}
         />
       </Grid>
     </Grid>
@@ -133,8 +149,8 @@ SearchBar.defaultProps = {
   categories: [],
   searchQuery: "",
   filters: {
-    priceMin: 0,
-    priceMax: 900,
+    priceMin: undefined, // Changed from 0 to undefined
+    priceMax: undefined, // Changed from 900 to undefined
     categories: [],
     designers: [],
   },
