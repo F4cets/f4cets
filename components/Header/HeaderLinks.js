@@ -1,14 +1,14 @@
 /* eslint-disable */
-import React, { useEffect } from "react"; // Add useEffect
+import React from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
-import dynamic from "next/dynamic";
+import dynamic from "next/dynamic"; // Add dynamic import
 
 // Solana Wallet Adapter imports
 import { useWallet } from '@solana/wallet-adapter-react';
 const WalletMultiButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
-  { ssr: false }
+  { ssr: false } // Disable SSR for this component
 );
 
 import makeStyles from "@mui/styles/makeStyles";
@@ -28,7 +28,6 @@ import styles from "/styles/jss/nextjs-material-kit-pro/components/headerLinksSt
 const useStyles = makeStyles(styles);
 
 export default function HeaderLinks(props) {
-  const { publicKey } = useWallet(); // Get wallet connection state
   const easeInOutQuad = (t, b, c, d) => {
     t /= d / 2;
     if (t < 1) return (c / 2) * t * t + b;
@@ -67,16 +66,6 @@ export default function HeaderLinks(props) {
     animateScroll();
   };
   var onClickSections = {};
-
-  // Refresh page on wallet connect (mobile only)
-  useEffect(() => {
-    const isMobile = navigator.userAgent.match(
-      /(iPad)|(iPhone)|(iPod)|(android)|(webOS)/i
-    );
-    if (isMobile && publicKey) {
-      window.location.reload();
-    }
-  }, [publicKey]); // Trigger when publicKey changes
 
   const { dropdownHoverColor } = props;
   const classes = useStyles();
