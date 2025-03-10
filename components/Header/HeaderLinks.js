@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect } from "react";
+import React, { useEffect } from "react"; // Add useEffect
 import PropTypes from "prop-types";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -28,8 +28,6 @@ import styles from "/styles/jss/nextjs-material-kit-pro/components/headerLinksSt
 const useStyles = makeStyles(styles);
 
 export default function HeaderLinks(props) {
-  const { publicKey, connecting, connected } = useWallet(); // Add connecting and connected
-
   const easeInOutQuad = (t, b, c, d) => {
     t /= d / 2;
     if (t < 1) return (c / 2) * t * t + b;
@@ -69,22 +67,20 @@ export default function HeaderLinks(props) {
   };
   var onClickSections = {};
 
-  // Refresh page on wallet connect (mobile only, once per session)
-  useEffect(() => {
-    const isMobile = navigator.userAgent.match(
-      /(iPad)|(iPhone)|(iPod)|(android)|(webOS)/i
-    );
-    const hasRefreshed = sessionStorage.getItem('walletConnectedRefreshed');
-
-    // Trigger refresh when wallet finishes connecting, but only once
-    if (isMobile && connected && !connecting && !hasRefreshed && publicKey) {
-      sessionStorage.setItem('walletConnectedRefreshed', 'true');
-      window.location.reload();
-    }
-  }, [connected, connecting, publicKey]); // Depend on connection states
-
   const { dropdownHoverColor } = props;
   const classes = useStyles();
+  const { publicKey } = useWallet(); // Access wallet state
+
+  // Fix scroll lock after wallet connect/disconnect
+  useEffect(() => {
+    // Only run on mobile (below md breakpoint)
+    const isMobile = window.matchMedia("(max-width: 960px)").matches;
+    if (isMobile) {
+      // Reset body overflow when wallet state changes
+      document.body.style.overflow = "auto";
+    }
+  }, [publicKey]); // Trigger on wallet connect/disconnect
+
   return (
     <List className={classes.list + " " + classes.mlAuto}>
       {/* Marketplace Link */}
