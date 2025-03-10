@@ -261,7 +261,7 @@ export default function Marketplace() {
             >
               <div className={classes.brand}>
                 <h1 className={classes.title}>Marketplace!</h1>
-                <h4>Buy, Mint, Sell RWA NFTs with the touch of a button</h4>
+                <h4>Buy, Mint, Sell RWA NFTs</h4>
               </div>
             </GridItem>
           </GridContainer>
