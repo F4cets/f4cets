@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useRef } from "react"; // Add useRef
+import React, { useEffect } from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -28,8 +28,7 @@ import styles from "/styles/jss/nextjs-material-kit-pro/components/headerLinksSt
 const useStyles = makeStyles(styles);
 
 export default function HeaderLinks(props) {
-  const { publicKey } = useWallet();
-  const prevPublicKeyRef = useRef(null); // Track previous wallet state
+  const { publicKey, disconnect } = useWallet(); // Add disconnect for cleanup
 
   const easeInOutQuad = (t, b, c, d) => {
     t /= d / 2;
@@ -75,15 +74,18 @@ export default function HeaderLinks(props) {
     const isMobile = navigator.userAgent.match(
       /(iPad)|(iPhone)|(iPod)|(android)|(webOS)/i
     );
-    const wasDisconnected = prevPublicKeyRef.current === null;
+    const hasRefreshed = localStorage.getItem('walletConnectedRefreshed');
     const isConnected = publicKey !== null;
 
-    if (isMobile && wasDisconnected && isConnected) {
+    if (isMobile && isConnected && !hasRefreshed) {
+      localStorage.setItem('walletConnectedRefreshed', 'true');
       window.location.reload();
     }
 
-    // Update the previous state
-    prevPublicKeyRef.current = publicKey;
+    // Cleanup: Clear flag when wallet disconnects
+    if (!isConnected && hasRefreshed) {
+      localStorage.removeItem('walletConnectedRefreshed');
+    }
   }, [publicKey]);
 
   const { dropdownHoverColor } = props;
