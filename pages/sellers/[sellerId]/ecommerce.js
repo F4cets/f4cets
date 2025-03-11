@@ -1,41 +1,32 @@
 /*eslint-disable*/
 import React from "react";
-// nodejs library that concatenates classes
 import classNames from "classnames";
 import makeStyles from '@mui/styles/makeStyles';
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import InputAdornment from "@mui/material/InputAdornment";
-// @material-ui icons
-import Mail from "@mui/icons-material/Mail";
-// core components
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import GridContainer from "/components/Grid/GridContainer.js";
 import GridItem from "/components/Grid/GridItem.js";
 import Parallax from "/components/Parallax/Parallax.js";
-import Button from "/components/CustomButtons/Button.js";
-import Card from "/components/Card/Card.js";
-import CardBody from "/components/Card/CardBody.js";
-import CustomInput from "/components/CustomInput/CustomInput.js";
 import Footer from "/components/Footer/Footer.js";
-// sections for this page
 import SectionProducts from "/pages-sections/ecommerce/SectionProducts.js";
-
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/ecommerceStyle.js";
 
 const useStyles = makeStyles(styles);
 
-export default function EcommercePage() {
+export default function EcommercePage(props) {
   React.useEffect(() => {
     window.scrollTo(0, 0);
     document.body.scrollTop = 0;
   });
   const classes = useStyles();
+  const { sellerId, storeName, promoText, headerImage } = props; // Get dynamic props
+
   return (
     <div>
       <Header
-        brand="NextJS Material Kit PRO"
+        brand="F4cets Marketplace"
         links={<HeaderLinks dropdownHoverColor="info" />}
         fixed
         color="transparent"
@@ -44,7 +35,7 @@ export default function EcommercePage() {
           color: "info"
         }}
       />
-      <Parallax image="/img/examples/exampleshop1.jpg" filter="dark" small>
+      <Parallax image={headerImage} filter="dark" small>
         <div className={classes.container}>
           <GridContainer>
             <GridItem
@@ -57,11 +48,8 @@ export default function EcommercePage() {
               )}
             >
               <div className={classes.brand}>
-                <h1 className={classes.title}>Ecommerce Page!</h1>
-                <h4>
-                  Free global delivery for all products. Use coupon{" "}
-                  <b>25summer</b> for an extra 25% Off
-                </h4>
+                <h1 className={classes.title}>{storeName}</h1>
+                <h4>{promoText}</h4>
               </div>
             </GridItem>
           </GridContainer>
@@ -69,17 +57,36 @@ export default function EcommercePage() {
       </Parallax>
 
       <div className={classNames(classes.main, classes.mainRaised)}>
-        <SectionProducts />
+        <SectionProducts /> {/* Static for now, dynamic later */}
       </div>
 
       <Footer
         theme="dark"
-        content={<div></div>} // Minimal content to satisfy Footer prop requirement
+        content={<div></div>}
       >
         <GridContainer>
-          {/* Empty GridContainer for global footer structure */}
+          {/* Empty for now */}
         </GridContainer>
       </Footer>
     </div>
   );
+}
+
+// Fetch sellerId and sample data server-side
+export async function getServerSideProps(context) {
+  const { sellerId } = context.params; // walletId from URL
+
+  // Sample data (replace with Firestore later)
+  const storeName = "Sample Seller Store"; // Seller sets this in admin panel
+  const promoText = "Free shipping on orders over 10 SOL! Use code F4CETS10."; // Seller customizes
+  const headerImage = "/img/examples/exampleshop1.jpg"; // Seller uploads later
+
+  return {
+    props: {
+      sellerId,
+      storeName,
+      promoText,
+      headerImage,
+    },
+  };
 }
