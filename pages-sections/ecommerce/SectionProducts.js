@@ -30,7 +30,7 @@ const useStyles = makeStyles(styles);
 
 export default function SectionProducts() {
   const [checked, setChecked] = React.useState([1, 9, 27]);
-  const [priceRange, setPriceRange] = React.useState([101, 790]);
+  const [priceRange, setPriceRange] = React.useState([1, 790]);
   React.useEffect(() => {
     if (
       !document
@@ -100,7 +100,7 @@ export default function SectionProducts() {
                               classes.priceSlider
                             )}
                           >
-                            €{priceRange[0]}
+                            ${priceRange[0]}
                           </span>
                           <span
                             className={classNames(
@@ -108,7 +108,7 @@ export default function SectionProducts() {
                               classes.priceSlider
                             )}
                           >
-                            €{priceRange[1]}
+                            ${priceRange[1]}
                           </span>
                           <br />
                           <br />
@@ -699,7 +699,7 @@ export default function SectionProducts() {
                       )
                     },
                     {
-                      title: "Colour",
+                      title: "Color",
                       content: (
                         <div className={classes.customExpandPanel}>
                           <div
@@ -908,7 +908,7 @@ export default function SectionProducts() {
                   </CardBody>
                   <CardFooter plain className={classes.justifyContentBetween}>
                     <div className={classes.priceContainer}>
-                      <span className={classes.price}> €800</span>
+                      <span className={classes.price}> $800</span>
                     </div>
                     <Tooltip
                       id="tooltip-top"
@@ -945,7 +945,7 @@ export default function SectionProducts() {
                   </CardBody>
                   <CardFooter plain className={classes.justifyContentBetween}>
                     <div className={classes.priceContainer}>
-                      <span className={classes.price}> €555</span>
+                      <span className={classes.price}> $555</span>
                     </div>
                     <Tooltip
                       id="tooltip-top"
@@ -982,7 +982,7 @@ export default function SectionProducts() {
                   </CardBody>
                   <CardFooter plain className={classes.justifyContentBetween}>
                     <div className={classes.priceContainer}>
-                      <span className={classes.price}> €879</span>
+                      <span className={classes.price}> $879</span>
                     </div>
                     <Tooltip
                       id="tooltip-top"
@@ -1019,7 +1019,7 @@ export default function SectionProducts() {
                   </CardBody>
                   <CardFooter plain className={classes.justifyContentBetween}>
                     <div className={classes.priceContainer}>
-                      <span className={classes.price}> €680</span>
+                      <span className={classes.price}> $680</span>
                     </div>
                     <Tooltip
                       id="tooltip-top"
@@ -1056,7 +1056,7 @@ export default function SectionProducts() {
                   </CardBody>
                   <CardFooter plain className={classes.justifyContentBetween}>
                     <div className={classes.priceContainer}>
-                      <span className={classes.price}> €725</span>
+                      <span className={classes.price}> $725</span>
                     </div>
                     <Tooltip
                       id="tooltip-top"
@@ -1093,7 +1093,7 @@ export default function SectionProducts() {
                   </CardBody>
                   <CardFooter plain className={classes.justifyContentBetween}>
                     <div className={classes.priceContainer}>
-                      <span className={classes.price}> €699</span>
+                      <span className={classes.price}> $699</span>
                     </div>
                     <Tooltip
                       id="tooltip-top"
@@ -1123,140 +1123,6 @@ export default function SectionProducts() {
                 </Button>
               </GridItem>
             </GridContainer>
-          </GridItem>
-        </GridContainer>
-        <br />
-        <h2>News in fashion</h2>
-        <GridContainer>
-          <GridItem md={4} sm={4}>
-            <Card
-              background
-              style={{ backgroundImage: "url('/img/examples/color1.jpg')" }}
-            >
-              <CardBody background>
-                <h6
-                  className={classNames(classes.cardCategory, classes.textInfo)}
-                >
-                  Productivity Apps
-                </h6>
-                <a href="#pablo">
-                  <h3 className={classes.cardTitle}>
-                    The best trends in fashion {new Date().getFullYear()}
-                  </h3>
-                </a>
-                <p className={classes.description}>
-                  Don{"'"}t be scared of the truth because we need to restart
-                  the human foundation in truth And I love you like Kanye loves
-                  Kanye I love Rick Owens’ bed design but the back is...
-                </p>
-                <Button href="#" round color="white">
-                  <Subject /> Read
-                </Button>
-              </CardBody>
-            </Card>
-          </GridItem>
-          <GridItem md={4} sm={4}>
-            <Card
-              background
-              style={{ backgroundImage: "url('/img/examples/color3.jpg')" }}
-            >
-              <CardBody background>
-                <h6
-                  className={classNames(classes.cardCategory, classes.textInfo)}
-                >
-                  FASHION NEWS
-                </h6>
-                <a href="#pablo">
-                  <h3 className={classes.cardTitle}>
-                    Kanye joins the Yeezy team at Adidas
-                  </h3>
-                </a>
-                <p className={classes.description}>
-                  Don{"'"}t be scared of the truth because we need to restart
-                  the human foundation in truth And I love you like Kanye loves
-                  Kanye I love Rick Owens’ bed design but the back is...
-                </p>
-                <Button href="#" round color="white">
-                  <Subject /> Read
-                </Button>
-              </CardBody>
-            </Card>
-          </GridItem>
-          <GridItem md={4} sm={4}>
-            <Card
-              background
-              style={{ backgroundImage: "url('/img/examples/color2.jpg')" }}
-            >
-              <CardBody background>
-                <h6
-                  className={classNames(classes.cardCategory, classes.textInfo)}
-                >
-                  Productivity Apps
-                </h6>
-                <a href="#pablo">
-                  <h3 className={classes.cardTitle}>
-                    Learn how to use the new colors of{" "}
-                    {new Date().getFullYear()}
-                  </h3>
-                </a>
-                <p className={classes.description}>
-                  Don{"'"}t be scared of the truth because we need to restart
-                  the human foundation in truth And I love you like Kanye loves
-                  Kanye I love Rick Owens’ bed design but the back is...
-                </p>
-                <Button href="#" round color="white">
-                  <Subject /> Read
-                </Button>
-              </CardBody>
-            </Card>
-          </GridItem>
-          <GridItem md={6} sm={6}>
-            <Card background style={{ backgroundImage: "url('/img/dg3.jpg')" }}>
-              <CardBody background>
-                <h6
-                  className={classNames(classes.cardCategory, classes.textInfo)}
-                >
-                  Tutorials
-                </h6>
-                <a href="#pablo">
-                  <h3 className={classes.cardTitle}>
-                    Trending colors of {new Date().getFullYear()}
-                  </h3>
-                </a>
-                <p className={classes.description}>
-                  Don{"'"}t be scared of the truth because we need to restart
-                  the human foundation in truth And I love you like Kanye loves
-                  Kanye I love Rick Owens’ bed design but the back is...
-                </p>
-                <Button href="#" round color="white">
-                  <Subject /> Read
-                </Button>
-              </CardBody>
-            </Card>
-          </GridItem>
-          <GridItem md={6} sm={6}>
-            <Card background style={{ backgroundImage: "url('/img/dg1.jpg')" }}>
-              <CardBody background>
-                <h6
-                  className={classNames(classes.cardCategory, classes.textInfo)}
-                >
-                  Productivity Style
-                </h6>
-                <a href="#pablo">
-                  <h3 className={classes.cardTitle}>
-                    Fashion & Style {new Date().getFullYear()}
-                  </h3>
-                </a>
-                <p className={classes.description}>
-                  Don{"'"}t be scared of the truth because we need to restart
-                  the human foundation in truth And I love you like Kanye loves
-                  Kanye I love Rick Owens’ bed design but the back is...
-                </p>
-                <Button href="#" round color="white">
-                  <Subject /> Read
-                </Button>
-              </CardBody>
-            </Card>
           </GridItem>
         </GridContainer>
       </div>
