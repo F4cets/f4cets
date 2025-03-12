@@ -73,9 +73,8 @@ export default function DynamicProducts(props) {
   );
 
   return (
-    <div className="section">
+    <div className="section" style={{ paddingTop: '40px' }}> {/* Added top padding */}
       <div className="container">
-        <h2>Find What You Need</h2>
         <GridContainer>
           <GridItem md={3} sm={3}>
             <Card plain>
