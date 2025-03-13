@@ -36,7 +36,7 @@ export default function ShoppingCartPage() {
     if (connected && publicKey) {
       const walletAddress = publicKey.toBase58();
       setWalletId(walletAddress);
-      console.log("Wallet ID:", walletAddress); // For purchase tracking
+      console.log("Wallet ID:", walletAddress);
     } else {
       setWalletId(null);
     }
@@ -48,7 +48,7 @@ export default function ShoppingCartPage() {
     document.body.scrollTop = 0;
   }, []);
 
-  // Placeholder cart data (loaded client-side when connected)
+  // Placeholder cart data
   useEffect(() => {
     if (isConnected) {
       const sampleCart = [
@@ -61,7 +61,7 @@ export default function ShoppingCartPage() {
           size: "M",
           priceSol: 10,
           quantity: 1,
-          nftTokenId: "NFT_DOGBED_001" // Placeholder for RWA NFT
+          nftTokenId: "NFT_DOGBED_001"
         },
         {
           id: "2",
@@ -72,7 +72,7 @@ export default function ShoppingCartPage() {
           size: "L",
           priceSol: 15,
           quantity: 2,
-          nftTokenId: "NFT_VASE_001" // Placeholder for RWA NFT
+          nftTokenId: "NFT_VASE_001"
         }
       ];
       setCartItems(sampleCart);
@@ -98,6 +98,7 @@ export default function ShoppingCartPage() {
     0
   );
 
+  // Desktop table data
   const tableData = cartItems.map((item) => [
     <div className={classes.imgContainer} key={item.id}>
       <img src={item.image} alt={item.name} className={classes.img} />
@@ -115,22 +116,20 @@ export default function ShoppingCartPage() {
       <small className={classes.tdNumberSmall}>SOL</small> {item.priceSol}
     </span>,
     <span key={item.id}>
-      {item.quantity}{` `}
       <div className={classes.buttonGroup}>
         <Button
-          color="info"
+          color="rose"
           size="sm"
           round
-          className={classes.firstButton}
           onClick={() => handleQuantityChange(item.id, -1)}
         >
           <Remove />
         </Button>
+        <span className={classes.quantityNumber}>{item.quantity}</span>
         <Button
-          color="info"
+          color="rose"
           size="sm"
           round
-          className={classes.lastButton}
           onClick={() => handleQuantityChange(item.id, 1)}
         >
           <Add />
@@ -147,7 +146,7 @@ export default function ShoppingCartPage() {
       placement="left"
       classes={{ tooltip: classes.tooltip }}
     >
-      <Button link className={classes.actionButton} onClick={() => handleRemoveItem(item.id)}>
+      <Button link className={classes.removeButton} onClick={() => handleRemoveItem(item.id)}>
         <Close />
       </Button>
     </Tooltip>
@@ -163,7 +162,7 @@ export default function ShoppingCartPage() {
       col: {
         colspan: 3,
         text: (
-          <Button color="info" round>
+          <Button color="rose" round>
             Complete Purchase <KeyboardArrowRight />
           </Button>
         )
@@ -171,19 +170,61 @@ export default function ShoppingCartPage() {
     }
   ]);
 
+  // Mobile card view
+  const mobileCartView = cartItems.map((item) => (
+    <div className={classes.mobileCard} key={item.id}>
+      <img src={item.image} alt={item.name} className={classes.mobileImg} />
+      <div className={classes.mobileDetails}>
+        <a href={`/products/${item.id}`} className={classes.tdNameAnchor}>
+          {item.name}
+        </a>
+        <br />
+        <small className={classes.tdNameSmall}>by {item.seller}</small>
+        <p>Color: {item.color}</p>
+        <p>Size: {item.size}</p>
+        <p>Price: <small>SOL</small> {item.priceSol}</p>
+        <div className={classes.mobileButtonGroup}>
+          <Button
+            color="rose"
+            size="sm"
+            round
+            onClick={() => handleQuantityChange(item.id, -1)}
+          >
+            <Remove />
+          </Button>
+          <span className={classes.mobileQuantityNumber}>{item.quantity}</span>
+          <Button
+            color="rose"
+            size="sm"
+            round
+            onClick={() => handleQuantityChange(item.id, 1)}
+          >
+            <Add />
+          </Button>
+        </div>
+        <p>Amount: <small>SOL</small> {item.priceSol * item.quantity}</p>
+        <div className={classes.removeButtonContainer}>
+          <Button link className={classes.removeButton} onClick={() => handleRemoveItem(item.id)}>
+            <Close />
+          </Button>
+        </div>
+      </div>
+    </div>
+  ));
+
   return (
     <div>
       <Header
         brand="F4cets Marketplace"
-        links={<HeaderLinks dropdownHoverColor="info" />}
+        links={<HeaderLinks dropdownHoverColor="rose" />}
         fixed
         color="transparent"
         changeColorOnScroll={{
           height: 300,
-          color: "info"
+          color: "dark"
         }}
       />
-      <Parallax image="/img/nextjs_header.jpg" filter="dark" small>
+      <Parallax image="/img/nextjs_header.jpg" filter="dark" className={classes.parallaxSmall}>
         <div className={classes.container}>
           <GridContainer>
             <GridItem
@@ -207,38 +248,53 @@ export default function ShoppingCartPage() {
                 </div>
               ) : isConnected ? (
                 cartItems.length > 0 ? (
-                  <Table
-                    tableHead={[
-                      "",
-                      "PRODUCT",
-                      "COLOR",
-                      "SIZE",
-                      "PRICE",
-                      "QTY",
-                      "AMOUNT",
-                      ""
-                    ]}
-                    tableData={tableData}
-                    tableShopping
-                    customHeadCellClasses={[
-                      classes.textCenter,
-                      classes.description,
-                      classes.description,
-                      classes.textRight,
-                      classes.textRight,
-                      classes.textRight
-                    ]}
-                    customHeadClassesForCells={[0, 2, 3, 4, 5, 6]}
-                    customCellClasses={[
-                      classes.tdName,
-                      classes.customFont,
-                      classes.customFont,
-                      classes.tdNumber,
-                      classes.tdNumber + " " + classes.tdNumberAndButtonGroup,
-                      classes.tdNumber + " " + classes.textCenter
-                    ]}
-                    customClassesForCells={[1, 2, 3, 4, 5, 6]}
-                  />
+                  <>
+                    {/* Desktop View */}
+                    <div className={classes.desktopView}>
+                      <Table
+                        tableHead={[
+                          "",
+                          "PRODUCT",
+                          "COLOR",
+                          "SIZE",
+                          "PRICE",
+                          "QTY",
+                          "AMOUNT",
+                          ""
+                        ]}
+                        tableData={tableData}
+                        tableShopping
+                        customHeadCellClasses={[
+                          classes.textCenter,
+                          classes.description,
+                          classes.description,
+                          classes.textRight,
+                          classes.textRight,
+                          classes.textRight
+                        ]}
+                        customHeadClassesForCells={[0, 2, 3, 4, 5, 6]}
+                        customCellClasses={[
+                          classes.tdName,
+                          classes.customFont,
+                          classes.customFont,
+                          classes.tdNumber,
+                          classes.tdNumber + " " + classes.tdNumberAndButtonGroup,
+                          classes.tdNumber + " " + classes.textCenter
+                        ]}
+                        customClassesForCells={[1, 2, 3, 4, 5, 6]}
+                      />
+                    </div>
+                    {/* Mobile View */}
+                    <div className={classes.mobileView}>
+                      {mobileCartView}
+                      <div className={classes.mobileTotal}>
+                        Total: <small>SOL</small> {totalAmount}
+                      </div>
+                      <Button color="rose" round fullWidth>
+                        Complete Purchase <KeyboardArrowRight />
+                      </Button>
+                    </div>
+                  </>
                 ) : (
                   <div className={classes.textCenter}>
                     <h4>Your cart is empty.</h4>

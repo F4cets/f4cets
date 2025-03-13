@@ -9,7 +9,6 @@ import {
   grayColor,
   mlAuto
 } from "/styles/jss/nextjs-material-kit-pro.js";
-
 import buttonGroup from "/styles/jss/nextjs-material-kit-pro/buttonGroupStyle.js";
 import tooltips from "/styles/jss/nextjs-material-kit-pro/tooltipsStyle.js";
 
@@ -29,7 +28,8 @@ const styles = {
     ...title,
     "&, & + h4": {
       color: whiteColor
-    }
+    },
+    fontSize: "1.5rem"
   },
   block: {
     color: "inherit",
@@ -102,10 +102,9 @@ const styles = {
     marginRight: "3px"
   },
   tdNumberAndButtonGroup: {
-    lineHeight: "1 !important",
-    "& svg,& .fab,& .fas,& .far,& .fal,& .material-icons": {
-      marginRight: "0"
-    }
+    textAlign: "right",
+    padding: "0.9375rem",
+    lineHeight: "1.5em"
   },
   customFont: {
     fontSize: "16px !important"
@@ -119,6 +118,117 @@ const styles = {
   },
   textRight: {
     textAlign: "right"
+  },
+  // Mobile styles
+  mobileCard: {
+    padding: "15px",
+    margin: "15px 0",
+    border: `1px solid ${grayColor[2]}`, // Lighter border for elegance
+    borderRadius: "12px", // Increased for rounded corners
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9", // Off-white for floating effect
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)", // Soft shadow for lift
+    transition: "box-shadow 0.3s ease", // Hover effect
+    "&:hover": {
+      boxShadow: "0 6px 20px rgba(0, 0, 0, 0.15)" // Deeper shadow on hover
+    }
+  },
+  mobileImg: {
+    width: "100px",
+    height: "auto",
+    marginBottom: "15px"
+  },
+  mobileDetails: {
+    textAlign: "center",
+    width: "100%"
+  },
+  mobileButtonGroup: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    margin: "10px 0",
+    gap: "15px"
+  },
+  mobileTotal: {
+    fontSize: "1.2rem",
+    fontWeight: "500",
+    margin: "10px 0"
+  },
+  desktopView: {
+    "@media (max-width: 959px)": {
+      display: "none" // Hide on mobile
+    }
+  },
+  mobileView: {
+    "@media (min-width: 960px)": {
+      display: "none" // Hide on desktop
+    }
+  },
+  // Quantity styles
+  quantityNumber: {
+    fontWeight: "bold",
+    margin: "0 5px"
+  },
+  mobileQuantityNumber: {
+    fontWeight: "bold"
+  },
+  // Custom Parallax style for adjusted header size
+  parallaxSmall: {
+    height: "300px",
+    "@media (max-width: 959px)": {
+      height: "200px"
+    }
+  },
+  // Button group styles
+  buttonGroup: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "5px",
+    "& button": {
+      borderRadius: "50px !important",
+      padding: "5px",
+      minWidth: "30px",
+      height: "30px",
+      lineHeight: "1",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      "& svg": {
+        margin: "0 auto",
+        display: "block"
+      }
+    }
+  },
+  // Pronounced remove button for mobile
+  removeButton: {
+    backgroundColor: "#e91e63",
+    color: whiteColor,
+    borderRadius: "20px",
+    padding: "8px 12px",
+    fontSize: "1rem",
+    fontWeight: "600",
+    minWidth: "40px",
+    height: "40px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    "&:hover": {
+      backgroundColor: "#c2185b"
+    },
+    "& svg": {
+      fontSize: "1.5rem",
+      margin: "0 auto"
+    }
+  },
+  // Style to center remove button on mobile
+  removeButtonContainer: {
+    display: "flex",
+    justifyContent: "center",
+    width: "100%",
+    marginTop: "10px"
   }
 };
 
