@@ -1,5 +1,5 @@
 /*eslint-disable*/
-import React from "react";
+import React, { useState, useEffect } from "react";
 import classNames from "classnames";
 import ImageGallery from "react-image-gallery";
 import makeStyles from '@mui/styles/makeStyles';
@@ -18,6 +18,8 @@ import GridItem from "/components/Grid/GridItem.js";
 import Button from "/components/CustomButtons/Button.js";
 import Accordion from "/components/Accordion/Accordion.js";
 import InfoArea from "/components/InfoArea/InfoArea.js";
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import productStyle from "/styles/jss/nextjs-material-kit-pro/pages/productStyle.js";
 
 const useStyles = makeStyles(productStyle);
@@ -28,6 +30,19 @@ export default function ProductPage(props) {
   const [sizeSelect, setSizeSelect] = React.useState("0");
   const [quantitySelect, setQuantitySelect] = React.useState("1");
   const classes = useStyles();
+  const { connected, publicKey } = useWallet(); // Use connected and publicKey
+  const [walletId, setWalletId] = useState(null); // Track wallet ID
+
+  // Update walletId when connected
+  useEffect(() => {
+    if (connected && publicKey) {
+      const walletAddress = publicKey.toBase58();
+      setWalletId(walletAddress);
+      console.log("Wallet ID:", walletAddress); // Log for tracking
+    } else {
+      setWalletId(null);
+    }
+  }, [connected, publicKey]);
 
   const images = [
     { original: item.imageUrl, thumbnail: item.imageUrl },
@@ -56,159 +71,169 @@ export default function ProductPage(props) {
       <div className={classNames(classes.section, classes.sectionGray)}>
         <div className={classes.container}>
           <div className={classNames(classes.main, classes.mainRaised)}>
-            <GridContainer>
-              <GridItem md={6} sm={6}>
-                <ImageGallery
-                  showFullscreenButton={false}
-                  showPlayButton={false}
-                  startIndex={0}
-                  items={images}
-                  showThumbnails={true}
-                  renderLeftNav={(onClick, disabled) => (
-                    <button
-                      className="image-gallery-left-nav"
-                      disabled={disabled}
-                      onClick={onClick}
-                    />
-                  )}
-                  renderRightNav={(onClick, disabled) => (
-                    <button
-                      className="image-gallery-right-nav"
-                      disabled={disabled}
-                      onClick={onClick}
-                    />
-                  )}
-                />
-              </GridItem>
-              <GridItem md={6} sm={6}>
-                <h2 className={classes.title}>{item.name}</h2>
-                <h4 className={classes.description}>
-                  {item.inventory > 0 ? `${item.inventory} in stock` : "Out of stock"}
-                </h4>
-                <h3 className={classes.mainPrice}>{item.priceSol} SOL</h3>
-                <Accordion
-                  active={0}
-                  activeColor="rose"
-                  collapses={[
-                    {
-                      title: "Description",
-                      content: <p>{item.description}</p>
-                    },
-                    {
-                      title: "Seller Information",
-                      content: (
-                        <p>
-                          Sold by {storeName}. {item.sellerInfo}
-                        </p>
-                      )
-                    },
-                    {
-                      title: "Details and Care",
-                      content: (
-                        <ul>
-                          {item.details.map((detail, index) => (
-                            <li key={index}>{detail}</li>
+            {connected ? (
+              <GridContainer>
+                <GridItem md={6} sm={6}>
+                  <ImageGallery
+                    showFullscreenButton={false}
+                    showPlayButton={false}
+                    startIndex={0}
+                    items={images}
+                    showThumbnails={true}
+                    renderLeftNav={(onClick, disabled) => (
+                      <button
+                        className="image-gallery-left-nav"
+                        disabled={disabled}
+                        onClick={onClick}
+                      />
+                    )}
+                    renderRightNav={(onClick, disabled) => (
+                      <button
+                        className="image-gallery-right-nav"
+                        disabled={disabled}
+                        onClick={onClick}
+                      />
+                    )}
+                  />
+                </GridItem>
+                <GridItem md={6} sm={6}>
+                  <h2 className={classes.title}>{item.name}</h2>
+                  <h4 className={classes.description}>
+                    {item.inventory > 0 ? `${item.inventory} in stock` : "Out of stock"}
+                  </h4>
+                  <h3 className={classes.mainPrice}>{item.priceSol} SOL</h3>
+                  <Accordion
+                    active={0}
+                    activeColor="rose"
+                    collapses={[
+                      {
+                        title: "Description",
+                        content: <p>{item.description}</p>
+                      },
+                      {
+                        title: "Seller Information",
+                        content: (
+                          <p>
+                            Sold by {storeName}. {item.sellerInfo}
+                          </p>
+                        )
+                      },
+                      {
+                        title: "Details and Care",
+                        content: (
+                          <ul>
+                            {item.details.map((detail, index) => (
+                              <li key={index}>{detail}</li>
+                            ))}
+                          </ul>
+                        )
+                      }
+                    ]}
+                  />
+                  <GridContainer className={classes.pickSize}>
+                    <GridItem md={4} sm={4}>
+                      <label>Select color</label>
+                      <FormControl fullWidth className={classes.selectFormControl}>
+                        <Select
+                          MenuProps={{ className: classes.selectMenu }}
+                          classes={{ select: classes.select }}
+                          value={colorSelect}
+                          onChange={(event) => setColorSelect(event.target.value)}
+                          inputProps={{ name: "colorSelect", id: "color-select" }}
+                        >
+                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="0">Blue</MenuItem>
+                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="1">Gray</MenuItem>
+                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="2">White</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </GridItem>
+                    <GridItem md={4} sm={4}>
+                      <label>Select size</label>
+                      <FormControl fullWidth className={classes.selectFormControl}>
+                        <Select
+                          MenuProps={{ className: classes.selectMenu }}
+                          classes={{ select: classes.select }}
+                          value={sizeSelect}
+                          onChange={(event) => setSizeSelect(event.target.value)}
+                          inputProps={{ name: "sizeSelect", id: "size-select" }}
+                        >
+                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="0">Small</MenuItem>
+                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="1">Medium</MenuItem>
+                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="2">Large</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </GridItem>
+                    <GridItem md={4} sm={4}>
+                      <label>Quantity</label>
+                      <FormControl fullWidth className={classes.selectFormControl}>
+                        <Select
+                          MenuProps={{ className: classes.selectMenu }}
+                          classes={{ select: classes.select }}
+                          value={quantitySelect}
+                          onChange={(event) => setQuantitySelect(event.target.value)}
+                          inputProps={{ name: "quantitySelect", id: "quantity-select" }}
+                        >
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((qty) => (
+                            <MenuItem
+                              key={qty}
+                              classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }}
+                              value={qty.toString()}
+                            >
+                              {qty}
+                            </MenuItem>
                           ))}
-                        </ul>
-                      )
-                    }
-                  ]}
-                />
-                <GridContainer className={classes.pickSize}>
-                  <GridItem md={4} sm={4}>
-                    <label>Select color</label>
-                    <FormControl fullWidth className={classes.selectFormControl}>
-                      <Select
-                        MenuProps={{ className: classes.selectMenu }}
-                        classes={{ select: classes.select }}
-                        value={colorSelect}
-                        onChange={(event) => setColorSelect(event.target.value)}
-                        inputProps={{ name: "colorSelect", id: "color-select" }}
-                      >
-                        <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="0">Blue</MenuItem>
-                        <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="1">Gray</MenuItem>
-                        <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="2">White</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </GridItem>
-                  <GridItem md={4} sm={4}>
-                    <label>Select size</label>
-                    <FormControl fullWidth className={classes.selectFormControl}>
-                      <Select
-                        MenuProps={{ className: classes.selectMenu }}
-                        classes={{ select: classes.select }}
-                        value={sizeSelect}
-                        onChange={(event) => setSizeSelect(event.target.value)}
-                        inputProps={{ name: "sizeSelect", id: "size-select" }}
-                      >
-                        <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="0">Small</MenuItem>
-                        <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="1">Medium</MenuItem>
-                        <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="2">Large</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </GridItem>
-                  <GridItem md={4} sm={4}>
-                    <label>Quantity</label>
-                    <FormControl fullWidth className={classes.selectFormControl}>
-                      <Select
-                        MenuProps={{ className: classes.selectMenu }}
-                        classes={{ select: classes.select }}
-                        value={quantitySelect}
-                        onChange={(event) => setQuantitySelect(event.target.value)}
-                        inputProps={{ name: "quantitySelect", id: "quantity-select" }}
-                      >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((qty) => (
-                          <MenuItem
-                            key={qty}
-                            classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }}
-                            value={qty.toString()}
-                          >
-                            {qty}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </GridItem>
-                </GridContainer>
-                <GridContainer className={classes.pullRight}>
-                  <Button round color="rose">
-                    Add to Cart <ShoppingCart />
-                  </Button>
-                </GridContainer>
-              </GridItem>
-            </GridContainer>
+                        </Select>
+                      </FormControl>
+                    </GridItem>
+                  </GridContainer>
+                  <GridContainer className={classes.pullRight}>
+                    <Button round color="rose">
+                      Add to Cart <ShoppingCart />
+                    </Button>
+                  </GridContainer>
+                </GridItem>
+              </GridContainer>
+            ) : (
+              <GridContainer justifyContent="center">
+                <GridItem xs={12} sm={6} md={6} className={classes.textCenter}>
+                  <h2>Please connect your Solana wallet to view this product</h2>
+                </GridItem>
+              </GridContainer>
+            )}
           </div>
-          <div className={classNames(classes.features, classes.textCenter)}>
-            <GridContainer>
-              <GridItem md={4} sm={4}>
-                <InfoArea
-                  title="2 Days Delivery"
-                  description="Fast shipping ensures your item arrives within 2 days."
-                  icon={LocalShipping}
-                  iconColor="info"
-                  vertical
-                />
-              </GridItem>
-              <GridItem md={4} sm={4}>
-                <InfoArea
-                  title="Refundable Policy"
-                  description="Return within 30 days if not satisfied."
-                  icon={VerifiedUser}
-                  iconColor="success"
-                  vertical
-                />
-              </GridItem>
-              <GridItem md={4} sm={4}>
-                <InfoArea
-                  title="Popular Item"
-                  description="One of our top picks this season."
-                  icon={Favorite}
-                  iconColor="rose"
-                  vertical
-                />
-              </GridItem>
-            </GridContainer>
-          </div>
+          {connected && (
+            <div className={classNames(classes.features, classes.textCenter)}>
+              <GridContainer>
+                <GridItem md={4} sm={4}>
+                  <InfoArea
+                    title="2 Days Delivery"
+                    description="Fast shipping ensures your item arrives within 2 days."
+                    icon={LocalShipping}
+                    iconColor="info"
+                    vertical
+                  />
+                </GridItem>
+                <GridItem md={4} sm={4}>
+                  <InfoArea
+                    title="Refundable Policy"
+                    description="Return within 30 days if not satisfied."
+                    icon={VerifiedUser}
+                    iconColor="success"
+                    vertical
+                  />
+                </GridItem>
+                <GridItem md={4} sm={4}>
+                  <InfoArea
+                    title="Popular Item"
+                    description="One of our top picks this season."
+                    icon={Favorite}
+                    iconColor="rose"
+                    vertical
+                  />
+                </GridItem>
+              </GridContainer>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -224,7 +249,7 @@ export async function getServerSideProps(context) {
       name: "Dog Bed",
       imageUrl: "/img/examples/dogbed.jpg",
       priceSol: 10, // Placeholder, will convert from USD later
-      inventory: 5, // Added inventory
+      inventory: 5,
       description: "Soft blue dog bed, perfect for pets.",
       sellerInfo: "Crafted with care by our artisans.",
       details: [
@@ -238,7 +263,7 @@ export async function getServerSideProps(context) {
       name: "Vase",
       imageUrl: "/img/examples/vase.jpg",
       priceSol: 15,
-      inventory: 3, // Added inventory
+      inventory: 3,
       description: "Elegant ceramic vase, crafted by artisans.",
       sellerInfo: "Handmade with precision.",
       details: [

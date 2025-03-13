@@ -1,27 +1,40 @@
 /*eslint-disable*/
-import React from "react";
+import React, { useState, useEffect } from "react";
 import classNames from "classnames";
 import makeStyles from '@mui/styles/makeStyles';
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import GridContainer from "/components/Grid/GridContainer.js";
 import GridItem from "/components/Grid/GridItem.js";
 import Parallax from "/components/Parallax/Parallax.js";
-import Footer from "/components/Footer/Footer.js";
 import DynamicProducts from "/pages-sections/ecommerce/DynamicProducts.js";
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/ecommerceStyle.js";
 
 const useStyles = makeStyles(styles);
 
 export default function EcommercePage(props) {
+  const { sellerId, storeName, promoText, headerImage, listings } = props;
+  const classes = useStyles();
+  const { connected, publicKey } = useWallet(); // Check wallet connection
+  const [walletId, setWalletId] = useState(null); // Track wallet ID
+
   React.useEffect(() => {
     window.scrollTo(0, 0);
     document.body.scrollTop = 0;
-  });
-  const classes = useStyles();
-  const { sellerId, storeName, promoText, headerImage, listings } = props;
+  }, []);
+
+  // Update walletId when connected
+  useEffect(() => {
+    if (connected && publicKey) {
+      const walletAddress = publicKey.toBase58();
+      setWalletId(walletAddress);
+      console.log("Wallet ID:", walletAddress); // Log for tracking
+    } else {
+      setWalletId(null);
+    }
+  }, [connected, publicKey]);
 
   return (
     <div>
@@ -57,40 +70,16 @@ export default function EcommercePage(props) {
       </Parallax>
 
       <div className={classNames(classes.main, classes.mainRaised)}>
-        <DynamicProducts sellerId={sellerId} listings={listings} />
+        {connected ? (
+          <DynamicProducts sellerId={sellerId} listings={listings} />
+        ) : (
+          <GridContainer justifyContent="center">
+            <GridItem xs={12} sm={6} md={6} className={classes.textCenter}>
+              <h2>Please connect your Solana wallet to view this shop</h2>
+            </GridItem>
+          </GridContainer>
+        )}
       </div>
-
-      <Footer
-        theme="dark"
-        content={
-          <div>
-            <div className={classes.left}>
-              <List className={classes.list}>
-                <ListItem className={classes.inlineBlock}>
-                  <a href="/presentation" className={classes.block}>
-                    Home
-                  </a>
-                </ListItem>
-                <ListItem className={classes.inlineBlock}>
-                  <a href="/marketplace" className={classes.block}>
-                    Marketplace
-                  </a>
-                </ListItem>
-                <ListItem className={classes.inlineBlock}>
-                  <a href="/affiliate" className={classes.block}>
-                    Affiliates
-                  </a>
-                </ListItem>
-              </List>
-            </div>
-            <div className={classes.right}>
-              © {1900 + new Date().getYear()} F4cets
-            </div>
-          </div>
-        }
-      >
-        <GridContainer />
-      </Footer>
     </div>
   );
 }
