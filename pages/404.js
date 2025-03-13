@@ -1,14 +1,11 @@
 /*eslint-disable*/
 import React from "react";
 import makeStyles from '@mui/styles/makeStyles';
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-// @mui/icons-material
-import Favorite from "@mui/icons-material/Favorite";
+import { useRouter } from 'next/router';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 // core components
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
-import Footer from "/components/Footer/Footer.js";
 import GridContainer from "/components/Grid/GridContainer.js";
 import GridItem from "/components/Grid/GridItem.js";
 
@@ -22,13 +19,16 @@ export default function ErrorPage({ ...rest }) {
     document.body.scrollTop = 0;
   });
   const classes = useStyles();
+  const router = useRouter();
+
   return (
-    <div>
+    <div className="bg-gradient-to-r from-purple-500 to-blue-500 min-h-screen text-white">
       <Header
         absolute
         color="transparent"
-        brand="NextJS Material Kit PRO"
+        brand="F4cets"
         links={<HeaderLinks dropdownHoverColor="dark" />}
+        rightLinks={<WalletMultiButton />}
         {...rest}
       />
       <div
@@ -36,10 +36,9 @@ export default function ErrorPage({ ...rest }) {
         style={{
           backgroundImage: "url('/img/clint-mckoy.jpg')",
           backgroundSize: "cover",
-          backgroundPosition: "top center"
+          backgroundPosition: "top center",
         }}
       >
-        {/* <div className={classes.container}> */}
         <div className={classes.contentCenter}>
           <GridContainer>
             <GridItem md={12}>
@@ -51,64 +50,8 @@ export default function ErrorPage({ ...rest }) {
             </GridItem>
           </GridContainer>
         </div>
-        {/* </div> */}
       </div>
-      <Footer
-        content={
-          <div>
-            <div className={classes.left}>
-              <List className={classes.list}>
-                <ListItem className={classes.inlineBlock}>
-                  <a
-                    href="https://www.creative-tim.com/?ref=njsmkp-error"
-                    target="_blank"
-                    className={classes.block}
-                  >
-                    Creative Tim
-                  </a>
-                </ListItem>
-                <ListItem className={classes.inlineBlock}>
-                  <a
-                    href="https://www.creative-tim.com/presentation/?ref=njsmkp-error"
-                    target="_blank"
-                    className={classes.block}
-                  >
-                    About us
-                  </a>
-                </ListItem>
-                <ListItem className={classes.inlineBlock}>
-                  <a
-                    href="http://blog.creative-tim.com/?ref=njsmkp-error"
-                    className={classes.block}
-                  >
-                    Blog
-                  </a>
-                </ListItem>
-                <ListItem className={classes.inlineBlock}>
-                  <a
-                    href="https://www.creative-tim.com/license/?ref=njsmkp-error"
-                    target="_blank"
-                    className={classes.block}
-                  >
-                    Licenses
-                  </a>
-                </ListItem>
-              </List>
-            </div>
-            <div className={classes.right}>
-              &copy; {1900 + new Date().getYear()} , made with{" "}
-              <Favorite className={classes.icon} /> by{" "}
-              <a
-                href="https://www.creative-tim.com/?ref=njsmkp-error"
-                target="_blank"
-              >
-                Creative Tim
-              </a>{" "}
-              for a better web.
-            </div>
-          </div>
-        }
-      />
+      {/* Global footer will render here */}
     </div>
   );
 }
