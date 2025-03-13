@@ -176,9 +176,9 @@ const styles = {
   },
   // Custom Parallax style for adjusted header size
   parallaxSmall: {
-    height: "300px",
+    height: "400px",
     "@media (max-width: 959px)": {
-      height: "200px"
+      height: "300px"
     }
   },
   // Button group styles
