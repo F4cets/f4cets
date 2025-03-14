@@ -39,6 +39,16 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Button from "/components/CustomButtons/Button.js";
 
+// Wallet Context for Persistence
+import { createContext, useContext } from 'react';
+const WalletContext = createContext(null);
+export const WalletContextProvider = ({ children }) => {
+  const { publicKey, connected } = useWallet();
+  return <WalletContext.Provider value={{ publicKey, connected }}>{children}</WalletContext.Provider>;
+};
+export const useWalletContext = () => useContext(WalletContext);
+import { useWallet } from '@solana/wallet-adapter-react';
+
 const theme = createTheme({
   components: {
     MuiSelect: {
@@ -100,108 +110,110 @@ function MyApp({ Component, pageProps }) {
       <ConnectionProvider endpoint={endpoint}>
         <WalletProvider wallets={wallets} autoConnect>
           <WalletModalProvider>
-            <ThemeProvider theme={theme}>
-              <StyledEngineProvider injectFirst>
-                <Component {...pageProps} />
-                <Footer
-                  theme="white"
-                  content={
-                    <div>
-                      <div className={footerClasses.left}>
-                        <a
-                          href="https://www.f4cets.market/"
-                          target="_blank"
-                          className={footerClasses.footerBrand}
-                        >
-                          F4cet MarketPlace PRO
-                        </a>
+            <WalletContextProvider>
+              <ThemeProvider theme={theme}>
+                <StyledEngineProvider injectFirst>
+                  <Component {...pageProps} />
+                  <Footer
+                    theme="white"
+                    content={
+                      <div>
+                        <div className={footerClasses.left}>
+                          <a
+                            href="https://www.f4cets.market/"
+                            target="_blank"
+                            className={footerClasses.footerBrand}
+                          >
+                            F4cet MarketPlace PRO
+                          </a>
+                        </div>
+                        <div className={footerClasses.pullCenter}>
+                          <List className={footerClasses.list}>
+                            <ListItem className={footerClasses.inlineBlock}>
+                              <a
+                                href="https://www.f4cets.com/"
+                                target="_blank"
+                                className={footerClasses.block}
+                              >
+                                F4cets
+                              </a>
+                            </ListItem>
+                            <ListItem className={footerClasses.inlineBlock}>
+                              <a
+                                href="https://www.f4cets.com/"
+                                target="_blank"
+                                className={footerClasses.block}
+                              >
+                                About us
+                              </a>
+                            </ListItem>
+                            <ListItem className={footerClasses.inlineBlock}>
+                              <a
+                                href="https://www.f4cets.com/"
+                                className={footerClasses.block}
+                              >
+                                Mint
+                              </a>
+                            </ListItem>
+                            <ListItem className={footerClasses.inlineBlock}>
+                              <a
+                                href="https://www.f4cets.com/"
+                                target="_blank"
+                                className={footerClasses.block}
+                              >
+                                Licenses
+                              </a>
+                            </ListItem>
+                          </List>
+                        </div>
+                        <div className={footerClasses.rightLinks}>
+                          <ul>
+                            <li>
+                              <Button
+                                href="https://x.com/f4cetsofficial"
+                                target="_blank"
+                                color="x"
+                                justIcon
+                                simple
+                              >
+                                <i className="fab fa-x-twitter" />
+                              </Button>
+                            </li>
+                            <li>
+                              <Button
+                                href="https://discord.gg/GAd75fa7"
+                                target="_blank"
+                                color="discord"
+                                justIcon
+                                simple
+                              >
+                                <i className="fab fa-discord" />
+                              </Button>
+                            </li>
+                          </ul>
+                        </div>
                       </div>
-                      <div className={footerClasses.pullCenter}>
-                        <List className={footerClasses.list}>
-                          <ListItem className={footerClasses.inlineBlock}>
-                            <a
-                              href="https://www.f4cets.com/"
-                              target="_blank"
-                              className={footerClasses.block}
-                            >
-                              F4cets
-                            </a>
-                          </ListItem>
-                          <ListItem className={footerClasses.inlineBlock}>
-                            <a
-                              href="https://www.f4cets.com/"
-                              target="_blank"
-                              className={footerClasses.block}
-                            >
-                              About us
-                            </a>
-                          </ListItem>
-                          <ListItem className={footerClasses.inlineBlock}>
-                            <a
-                              href="https://www.f4cets.com/"
-                              className={footerClasses.block}
-                            >
-                              Mint
-                            </a>
-                          </ListItem>
-                          <ListItem className={footerClasses.inlineBlock}>
-                            <a
-                              href="https://www.f4cets.com/"
-                              target="_blank"
-                              className={footerClasses.block}
-                            >
-                              Licenses
-                            </a>
-                          </ListItem>
-                        </List>
-                      </div>
-                      <div className={footerClasses.rightLinks}>
-                        <ul>
-                          <li>
-                            <Button
-                              href="https://x.com/f4cetsofficial"
-                              target="_blank"
-                              color="x" // Updated to new "x" color
-                              justIcon
-                              simple
-                            >
-                              <i className="fab fa-x-twitter" />
-                            </Button>
-                          </li>
-                          <li>
-                            <Button
-                              href="https://discord.gg/GAd75fa7" // Replace with your actual Discord link
-                              target="_blank"
-                              color="discord" // New "discord" color
-                              justIcon
-                              simple
-                            >
-                              <i className="fab fa-discord" />
-                            </Button>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  }
-                />
-                <Script
-                  strategy="lazyOnload"
-                  dangerouslySetInnerHTML={{
-                    __html: `
-                      var vglnk = {key: '470d208414494e10832300d5b64a9924'};
-                      (function(d, t) {
-                        var s = d.createElement(t);
-                        s.type = 'text/javascript';
-                        s.async = true;
-                        s.src = '//cdn.viglink.com/api/vglnk.js';
-                        var r = d.getElementsByTagName(t)[0];
-                        r.parentNode.insertBefore(s, r);
-                      }(document, 'script'));
-                    `,
-                  }}
-                />
-              </StyledEngineProvider>
-            </ThemeProvider>
+                    }
+                  />
+                  <Script
+                    strategy="lazyOnload"
+                    dangerouslySetInnerHTML={{
+                      __html: `
+                        var vglnk = {key: '470d208414494e10832300d5b64a9924'};
+                        (function(d, t) {
+                          var s = d.createElement(t);
+                          s.type = 'text/javascript';
+                          s.async = true;
+                          s.src = '//cdn.viglink.com/api/vglnk.js';
+                          var r = d.getElementsByTagName(t)[0];
+                          r.parentNode.insertBefore(s, r);
+                        }(document, 'script'));
+                      `,
+                    }}
+                  />
+                </StyledEngineProvider>
+              </ThemeProvider>
+            </WalletContextProvider>
           </WalletModalProvider>
         </WalletProvider>
       </ConnectionProvider>
