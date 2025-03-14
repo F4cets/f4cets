@@ -1,11 +1,14 @@
 /* eslint-disable */
-import React, { useEffect } from "react"; // Add useEffect
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
 // Solana Wallet Adapter imports
 import { useWallet } from '@solana/wallet-adapter-react';
+import { db } from '/firebase'; // Correct root path
+import { doc, getDoc, setDoc } from 'firebase/firestore'; // Import modular SDK methods
+
 const WalletMultiButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
   { ssr: false }
@@ -69,7 +72,34 @@ export default function HeaderLinks(props) {
 
   const { dropdownHoverColor } = props;
   const classes = useStyles();
-  const { publicKey } = useWallet(); // Access wallet state
+  const { publicKey, connected } = useWallet(); // Use useWallet instead of useWalletContext
+  const [role, setRole] = useState(null); // State to store user role
+
+  // Fetch user role from Firestore when wallet connects
+  useEffect(() => {
+    if (connected && publicKey) {
+      const walletId = publicKey.toString();
+      const userDocRef = doc(db, 'users', walletId); // Use modular doc()
+      getDoc(userDocRef) // Use modular getDoc()
+        .then(docSnap => {
+          if (docSnap.exists()) {
+            setRole(docSnap.data().role); // Set role from Firestore
+          } else {
+            // First-time user: create buyer entry
+            setDoc(userDocRef, { // Use modular setDoc()
+              role: 'buyer',
+              purchases: [],
+              affiliateClicks: [],
+              rewards: [],
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true })
+              .then(() => setRole('buyer'))
+              .catch(error => console.error("Error creating user:", error));
+          }
+        })
+        .catch(error => console.error("Error fetching user:", error));
+    }
+  }, [connected, publicKey]);
 
   // Fix scroll lock after wallet connect/disconnect
   useEffect(() => {
@@ -93,7 +123,7 @@ export default function HeaderLinks(props) {
       </ListItem>
       {/* Affiliate Link */}
       <ListItem className={classes.listItem}>
-        <Link href="/affiliate">
+        <Link Terminator href="/affiliate">
           <a className={classes.navLink}>
             <Icon className={classes.icons}>group</Icon> Affiliate
           </a>
@@ -124,6 +154,19 @@ export default function HeaderLinks(props) {
           </Button>
         </Hidden>
       </ListItem>
+      {/* Account Button - Added between Cart and Wallet */}
+      {connected && publicKey && role && (
+        <ListItem className={classes.listItem}>
+          <Button
+            href={`/admin/${role}/${publicKey.toString()}`}
+            color="white"
+            className={classes.navButton}
+            round
+          >
+            <Icon className={classes.icons}>account_circle</Icon> Account
+          </Button>
+        </ListItem>
+      )}
       {/* Solana Wallet Button - Visible on all screen sizes */}
       <ListItem className={classes.listItem}>
         <WalletMultiButton className={classes.navButton} />
