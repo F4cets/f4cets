@@ -6,8 +6,8 @@ import dynamic from "next/dynamic";
 
 // Solana Wallet Adapter imports
 import { useWallet } from '@solana/wallet-adapter-react';
-import { db } from '/firebase'; // Correct root path
-import { doc, getDoc, setDoc } from 'firebase/firestore'; // Import modular SDK methods
+import { db } from '/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const WalletMultiButton = dynamic(
   () => import('@solana/wallet-adapter-react-ui').then((mod) => mod.WalletMultiButton),
@@ -72,21 +72,20 @@ export default function HeaderLinks(props) {
 
   const { dropdownHoverColor } = props;
   const classes = useStyles();
-  const { publicKey, connected } = useWallet(); // Use useWallet instead of useWalletContext
-  const [role, setRole] = useState(null); // State to store user role
+  const { publicKey, connected } = useWallet();
+  const [role, setRole] = useState(null);
 
   // Fetch user role from Firestore when wallet connects
   useEffect(() => {
     if (connected && publicKey) {
       const walletId = publicKey.toString();
-      const userDocRef = doc(db, 'users', walletId); // Use modular doc()
-      getDoc(userDocRef) // Use modular getDoc()
+      const userDocRef = doc(db, 'users', walletId);
+      getDoc(userDocRef)
         .then(docSnap => {
           if (docSnap.exists()) {
-            setRole(docSnap.data().role); // Set role from Firestore
+            setRole(docSnap.data().role);
           } else {
-            // First-time user: create buyer entry
-            setDoc(userDocRef, { // Use modular setDoc()
+            setDoc(userDocRef, {
               role: 'buyer',
               purchases: [],
               affiliateClicks: [],
@@ -103,17 +102,14 @@ export default function HeaderLinks(props) {
 
   // Fix scroll lock after wallet connect/disconnect
   useEffect(() => {
-    // Only run on mobile (below md breakpoint)
     const isMobile = window.matchMedia("(max-width: 960px)").matches;
     if (isMobile) {
-      // Reset body overflow when wallet state changes
       document.body.style.overflow = "auto";
     }
-  }, [publicKey]); // Trigger on wallet connect/disconnect
+  }, [publicKey]);
 
   return (
     <List className={classes.list + " " + classes.mlAuto}>
-      {/* Marketplace Link */}
       <ListItem className={classes.listItem}>
         <Link href="/marketplace">
           <a className={classes.navLink}>
@@ -121,21 +117,18 @@ export default function HeaderLinks(props) {
           </a>
         </Link>
       </ListItem>
-      {/* Affiliate Link */}
       <ListItem className={classes.listItem}>
-        <Link Terminator href="/affiliate">
+        <Link href="/affiliate">
           <a className={classes.navLink}>
             <Icon className={classes.icons}>group</Icon> Affiliate
           </a>
         </Link>
       </ListItem>
-      {/* Cart Button */}
       <ListItem className={classes.listItem}>
         <Hidden lgDown>
           <Button
-            href="https://www.creative-tim.com/product/nextjs-material-kit-pro?ref=njsmkp-navbar"
+            href="/shopping-cart"
             color={"white"}
-            target="_blank"
             className={classes.navButton}
             round
           >
@@ -144,9 +137,8 @@ export default function HeaderLinks(props) {
         </Hidden>
         <Hidden mdUp>
           <Button
-            href="https://www.creative-tim.com/product/nextjs-material-kit-pro?ref=njsmkp-navbar"
-            color={"info"}
-            target="_blank"
+            href="/shopping-cart"
+            color={"rose"}
             className={classes.navButton}
             round
           >
@@ -154,11 +146,10 @@ export default function HeaderLinks(props) {
           </Button>
         </Hidden>
       </ListItem>
-      {/* Account Button - Added between Cart and Wallet */}
       {connected && publicKey && role && (
         <ListItem className={classes.listItem}>
           <Button
-            href={`/admin/${role}/${publicKey.toString()}`}
+            href={`https://user.f4cets.market/${role}/${publicKey.toString()}`}
             color="white"
             className={classes.navButton}
             round
@@ -167,7 +158,6 @@ export default function HeaderLinks(props) {
           </Button>
         </ListItem>
       )}
-      {/* Solana Wallet Button - Visible on all screen sizes */}
       <ListItem className={classes.listItem}>
         <WalletMultiButton className={classes.navButton} />
       </ListItem>
