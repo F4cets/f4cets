@@ -286,7 +286,7 @@ export default function Affiliate() {
                       alt="Solflare QR Code"
                       style={{
                         width: "100%",
-                        maxWidth: "150px",
+                        maxWidth: "250px",
                         height: "auto",
                         marginBottom: "20px",
                         display: "block",
