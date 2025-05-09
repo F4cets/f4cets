@@ -14,6 +14,7 @@ import styles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.j
 import { db } from "../firebase";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { useWallet } from '@solana/wallet-adapter-react';
+import { motion } from "framer-motion";
 
 const useStyles = makeStyles(styles);
 
@@ -237,6 +238,23 @@ export default function Marketplace() {
     };
   }, [loadMore]);
 
+  // Animation variants for the Solflare logo shake effect
+  const logoVariants = {
+    rest: {
+      scale: 1,
+      rotate: 0,
+      transition: { duration: 0.3 },
+    },
+    hover: {
+      scale: 1.1,
+      rotate: [0, 5, -5, 5, 0],
+      transition: {
+        scale: { duration: 0.2 },
+        rotate: { repeat: 1, duration: 0.5 },
+      },
+    },
+  };
+
   return (
     <div>
       <Header
@@ -290,8 +308,154 @@ export default function Marketplace() {
               ))}
             </GridContainer>
           ) : (
-            <div style={{ textAlign: "center", padding: "20px", color: "#212121" }}>
-              <h2>Please Connect Your Wallet to View Marketplace</h2>
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#212121" }}>
+              <h1
+                style={{
+                  fontSize: "2.5rem",
+                  fontWeight: "bold",
+                  marginBottom: "40px",
+                  lineHeight: "1.2",
+                }}
+              >
+                Please Connect Your Wallet to View Marketplace
+              </h1>
+              <GridContainer spacing={3} justifyContent="center">
+                {/* First Card */}
+                <GridItem xs={12}>
+                  <div
+                    style={{
+                      backgroundColor: "#ffffff",
+                      padding: "30px 30px 0 30px", // No padding at the bottom
+                      borderRadius: "15px",
+                      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)", // Floating effect with shadow
+                      textAlign: "center",
+                      marginBottom: "30px",
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: "3rem",
+                        marginBottom: "15px",
+                      }}
+                    >
+                      New to Solana or Crypto?
+                    </h3>
+                    <h4
+                      style={{
+                        fontSize: "3.75rem",
+                        marginBottom: "20px",
+                      }}
+                    >
+                      Download
+                    </h4>
+                    <motion.div
+                      variants={{
+                        rest: {
+                          scale: 1,
+                          rotate: 0,
+                          transition: { duration: 0.3 },
+                        },
+                        hover: {
+                          scale: 1.1,
+                          rotate: [0, 5, -5, 5, 0],
+                          transition: {
+                            scale: { duration: 0.2 },
+                            rotate: { repeat: 1, duration: 0.5 },
+                          },
+                        },
+                      }}
+                      initial="rest"
+                      whileHover="hover"
+                    >
+                      <a
+                        href="https://chromewebstore.google.com/detail/solflare-wallet/bhhhlbepdkbapadjdnnojkbgioiodbic"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src="/img/solflare-logo.png"
+                          alt="Solflare Logo"
+                          style={{
+                            width: "100%",
+                            maxWidth: "50%",
+                            height: "auto",
+                            marginBottom: "20px",
+                            display: "block",
+                            marginLeft: "auto",
+                            marginRight: "auto",
+                          }}
+                        />
+                      </a>
+                    </motion.div>
+                    <h2
+                      style={{
+                        fontSize: "2.5rem",
+                        marginBottom: "20px",
+                      }}
+                    >
+                      Preferred F4cet Marketplace Wallet
+                    </h2>
+                    <img
+                      src="/img/solflare-m.png"
+                      alt="Solflare QR Code"
+                      style={{
+                        width: "100%",
+                        maxWidth: "250px",
+                        height: "auto",
+                        marginBottom: "10px",
+                        display: "block",
+                        marginLeft: "auto",
+                        marginRight: "auto",
+                      }}
+                    />
+                    <img
+                      src="/img/solflareH.png"
+                      alt="Solflare Hand"
+                      style={{
+                        width: "100%",
+                        maxWidth: "60%",
+                        height: "auto",
+                        display: "block",
+                        marginLeft: "auto",
+                        marginRight: "auto",
+                      }}
+                    />
+                  </div>
+                </GridItem>
+
+                {/* Second Card */}
+                <GridItem xs={12}>
+                  <div
+                    style={{
+                      backgroundColor: "#ffffff",
+                      padding: "30px",
+                      borderRadius: "15px",
+                      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)", // Floating effect with shadow
+                      textAlign: "center",
+                      marginBottom: "30px",
+                    }}
+                  >
+                    <a
+                      href="https://chromewebstore.google.com/detail/solflare-wallet/bhhhlbepdkbapadjdnnojkbgioiodbic"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <img
+                        src="/img/solflareD.png"
+                        alt="Solflare Extension"
+                        style={{
+                          width: "100%",
+                          maxWidth: "70%",
+                          height: "auto",
+                          display: "block",
+                          marginLeft: "auto",
+                          marginRight: "auto",
+                        }}
+                      />
+                    </a>
+                  </div>
+                </GridItem>
+              </GridContainer>
             </div>
           )}
           {publicKey && <div ref={loader} style={{ height: "20px" }} />}
