@@ -311,7 +311,7 @@ export default function Marketplace() {
             <div style={{ textAlign: "center", padding: "40px 20px", color: "#212121" }}>
               <h1
                 style={{
-                  fontSize: "2.5rem",
+                  fontSize: { xs: "1.5rem", md: "2.5rem" }, // Reduced for mobile
                   fontWeight: "bold",
                   marginBottom: "40px",
                   lineHeight: "1.2",
@@ -325,16 +325,16 @@ export default function Marketplace() {
                   <div
                     style={{
                       backgroundColor: "#ffffff",
-                      padding: "30px 30px 0 30px", // No padding at the bottom
+                      padding: "30px 30px 0 30px",
                       borderRadius: "15px",
-                      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)", // Floating effect with shadow
+                      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)",
                       textAlign: "center",
                       marginBottom: "30px",
                     }}
                   >
                     <h3
                       style={{
-                        fontSize: "3rem",
+                        fontSize: { xs: "1.5rem", md: "3rem" }, // Reduced for mobile
                         marginBottom: "15px",
                       }}
                     >
@@ -342,7 +342,7 @@ export default function Marketplace() {
                     </h3>
                     <h4
                       style={{
-                        fontSize: "3.75rem",
+                        fontSize: { xs: "1.5rem", md: "3.75rem" }, // Reduced for mobile
                         marginBottom: "20px",
                       }}
                     >
@@ -353,7 +353,7 @@ export default function Marketplace() {
                         rest: {
                           scale: 1,
                           rotate: 0,
-                          transition: { duration: 0.3 },
+                          transition: { duration: 0.5 },
                         },
                         hover: {
                           scale: 1.1,
@@ -389,7 +389,7 @@ export default function Marketplace() {
                     </motion.div>
                     <h2
                       style={{
-                        fontSize: "2.5rem",
+                        fontSize: { xs: "1.25rem", md: "2.5rem" }, // Reduced for mobile
                         marginBottom: "20px",
                       }}
                     >
@@ -402,7 +402,7 @@ export default function Marketplace() {
                         width: "100%",
                         maxWidth: "250px",
                         height: "auto",
-                        marginBottom: "10px",
+                        marginBottom: "20px",
                         display: "block",
                         marginLeft: "auto",
                         marginRight: "auto",
@@ -430,7 +430,7 @@ export default function Marketplace() {
                       backgroundColor: "#ffffff",
                       padding: "30px",
                       borderRadius: "15px",
-                      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)", // Floating effect with shadow
+                      boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)",
                       textAlign: "center",
                       marginBottom: "30px",
                     }}
