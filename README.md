@@ -45,7 +45,7 @@ Ongoing: Compete in Solana hackathons, refine UI/UX, and expand affiliate featur
 Join our journey to redefine digital commerce:
 Website: f4cets.com
 
-X: @f4cetsofficial
+X: [@f4cetsofficial](https://x.com/f4cetsofficial)
 
 Discord https://discord.gg/mYdURh9r
 
