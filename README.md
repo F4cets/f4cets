@@ -1,361 +1,57 @@
-# [NextJS Material Kit PRO](https://demos.creative-tim.com/nextjs-material-kit-pro?ref=njsmkp-readme) [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social&logo=twitter)](https://twitter.com/share?url=https%3A%2F%2Fdemos.creative-tim.com%2Fnextjs-material-kit-pro%2Fpresentation&text=NextJS%20Material%20Kit%20PRO&via=Creative%20Tim&hashtags=nextjs%20%23creativetim%20%23material-ui%20%23react%20%23reactjs%20%23materialdesign)
+F4cets
+Welcome to F4cets, a groundbreaking Solana-powered platform revolutionizing digital commerce by empowering creators, sellers, and affiliates with decentralized tools for secure, transparent, and rewarding transactions. Built with Next.js, Material-UI, and Firebase, F4cets is designed to deliver a seamless user experience while leveraging Solana’s high-speed, low-cost blockchain for payments, escrow, and NFT-based inventory management.
+Project Overview
+F4cets is a marketplace and management platform that bridges Web3 and e-commerce, enabling:
+Creators and Sellers: To onboard stores, manage inventory (digital goods and real-world items), and leverage Solana for secure transactions.
 
-![version](https://img.shields.io/badge/version-1.3.2-blue.svg) [![GitHub issues open](https://img.shields.io/github/issues/creativetimofficial/ct-nextjs-material-kit-pro.svg?maxAge=2592000)](https://github.com/creativetimofficial/ct-nextjs-material-kit-pro/issues?q=is%3Aopen+is%3Aissue) [![GitHub issues closed](https://img.shields.io/github/issues-closed-raw/creativetimofficial/ct-nextjs-material-kit-pro.svg?maxAge=2592000)](https://github.com/creativetimofficial/ct-nextjs-material-kit-pro/issues?q=is%3Aissue+is%3Aclosed) [![Join the chat at https://gitter.im/NIT-dgp/General](https://badges.gitter.im/NIT-dgp/General.svg)](https://gitter.im/creative-tim-general/Lobby) [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://discord.gg/E4aHAQy)
+Key Features
+Decentralized Web3 System: Secure Solana Buyer, Seller, & Affiliate platform, built for speed.
 
-![Product Presentation Image](https://raw.githubusercontent.com/creativetimofficial/public-assets/master/nextjs-material-kit-pro/nextjs-material-kit-pro.jpg)
+Store and Affiliate Management: Intuitive dashboards for creating/editing stores and affiliates, supporting rich metadata (logos, categories, cashback offers).
 
-**NextJS Material Kit PRO** is a Premium UI Kit made for NextJS version 9.0.5, React version 16.9.0 and Material-UI version 4.3.2.
+NFT Inventory Tracking: Support for digital and real-world item (RWI) inventory, with NFT-based ownership and escrow integration (pending Solana minting functions).
 
-If you like bright and fresh colors, you will love this Premium NextJS Material-UI Kit! It features a huge number of components that can help you create amazing websites.
+Search and Admin Tools: Robust search by store name, wallet ID, or escrow ID, with transparent card-based UI for easy navigation.
 
-Special thanks go to:
+Future-Proof Architecture: Built with Next.js for performance, Material-UI for responsive design, and Firebase for scalable data management, ready for Solana’s blockchain capabilities.
 
-- [Nepcha Analytics](https://nepcha.com?ref=readme) for the analytics tool. Nepcha is already integrated with Next.js Material Kit PRO. You can use it to gain insights into your sources of traffic
+Why Solana?
+We chose Solana for its unparalleled speed, low transaction costs, and robust NFT ecosystem, making it ideal for:
+Instant payment processing and escrow management.
 
-**Getting Started**
+Minting and tracking NFTs for digital goods and RWIs.
 
-- Install NodeJs from [NodeJs Official Page](https://nodejs.org/en/?ref=creativetim)
-- Go to [creative tim website](https://creative-tim.com?ref=njsmkp-readme) and login into your account
-- Go to [downloads](https://www.creative-tim.com/downloads?ref=njsmkp-readme) section on creative tim website (be sure to be logged into your account) - after you've bought the theme
-- Press the download button near **NextJS Material Kit Pro** product (this will download onto your computer a zip file)
-- Unzip the downloaded file to a folder in your computer
-- Open Terminal
-- Go to your file project (where you've unzipped the product)
-- Run in terminal `npm install`
-- Then run `npm start`
-- Alternatively you can run `npm run install:clean` which will delete `node_modules`, `package-lock.json`, `.next/`, automatically run `install` script and `start` script
-- Navigate to [http://localhost:3000](http://localhost:3000)
-- More information → [React](https://reactjs.org/docs/installation.html?ref=creativetim)
-- More information → [NextJS](https://nextjs.org?ref=creativetim)
-- More information → [Material-UI](https://material-ui.com/?ref=creativetim)
-- More information → [Material Kit PRO React](https://www.creative-tim.com/product/nextjs-material-kit-pro?ref=njsmkp-readme)
+Enabling crypto cashback offers for affiliates, processed on-chain.
 
-**Fully Coded Components**
+Supporting a high-throughput marketplace with global reach.
 
-NextJS Material Kit PRO is built with over frontend 1000 individual components, giving you the freedom of choosing and combining. All components can take variations in colour, that you can easily modify using SASS and JSS files and classes.
+F4cets aims to showcase Solana’s potential in e-commerce, competing in Colosseum’s competitive online hackathons to push the boundaries of decentralized commerce.
+Getting Started
+To explore F4cets:
+Visit our parent website: f4cets.com
 
-You will save a lot of time going from prototyping to full-functional code, because all elements are implemented. This Premium NextJS Material-UI Kit is coming with prebuilt examples, so the development process is seamless, switching from our pages to the real website is very easy to be done.
+Follow us on X for updates: @f4cetsofficial
 
-Every element has multiple states for colors, styles, hover, focus, that you can easily access and use.
+Roadmap
+Q2 2025: Integrate Solana wallet creation and NFT minting via Google Cloud Functions.
 
-View [all components here](https://demos.creative-tim.com/nextjs-material-kit-pro/documentation/accordion?ref=njsmkp-readme).
+Q3 2025: Implement secure fund release mechanisms with Solana transactions and Google Secret Manager.
 
-**COMPLEX DOCUMENTATION**
+Q3/Q4 2025: Launch public marketplace with full buyer-seller-affiliate workflows.
 
-Each element is well presented in a very complex documentation. You can read more about the [idea behind this product here](https://demos.creative-tim.com/nextjs-material-kit-pro/documentation/tutorial?ref=njsmkp-readme). You can [check the components here](https://demos.creative-tim.com/nextjs-material-kit-pro/documentation/accordion?ref=njsmkp-readme).
+Ongoing: Compete in Solana hackathons, refine UI/UX, and expand affiliate features.
 
-**Example Pages**
 
-If you want to get inspiration or just show something directly to your clients, you can jump start your development with our pre-built example pages. You will be able to quickly set up the basic structure for your web project.
+Join our journey to redefine digital commerce:
 
-View [example pages here](https://demos.creative-tim.com/nextjs-material-kit-pro/presentation?ref=njsmkp-readme).
+Website: [f4cets.com](https://www.f4cets.com/)
 
-## Table of Contents
+X: [@f4cetsofficial](https://x.com/f4cetsofficial)
 
-- [Versions](#versions)
-- [Demo](#demo)
-- [Quick Start](#quick-start)
-- [Documentation](#documentation)
-- [File Structure](#file-structure)
-- [Browser Support](#browser-support)
-- [Resources](#resources)
-- [Reporting Issues](#reporting-issues)
-- [Technical Support or Questions](#technical-support-or-questions)
-- [Licensing](#licensing)
-- [Useful Links](#useful-links)
+Discord https://discord.gg/mYdURh9r
 
-## Versions
+Email: contact@f4cets.com (mailto:contact@f4cets.com)
 
-[<img src="https://github.com/creativetimofficial/public-assets/blob/master/logos/html-logo.jpg?raw=true" width="60" height="60" />](https://www.creative-tim.com/product/material-kit?ref=njsmkp-readme)[<img src="https://github.com/creativetimofficial/public-assets/blob/master/logos/nextjs_logo.jpg?raw=true" width="60" height="60" />](https://www.creative-tim.com/product/nextjs-material-kit?ref=njsmkp-readme)[<img src="https://github.com/creativetimofficial/public-assets/blob/master/logos/vue-logo.jpg?raw=true" width="60" height="60" />](https://www.creative-tim.com/product/vue-material-kit?ref=njsmkp-readme)[<img src="https://github.com/creativetimofficial/public-assets/blob/master/logos/react-logo.jpg?raw=true" width="60" height="60" />](https://www.creative-tim.com/product/material-kit-react?ref=njsmkp-readme)[<img src="https://github.com/creativetimofficial/public-assets/blob/master/logos/react-native-logo.jpg?raw=true" width="60" height="60" />](https://www.creative-tim.com/product/material-kit-react-native?ref=njsmkp-readme)[<img src="https://github.com/creativetimofficial/public-assets/blob/master/logos/wordpress-logo.jpg?raw=true" width="60" height="60" />](https://themeisle.com/themes/hestia-pro/?ref=creativetim)[<img src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/logos/photoshop-logo.jpg" width="60" height="60" />](https://www.creative-tim.com/product/nextjs-material-kit-pro?ref=njsmkp-readme)[<img src="https://raw.githubusercontent.com/creativetimofficial/public-assets/master/logos/sketch-logo.jpg" width="60" height="60" />](https://www.creative-tim.com/product/nextjs-material-kit-pro?ref=njsmkp-readme)
+F4cets is a proud participant in the Solana ecosystem, aiming to deliver a decentralized marketplace that empowers creators and engages users worldwide. We’re excited to connect with the Solana Foundation and Colosseum communities to drive innovation in Web3 commerce.
 
-| React Native                                                                                                                                                                                                                                                | WordPress                                                                                                                                                                                                     | NextJS                                                                                                                                                                                                                                   | HTML                                                                                                                                                                                                                     |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [![Material Kit React Native](https://github.com/creativetimofficial/public-assets/blob/master/material-kit-pro-react-native/material-kit-pro-react-native.jpg?raw=true)](https://www.creative-tim.com/product/material-kit-react-native?ref=njsmkp-readme) | [![Material Kit WordPress](https://github.com/creativetimofficial/public-assets/blob/master/material-kit-wordpress/opt_smd_thumbnail.jpg?raw=true)](https://themeisle.com/themes/hestia-pro/?ref=creativetim) | [![NextJS Material Kit](https://raw.githubusercontent.com/creativetimofficial/public-assets/master/nextjs-material-kit-pro/nextjs-material-kit-pro.jpg)](https://www.creative-tim.com/product/nextjs-material-kit-pro?ref=njsmkp-readme) | [![Material Kit  HTML](https://raw.githubusercontent.com/creativetimofficial/public-assets/master/material-kit-pro-html/opt_mkp_thumbnail.jpg)](https://www.creative-tim.com/product/material-kit-pro?ref=njsmkp-readme) |
 
-| React                                                                                                                                                                                                                    | Vue                                                                                                                                                                                                              |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [![Material Kit React](https://github.com/creativetimofficial/public-assets/blob/master/material-kit-react/material-kit-react.jpeg?raw=true)](https://www.creative-tim.com/product/material-kit-react?ref=njsmkp-readme) | [![Vue Material Kit](https://github.com/creativetimofficial/public-assets/blob/master/vue-material-kit/vue-material-kit.jpeg?raw=true)](https://www.creative-tim.com/product/vue-material-kit?ref=njsmkp-readme) |
-
-## Demo
-
-- [Index Page](https://demos.creative-tim.com/nextjs-material-kit-pro/presentation?ref=njsmkp-readme)
-- [Buttons Section](https://demos.creative-tim.com/nextjs-material-kit-pro/components#buttons?ref=njsmkp-readme)
-- [Navigation Section](https://demos.creative-tim.com/nextjs-material-kit-pro/components#navigation?ref=njsmkp-readme)
-- [Notifications Section](https://demos.creative-tim.com/nextjs-material-kit-pro/components#notifications?ref=njsmkp-readme)
-- [User profile page](https://demos.creative-tim.com/nextjs-material-kit-pro/profile?ref=njsmkp-readme)
-- [Landing page](https://demos.creative-tim.com/nextjs-material-kit-pro/landing-page?ref=njsmkp-readme)
-
-[View More](https://demos.creative-tim.com/nextjs-material-kit-pro/components?ref=njsmkp-readme).
-
-## Quick start
-
-- Buy from [Creative Tim](https://www.creative-tim.com/product/nextjs-material-kit-pro?ref=njsmkp-readme)
-
-## Documentation
-
-The documentation for the NextJS Material Kit PRO is hosted at our [website](https://demos.creative-tim.com/nextjs-material-kit-pro/documentation/tutorial?ref=njsmkp-readme).
-
-## File Structure
-
-Within the download you'll find the following directories and files:
-
-```
-nextjs-material-kit-pro
-.
-├── CHANGELOG.md
-├── ISSUE_TEMPLATE.md
-├── README.md
-├── next.config.js
-├── package.json
-├── Documentation
-│   ├── assets
-│   │   ├── css
-│   │   ├── img
-│   │   │   └── faces
-│   │   └── js
-│   └── tutorial-components.html
-├── pages
-│   ├── _app.js
-│   ├── _document.js
-│   ├── _error.js
-│   ├── about-us.js
-│   ├── blog-post.js
-│   ├── blog-posts.js
-│   ├── components.js
-│   ├── contact-us.js
-│   ├── ecommerce.js
-│   ├── error-page.js
-│   ├── index.js
-│   ├── landing-page.js
-│   ├── login.js
-│   ├── presentation.js
-│   ├── pricing.js
-│   ├── product.js
-│   ├── profile.js
-│   ├── sections.js
-│   ├── shopping-cart.js
-│   └── signup.js
-├── assets
-│   ├── css
-│   │   ├── nextjs-material-kit-pro.css
-│   │   ├── nextjs-material-kit-pro.css.map
-│   │   └── nextjs-material-kit-pro.min.css
-│   ├── img
-│   │   ├── assets-for-demo
-│   │   │   ├── example-pages
-│   │   │   ├── ourClients
-│   │   │   ├── presentationViewSectionComponent
-│   │   │   └── sections
-│   │   │       └── imgs.js
-│   │   ├── examples
-│   │   ├── faces
-│   │   ├── flags
-│   │   └── sections
-│   ├── jss
-│   │   ├── nextjs-material-kit-pro
-│   │   │   ├── components
-│   │   │   └── views
-│   │   │       ├── aboutUsSections
-│   │   │       ├── blogPostSections
-│   │   │       ├── blogPostsSections
-│   │   │       ├── componentsSections
-│   │   │       ├── ecommerceSections
-│   │   │       ├── landingPageSections
-│   │   │       ├── presentationSections
-│   │   │       ├── pricingSections
-│   │   │       ├── sectionsSections
-│   │   └── nextjs-material-kit-pro.js
-│   └── scss
-│       ├── core
-│       │   ├── mixins
-│       │   └── variables
-│       ├── plugins
-│       └── nextjs-material-kit-pro.scss
-├── components
-│   ├── Accordion
-│   │   └── Accordion.js
-│   ├── Badge
-│   │   └── Badge.js
-│   ├── Card
-│   │   ├── Card.js
-│   │   ├── CardAvatar.js
-│   │   ├── CardBody.js
-│   │   ├── CardFooter.js
-│   │   └── CardHeader.js
-│   ├── Clearfix
-│   │   └── Clearfix.js
-│   ├── CustomButtons
-│   │   └── Button.js
-│   ├── CustomDropdown
-│   │   └── CustomDropdown.js
-│   ├── CustomFileInput
-│   │   └── CustomFileInput.js
-│   ├── CustomInput
-│   │   └── CustomInput.js
-│   ├── CustomLinearProgress
-│   │   └── CustomLinearProgress.js
-│   ├── CustomTabs
-│   │   └── CustomTabs.js
-│   ├── CustomUpload
-│   │   └── ImageUpload.js
-│   ├── Footer
-│   │   └── Footer.js
-│   ├── Grid
-│   │   ├── GridContainer.js
-│   │   └── GridItem.js
-│   ├── Header
-│   │   ├── Header.js
-│   │   └── HeaderLinks.js
-│   ├── InfoArea
-│   │   └── InfoArea.js
-│   ├── Instruction
-│   │   └── Instruction.js
-│   ├── Media
-│   │   └── Media.js
-│   ├── NavPills
-│   │   └── NavPills.js
-│   ├── PageChange
-│   │   └── PageChange.js
-│   ├── Pagination
-│   │   └── Pagination.js
-│   ├── Parallax
-│   │   └── Parallax.js
-│   ├── Snackbar
-│   │   └── SnackbarContent.js
-│   ├── Table
-│   │   └── Table.js
-│   └── Typography
-│       ├── Danger.js
-│       ├── Info.js
-│       ├── Muted.js
-│       ├── Primary.js
-│       ├── Quote.js
-│       ├── Rose.js
-│       ├── Small.js
-│       ├── Success.js
-│       └── Warning.js
-└── pages-sections
-    ├── about-us
-    │   ├── SectionContact.js
-    │   ├── SectionDescription.js
-    │   ├── SectionOffice.js
-    │   ├── SectionServices.js
-    │   └── SectionTeam.js
-    ├── blog-post
-    │   ├── SectionBlogInfo.js
-    │   ├── SectionComments.js
-    │   ├── SectionSimilarStories.js
-    │   └── SectionText.js
-    ├── blog-posts
-    │   ├── SectionImage.js
-    │   ├── SectionInterested.js
-    │   ├── SectionPills.js
-    │   └── SubscribeLine.js
-    ├── components
-    │   ├── SectionBasics.js
-    │   ├── SectionCards.js
-    │   ├── SectionCarousel.js
-    │   ├── SectionContentAreas.js
-    │   ├── SectionFooter.js
-    │   ├── SectionJavascript.js
-    │   ├── SectionNavbars.js
-    │   ├── SectionNotifications.js
-    │   ├── SectionPills.js
-    │   ├── SectionPreFooter.js
-    │   ├── SectionTabs.js
-    │   └── SectionTypography.js
-    ├── ecommerce
-    │   ├── SectionBlog.js
-    │   ├── SectionLatestOffers.js
-    │   └── SectionProducts.js
-    ├── landing-page
-    │   ├── SectionProduct.js
-    │   ├── SectionTeam.js
-    │   └── SectionWork.js
-    ├── presentation-page
-    │   ├── SectionCards.js
-    │   ├── SectionComponents.js
-    │   ├── SectionContent.js
-    │   ├── SectionDescription.js
-    │   ├── SectionExamples.js
-    │   ├── SectionFreeDemo.js
-    │   ├── SectionOverview.js
-    │   ├── SectionPricing.js
-    │   └── SectionSections.js
-    ├── pricing-page
-    │   ├── SectionFeatures.js
-    │   └── SectionPricing.js
-    └── sections-page
-        ├── SectionBlogs.js
-        ├── SectionContacts.js
-        ├── SectionFeatures.js
-        ├── SectionHeaders.js
-        ├── SectionPricing.js
-        ├── SectionProjects.js
-        ├── SectionTeams.js
-        └── SectionTestimonials.js
-```
-
-## Browser Support
-
-At present, we officially aim to support the last two versions of the following browsers:
-
-<img src="https://s3.amazonaws.com/creativetim_bucket/github/browser/chrome.png" width="64" height="64"> <img src="https://s3.amazonaws.com/creativetim_bucket/github/browser/firefox.png" width="64" height="64"> <img src="https://s3.amazonaws.com/creativetim_bucket/github/browser/edge.png" width="64" height="64"> <img src="https://s3.amazonaws.com/creativetim_bucket/github/browser/safari.png" width="64" height="64"> <img src="https://s3.amazonaws.com/creativetim_bucket/github/browser/opera.png" width="64" height="64">
-
-## Resources
-
-- Demo: <https://demos.creative-tim.com/nextjs-material-kit-pro/presentation?ref=njsmkp-readme>
-- Download Page: <https://www.creative-tim.com/product/nextjs-material-kit-pro?ref=njsmkp-readme>
-- Documentation: <https://demos.creative-tim.com/nextjs-material-kit-pro/documentation/tutorial?ref=njsmkp-readme>
-- License Agreement: <https://www.creative-tim.com/license?ref=njsmkp-readme>
-- Support: <https://www.creative-tim.com/contact-us?ref=njsmkp-readme>
-- Issues: [Github Issues Page](https://github.com/creativetimofficial/ct-nextjs-material-kit-pro/issues)
-- [Nepcha Analytics](https://nepcha.com?ref=readme) - Analytics tool for your website
-- **Dashboards:**
-
-| HTML                                                                                                                                                                                                                                     | React                                                                                                                                                                                                                                                            | Angular                                                                                                                                                                                                                                                                   | Vue                                                                                                                                                                                                                                                      | Laravel                                                                                                                                                                                                                                                                  | Vuetify                                                                                                                                                                                                                                                                  |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [![Material Dashboard PRO](https://raw.githubusercontent.com/creativetimofficial/public-assets/master/material-dashboard-pro-html/opt_mdp_thumbnail.jpg)](https://www.creative-tim.com/product/material-dashboard-pro?ref=njsmkp-readme) | [![Material Dashboard PRO React](https://raw.githubusercontent.com/creativetimofficial/public-assets/master/material-dashboard-pro-react/material-dashboard-pro-react.jpg)](https://www.creative-tim.com/product/material-dashboard-pro-react?ref=njsmkp-readme) | [![Material Dashboard PRO Angular](https://raw.githubusercontent.com/creativetimofficial/public-assets/master/material-dashboard-pro-angular/material-dashboard-pro-angular.jpg)](https://www.creative-tim.com/product/material-dashboard-pro-angular2?ref=njsmkp-readme) | [![Vue Material Dashboard PRO](https://raw.githubusercontent.com/creativetimofficial/public-assets/master/vue-material-dashboard-pro/vue-material-dashboard-pro.jpg)](https://www.creative-tim.com/product/vue-material-dashboard-pro?ref=njsmkp-readme) | [![Material Dashboard PRO Laravel](https://raw.githubusercontent.com/creativetimofficial/public-assets/master/material-dashboard-pro-laravel/material-dashboard-pro-laravel.jpg)](https://www.creative-tim.com/product/material-dashboard-pro-laravel?ref=njsmkp-readme) | [![Vuetify Material Dashboard PRO](https://raw.githubusercontent.com/creativetimofficial/public-assets/master/vuetify-material-dashboard-pro/vuetify-material-dashboard-pro.jpg)](https://www.creative-tim.com/product/vuetify-material-dashboard-pro?ref=njsmkp-readme) |
-
-## Reporting Issues
-
-We use GitHub Issues as the official bug tracker for the NextJS Material Kit PRO. Here are some advices for our users that want to report an issue:
-
-1. Make sure that you are using the latest version of the NextJS Material Kit PRO. Check the CHANGELOG from your dashboard on our [website](https://www.creative-tim.com/?ref=njsmkp-readme).
-2. Providing us reproducible steps for the issue will shorten the time it takes for it to be fixed.
-3. Some issues may be browser specific, so specifying in what browser you encountered the issue might help.
-
-## Technical Support or Questions
-
-If you have questions or need help integrating the product please [contact us](https://www.creative-tim.com/contact-us?ref=njsmkp-readme) instead of opening an issue.
-
-## Licensing
-
-- Copyright 2022 Creative Tim (https://www.creative-tim.com/?ref=njsmkp-readme)
-
-- Creative Tim [license](https://www.creative-tim.com/license?ref=njsmkp-readme)
-
-## Useful Links
-
-- [Tutorials](https://www.youtube.com/channel/UCVyTG4sCw-rOvB9oHkzZD1w)
-- [Affiliate Program](https://www.creative-tim.com/affiliates/new?ref=njsmkp-readme) (earn money)
-- [Blog Creative Tim](http://blog.creative-tim.com/?ref=njsmkp-readme)
-- [Free Products](https://www.creative-tim.com/templates/free?direction=desc&sort=created_at&ref=njsmkp-readme) from Creative Tim
-- [Premium Products](https://www.creative-tim.com/templates/premium?direction=desc&sort=created_at&ref=njsmkp-readme) from Creative Tim
-- [React Products](https://www.creative-tim.com/templates/react?direction=desc&sort=created_at&ref=njsmkp-readme) from Creative Tim
-- [Angular Products](https://www.creative-tim.com/templates/angular?direction=desc&sort=created_at&ref=njsmkp-readme) from Creative Tim
-- [VueJS Products](https://www.creative-tim.com/templates/vuejs?direction=desc&sort=created_atref=njsmkp-readme) from Creative Tim
-- [More products](https://www.creative-tim.com/templates?ref=njsmkp-readme) from Creative Tim
-- Check our Bundles [here](https://www.creative-tim.com/bundles?ref=njsmkp-readme)
-
-##### Social Media
-
-Twitter: <https://twitter.com/CreativeTim>
-
-Facebook: <https://www.facebook.com/CreativeTim>
-
-Dribbble: <https://dribbble.com/creativetim>
-
-Github: <https://github.com/creativetimofficial>
-
-Instagram: <https://www.instagram.com/CreativeTimOfficial>
