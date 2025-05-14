@@ -2,61 +2,46 @@ import React from "react";
 import PropTypes from "prop-types";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import Card from "./Card.js"; // Relative import from same folder
-import CardHeader from "./CardHeader.js"; // Import stock CardHeader
-import CardBody from "./CardBody.js"; // Import stock CardBody
-import CardFooter from "./CardFooter.js"; // Import stock CardFooter
-import Button from "/components/CustomButtons/Button.js"; // Import Button component
-import styles from "/styles/jss/nextjs-material-kit-pro/components/cardStyle.js";
-import marketplaceStyles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.js";
-import makeStyles from "@mui/styles/makeStyles"; // Ensure correct import
-import classNames from "classnames"; // Ensure correct import
+import Card from "./Card.js";
+import makeStyles from "@mui/styles/makeStyles";
+import styles from "/styles/jss/nextjs-material-kit-pro/pages/affiliateStyle.js";
+import classNames from "classnames";
 
-const useStyles = makeStyles({ ...styles, ...marketplaceStyles });
+const useStyles = makeStyles(styles);
 
 export default function SellerCard({ seller, className }) {
   const classes = useStyles();
 
+  // Determine image source
+  const imageSrc = seller.image && seller.image !== ""
+    ? seller.image
+    : "https://picsum.photos/600/300";
+
   return (
     <motion.div
       initial={{ rotate: 0, scale: 0.9 }}
-      whileHover={{
-        rotate: 5,
-        scale: [1.1, 1.05, 1.1], // Pulse effect
-        transition: {
-          duration: 0.5,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "easeInOut",
-        },
-      }}
+      whileHover={{ rotate: 10, scale: 1.1 }}
       whileInView={{ rotate: 0, scale: 1 }}
       transition={{ duration: 0.5 }}
       className={className}
     >
-      <Link href={`/seller/${seller.id}`} passHref>
-        <a>
-          <Card
-            plain
-            product
-            className={classNames(classes.card, classes.cardContent)} // Ensure cardContent is applied
-          >
-            <CardHeader image>
-              <img
-                src={seller.selectedImage} // Changed to use Firebase Storage URL
-                alt={seller.name}
-                className={classes.cardImage}
-              />
-            </CardHeader>
-            <CardBody>
-              <h4 className={classes.cardTitle}>{seller.name}</h4>
-              <p className={classes.description}>{seller.description}</p>
-            </CardBody>
-            <CardFooter className={classes.cardFooter}>
-              <Button color="rose" round className={classes.button}>
-                Visit Store
-              </Button>
-            </CardFooter>
+      <Link href={seller.type === "store" ? `/sellers/${seller.id}` : `/products/${seller.id}`} passHref>
+        <a style={{ textDecoration: "none" }}>
+          <Card plain className={classNames(classes.card, classes.cardContent)}>
+            <img
+              src={imageSrc}
+              alt={seller.name || "Item"}
+              className={classes.cardImage}
+              style={{ aspectRatio: "2/1", objectFit: "cover" }}
+              onError={(e) => {
+                e.target.src = "https://picsum.photos/600/300";
+                console.log("Image load failed, using fallback");
+              }}
+            />
+            <h4 className={classes.cardTitle}>{seller.name || "Unnamed Item"}</h4>
+            <p className={classes.description}>
+              {seller.price ? `${seller.price} USDC` : "Price not available"}
+            </p>
           </Card>
         </a>
       </Link>
@@ -66,10 +51,12 @@ export default function SellerCard({ seller, className }) {
 
 SellerCard.propTypes = {
   seller: PropTypes.shape({
-    id: PropTypes.number.isRequired,
-    name: PropTypes.string.isRequired,
-    image: PropTypes.string.isRequired, // e.g., "seller1.jpg"
-    description: PropTypes.string.isRequired,
+    id: PropTypes.string.isRequired,
+    name: PropTypes.string,
+    image: PropTypes.string,
+    description: PropTypes.string,
+    type: PropTypes.oneOf(["store", "product"]).isRequired,
+    price: PropTypes.number,
   }).isRequired,
   className: PropTypes.string,
 };

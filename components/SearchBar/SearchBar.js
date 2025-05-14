@@ -1,157 +1,263 @@
-import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import InputLabel from "@mui/material/InputLabel";
-import FormControl from "@mui/material/FormControl";
-import Grid from "@mui/material/Grid";
+import React, { useState } from "react";
+import classNames from "classnames";
 import makeStyles from "@mui/styles/makeStyles";
+import GridContainer from "/components/Grid/GridContainer.js";
+import GridItem from "/components/Grid/GridItem.js";
+import Card from "/components/Card/Card.js";
+import CardBody from "/components/Card/CardBody.js";
+import CustomInput from "/components/CustomInput/CustomInput.js";
+import Button from "/components/CustomButtons/Button.js";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Slider from "@mui/material/Slider";
+import Search from "@mui/icons-material/Search";
+import InputAdornment from "@mui/material/InputAdornment";
 
 const useStyles = makeStyles((theme) => ({
-  search: {
-    backgroundColor: theme.palette.common.white,
-    borderRadius: "4px",
-    maxWidth: "500px",
-    margin: "0 auto",
-    "& .MuiInputBase-root": {
-      backgroundColor: theme.palette.common.white,
-    },
-    [theme.breakpoints.down('sm')]: { // Stack on mobile
-      maxWidth: "100%", // Full width on mobile
-      margin: "0",
+  searchContainer: {
+    width: "100%",
+    padding: theme.spacing(1),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(0.5),
     },
   },
-  filter: {
-    minWidth: "150px",
-    backgroundColor: theme.palette.common.white,
-    borderRadius: "4px",
-    "& .MuiSelect-select": {
-      backgroundColor: theme.palette.common.white,
-    },
-    [theme.breakpoints.down('sm')]: { // Stack on mobile
-      minWidth: "100%", // Full width on mobile
+  filterContainer: {
+    width: "100%",
+    padding: theme.spacing(1),
+    marginTop: theme.spacing(0.25), // Reduced from 0.5 to 0.25 (2px) for tighter gap
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(0.5),
+      marginTop: theme.spacing(0.125), // Reduced to 1px on mobile
     },
   },
-  gridContainer: {
-    [theme.breakpoints.down('sm')]: { // Stack vertically on mobile
-      flexDirection: "column",
-      alignItems: "stretch",
-      padding: "0 10px", // Add padding for mobile
+  card: {
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+    borderRadius: "8px",
+    backgroundColor: "#ffffff",
+  },
+  cardBody: {
+    padding: theme.spacing(1, 2),
+    [theme.breakpoints.down('sm')]: {
+      padding: theme.spacing(0.5, 1.5),
     },
+  },
+  formControl: {
+    width: "100%",
+    margin: theme.spacing(0.5),
+    '& .MuiInputBase-root': {
+      fontSize: '0.75rem',
+      height: '28px',
+    },
+    '& .MuiInputLabel-root': {
+      fontSize: '0.75rem',
+      top: '-4px',
+    },
+    [theme.breakpoints.down('sm')]: {
+      margin: theme.spacing(0.5, 0),
+    },
+  },
+  input: {
+    width: "100%",
+    margin: theme.spacing(0.5),
+    '& .MuiInputBase-input': {
+      fontSize: '0.75rem',
+      height: '28px',
+      padding: '4px 8px',
+    },
+    [theme.breakpoints.down('sm')]: {
+      margin: theme.spacing(0.5, 0),
+    },
+  },
+  toggle: {
+    margin: theme.spacing(0.5),
+    width: "100%",
+    '& .MuiToggleButton-root': {
+      fontSize: '0.7rem',
+      padding: '4px 8px',
+    },
+    [theme.breakpoints.down('sm')]: {
+      margin: theme.spacing(0.5, 0),
+      display: "flex",
+      justifyContent: "center",
+    },
+  },
+  sliderContainer: {
+    width: "100%",
+    margin: theme.spacing(0.5),
+    paddingTop: theme.spacing(0.5),
+    '& .MuiSlider-root': {
+      height: '4px',
+      '& .MuiSlider-thumb': {
+        width: '10px',
+        height: '10px',
+      },
+      '& .MuiSlider-valueLabel': {
+        fontSize: '0.65rem',
+      },
+    },
+    '& .MuiInputLabel-root': {
+      fontSize: '0.75rem',
+    },
+    [theme.breakpoints.down('sm')]: {
+      margin: theme.spacing(0.5, 0),
+      padding: theme.spacing(0, 1),
+    },
+  },
+  button: {
+    margin: theme.spacing(0.5),
+    width: "100%",
+    fontSize: '0.75rem',
+    padding: '4px 8px',
+    [theme.breakpoints.down('sm')]: {
+      margin: theme.spacing(0.5, 0),
+    },
+  },
+  mlAuto: {
+    marginLeft: "auto",
+  },
+  mrAuto: {
+    marginRight: "auto",
   },
 }));
 
-export default function SearchBar({ onSearch, onFilter, searchQuery, filters, categories = [] }) {
+export default function SearchBar({ onSearch, onFilter, searchQuery, filters, categories }) {
   const classes = useStyles();
-  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery || "");
-  const [localFilters, setLocalFilters] = useState(filters || {
-    priceMin: undefined, // Changed from 0 to undefined
-    priceMax: undefined, // Changed from 900 to undefined
-    categories: [],
-    designers: [],
-  });
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+  const [localFilters, setLocalFilters] = useState(filters);
 
-  useEffect(() => {
-    setLocalSearchQuery(searchQuery);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    setLocalFilters(filters);
-  }, [filters]);
-
-  const handleSearchChange = (event) => {
-    const query = event.target.value;
-    setLocalSearchQuery(query);
-    onSearch(query, localFilters);
+  const handleSearchChange = (e) => {
+    const newQuery = e.target.value;
+    setLocalQuery(newQuery);
+    onSearch(newQuery, localFilters);
   };
 
-  const handleFilterChange = (field) => (event) => {
-    const value = event.target.value === "" 
-      ? undefined // Allow clearing to undefined
-      : field === "categories" || field === "designers" 
-        ? event.target.value 
-        : parseFloat(event.target.value) || 0;
-    const newFilters = { ...localFilters, [field]: value };
-    setLocalFilters(newFilters);
-    onFilter(newFilters);
+  const handleCategoryChange = (e) => {
+    setLocalFilters({ ...localFilters, categories: e.target.value });
+  };
+
+  const handleTypeChange = (e, newType) => {
+    if (newType !== null) {
+      setLocalFilters({ ...localFilters, type: newType });
+    }
+  };
+
+  const handlePriceRangeChange = (e, newValue) => {
+    setLocalFilters({ ...localFilters, priceRange: newValue });
+  };
+
+  const handleApply = () => {
+    onFilter(localFilters);
   };
 
   return (
-    <Grid container spacing={2} alignItems="center" className={classes.gridContainer}>
-      <Grid item xs={12} sm={4}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search sellers..."
-          value={localSearchQuery}
-          onChange={handleSearchChange}
-          className={classes.search}
-        />
-      </Grid>
-      <Grid item xs={12} sm={3}>
-        <FormControl fullWidth variant="outlined" className={classes.filter}>
-          <InputLabel>Categories</InputLabel>
-          <Select
-            multiple
-            value={localFilters.categories}
-            onChange={handleFilterChange("categories")}
-            label="Categories"
-          >
-            {categories.map((category) => (
-              <MenuItem key={category} value={category}>
-                {category}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Grid>
-      <Grid item xs={12} sm={2}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          label="Min Price (SOL)"
-          type="number"
-          value={localFilters.priceMin === undefined ? "" : localFilters.priceMin} // Show empty if undefined
-          onChange={handleFilterChange("priceMin")}
-          className={classes.filter}
-        />
-      </Grid>
-      <Grid item xs={12} sm={3}>
-        <TextField
-          fullWidth
-          variant="outlined"
-          label="Max Price (SOL)"
-          type="number"
-          value={localFilters.priceMax === undefined ? "" : localFilters.priceMax} // Show empty if undefined
-          onChange={handleFilterChange("priceMax")}
-          className={classes.filter}
-        />
-      </Grid>
-    </Grid>
+    <div>
+      {/* Top Search Area: Instant Search */}
+      <div className={classes.searchContainer}>
+        <GridContainer>
+          <GridItem xs={12} sm={12} md={8} className={classNames(classes.mlAuto, classes.mrAuto)}>
+            <Card raised className={classes.card}>
+              <CardBody className={classes.cardBody}>
+                <GridContainer spacing={1} justifyContent="center" alignItems="center">
+                  <GridItem xs={12}>
+                    <CustomInput
+                      id="marketplaceSearch"
+                      formControlProps={{
+                        fullWidth: true,
+                        className: classes.input,
+                      }}
+                      inputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Search />
+                          </InputAdornment>
+                        ),
+                        placeholder: "Search stores or products...",
+                        value: localQuery,
+                        onChange: handleSearchChange,
+                      }}
+                    />
+                  </GridItem>
+                </GridContainer>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </GridContainer>
+      </div>
+
+      {/* Bottom Search Area: Filters */}
+      <div className={classes.filterContainer}>
+        <GridContainer>
+          <GridItem xs={12} sm={12} md={8} className={classNames(classes.mlAuto, classes.mrAuto)}>
+            <Card raised className={classes.card}>
+              <CardBody className={classes.cardBody}>
+                <GridContainer spacing={1} justifyContent="center" alignItems="center">
+                  {/* Top Row: RWI Toggle and Price Slider */}
+                  <GridItem xs={12} sm={6} md={5}>
+                    <ToggleButtonGroup
+                      value={localFilters.type}
+                      exclusive
+                      onChange={handleTypeChange}
+                      className={classes.toggle}
+                    >
+                      <ToggleButton value="all">All</ToggleButton>
+                      <ToggleButton value="digital">Digital</ToggleButton>
+                      <ToggleButton value="rwi">RWI</ToggleButton>
+                    </ToggleButtonGroup>
+                  </GridItem>
+                  <GridItem xs={12} sm={6} md={5}>
+                    <div className={classes.sliderContainer}>
+                      <InputLabel>Price Range (USDC)</InputLabel>
+                      <Slider
+                        value={localFilters.priceRange}
+                        onChange={handlePriceRangeChange}
+                        valueLabelDisplay="auto"
+                        min={0}
+                        max={1000}
+                        step={10}
+                        marks={[
+                          { value: 50, label: "$0" },
+                          { value: 950, label: "$1000" },
+                        ]}
+                      />
+                    </div>
+                  </GridItem>
+                  {/* Bottom Row: Categories and Apply Button */}
+                  <GridItem xs={12} sm={6} md={5}>
+                    <FormControl fullWidth className={classes.formControl}>
+                      <InputLabel>Categories</InputLabel>
+                      <Select
+                        multiple
+                        value={localFilters.categories}
+                        onChange={handleCategoryChange}
+                        label="Categories"
+                      >
+                        {categories.map((category) => (
+                          <MenuItem key={category} value={category}>
+                            {category}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </GridItem>
+                  <GridItem xs={12} sm={6} md={5}>
+                    <Button
+                      color="info"
+                      onClick={handleApply}
+                      className={classes.button}
+                    >
+                      Apply Filters
+                    </Button>
+                  </GridItem>
+                </GridContainer>
+              </CardBody>
+            </Card>
+          </GridItem>
+        </GridContainer>
+      </div>
+    </div>
   );
 }
-
-SearchBar.propTypes = {
-  onSearch: PropTypes.func.isRequired,
-  onFilter: PropTypes.func.isRequired,
-  searchQuery: PropTypes.string,
-  filters: PropTypes.shape({
-    priceMin: PropTypes.number,
-    priceMax: PropTypes.number,
-    categories: PropTypes.arrayOf(PropTypes.string),
-    designers: PropTypes.arrayOf(PropTypes.string),
-  }),
-  categories: PropTypes.arrayOf(PropTypes.string),
-};
-
-SearchBar.defaultProps = {
-  categories: [],
-  searchQuery: "",
-  filters: {
-    priceMin: undefined, // Changed from 0 to undefined
-    priceMax: undefined, // Changed from 900 to undefined
-    categories: [],
-    designers: [],
-  },
-};

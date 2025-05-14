@@ -12,11 +12,22 @@ import SearchBar from "/components/SearchBar/SearchBar.js";
 import SellerCard from "/components/Card/SellerCard.js";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.js";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { motion } from "framer-motion";
 
-const useStyles = makeStyles(styles);
+const useStyles = makeStyles({
+  ...styles,
+  searchContainer: {
+    width: "100%",
+    maxWidth: "1200px",
+    margin: "0 auto",
+    padding: "16px",
+  },
+  searchPadding: {
+    padding: "16px",
+  },
+});
 
 export default function Marketplace() {
   React.useEffect(() => {
@@ -32,48 +43,51 @@ export default function Marketplace() {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
-    priceMin: undefined,
-    priceMax: undefined,
+    priceRange: [0, 1000],
     categories: [],
-    designers: [],
+    type: "all",
   });
+  const [categories, setCategories] = useState([]);
   const loader = useRef(null);
 
+  // Fetch categories and sellers
   useEffect(() => {
-    const fetchSellers = async () => {
+    const fetchData = async () => {
       try {
         console.log("Starting Firestore fetch...");
 
+        // Fetch unique categories
+        const storesQuery = query(collection(db, "stores"), where("isActive", "==", true));
+        const productsQuery = query(collection(db, "products"), where("isActive", "==", true));
+        const [storesSnapshot, productsSnapshot] = await Promise.all([
+          getDocs(storesQuery),
+          getDocs(productsQuery),
+        ]);
+
+        const storeCategories = storesSnapshot.docs.flatMap(doc => doc.data().categories || []);
+        const productCategories = productsSnapshot.docs.flatMap(doc => doc.data().categories || []);
+        const uniqueCategories = [...new Set([...storeCategories, ...productCategories])].sort();
+        setCategories(uniqueCategories);
+
         // Fetch stores
-        const storesQuery = query(
-          collection(db, "stores"),
-          where("isActive", "==", true)
-        );
         console.log("Executing stores query...");
-        const storesSnapshot = await getDocs(storesQuery);
-        console.log("Stores fetched:", storesSnapshot.docs.length, "documents");
-
-        // Fetch products
-        const productsQuery = query(
-          collection(db, "products"),
-          where("isActive", "==", true),
-          where("quantity", ">", 0)
-        );
-        console.log("Executing products query...");
-        const productsSnapshot = await getDocs(productsQuery);
-        console.log("Products fetched:", productsSnapshot.docs.length, "documents");
-
         const stores = storesSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
           type: "store",
           price: doc.data().minPrice || 0,
+          image: doc.data().thumbnailUrl || "https://picsum.photos/600/300",
         }));
+
+        // Fetch products
+        console.log("Executing products query...");
         const products = productsSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
           type: "product",
+          productType: doc.data().type || "unknown",
           price: doc.data().price || 0,
+          image: doc.data().imageUrls && doc.data().imageUrls[0] ? doc.data().imageUrls[0] : "https://picsum.photos/600/300",
         }));
 
         // Combine and sort
@@ -87,12 +101,10 @@ export default function Marketplace() {
         setFilteredSellers(combined);
         setVisibleSellers(combined.slice(0, 20));
       } catch (error) {
-        console.error("Detailed Firestore error:", error);
-        console.error("Error code:", error.code);
-        console.error("Error message:", error.message);
+        console.error("Firestore fetch error:", error);
       }
     };
-    fetchSellers();
+    fetchData();
   }, []);
 
   const applyFilters = useCallback(async () => {
@@ -115,22 +127,28 @@ export default function Marketplace() {
           where("categories", "array-contains-any", filters.categories)
         );
       }
-      if (filters.priceMin !== undefined) {
-        storesQuery = query(storesQuery, where("minPrice", ">=", filters.priceMin));
+      if (filters.priceRange[0] !== undefined) {
+        storesQuery = query(storesQuery, where("minPrice", ">=", filters.priceRange[0]));
       }
-      if (filters.priceMax !== undefined) {
-        storesQuery = query(storesQuery, where("maxPrice", "<=", filters.priceMax));
+      if (filters.priceRange[1] !== undefined) {
+        storesQuery = query(storesQuery, where("maxPrice", "<=", filters.priceRange[1]));
       }
 
       // Apply filters to products
       if (filters.categories.length) {
-        productsQuery = query(productsQuery, where("category", "in", filters.categories));
+        productsQuery = query(
+          productsQuery,
+          where("categories", "array-contains-any", filters.categories)
+        );
       }
-      if (filters.priceMin !== undefined) {
-        productsQuery = query(productsQuery, where("price", ">=", filters.priceMin));
+      if (filters.priceRange[0] !== undefined) {
+        productsQuery = query(productsQuery, where("price", ">=", filters.priceRange[0]));
       }
-      if (filters.priceMax !== undefined) {
-        productsQuery = query(productsQuery, where("price", "<=", filters.priceMax));
+      if (filters.priceRange[1] !== undefined) {
+        productsQuery = query(productsQuery, where("price", "<=", filters.priceRange[1]));
+      }
+      if (filters.type !== "all") {
+        productsQuery = query(productsQuery, where("type", "==", filters.type));
       }
 
       // Fetch data
@@ -140,19 +158,22 @@ export default function Marketplace() {
 
       console.log("Fetching filtered products...");
       const productsSnapshot = await getDocs(productsQuery);
-      console.log("Filtered products fetched:", productsSnapshot.docs.length, "documents");
+      console.log("Filtered products fetched:", storesSnapshot.docs.length, "documents");
 
       const stores = storesSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
         type: "store",
         price: doc.data().minPrice || 0,
+        image: doc.data().thumbnailUrl || "https://picsum.photos/600/300",
       }));
       const products = productsSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
         type: "product",
+        productType: doc.data().type || "unknown",
         price: doc.data().price || 0,
+        image: doc.data().imageUrls && doc.data().imageUrls[0] ? doc.data().imageUrls[0] : "https://picsum.photos/600/300",
       }));
 
       // Combine and apply search
@@ -164,7 +185,7 @@ export default function Marketplace() {
             (seller.name || "").toLowerCase().includes(term)
           );
           const categoryMatch = terms.some((term) =>
-            (seller.category || "").toLowerCase().includes(term)
+            (seller.categories || []).some(cat => cat.toLowerCase().includes(term))
           );
           const descriptionMatch = terms.some((term) =>
             (seller.description || "").toLowerCase().includes(term)
@@ -189,9 +210,7 @@ export default function Marketplace() {
       setVisibleSellers(filtered.slice(0, 20));
       setPage(1);
     } catch (error) {
-      console.error("Error applying filters:", error);
-      console.error("Error code:", error.code);
-      console.error("Error message:", error.message);
+      console.error("Filter error:", error);
     }
   }, [searchQuery, filters]);
 
@@ -295,75 +314,51 @@ export default function Marketplace() {
             onFilter={handleFilter}
             searchQuery={searchQuery}
             filters={filters}
-            categories={["Art & Crafts", "Jewelry", "Handmade Goods", "Furniture", "Electronics"]}
+            categories={categories}
           />
         </div>
         <div className={classes.grid}>
           {publicKey ? (
-            <GridContainer spacing={3} justifyContent="center">
+            <GridContainer spacing={4} justifyContent="center">
               {visibleSellers.map((seller) => (
-                <GridItem key={seller.id} xs={12} sm={6} md={2}>
+                <GridItem
+                  key={seller.id}
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  lg={2}
+                  style={{ marginBottom: "24px" }}
+                >
                   <SellerCard seller={seller} />
                 </GridItem>
               ))}
+              <div ref={loader} style={{ height: "40px" }} />
             </GridContainer>
           ) : (
             <div style={{ textAlign: "center", padding: "40px 20px", color: "#212121" }}>
-              <h1
-                style={{
-                  fontSize: { xs: "1.5rem", md: "2.5rem" }, // Reduced for mobile
-                  fontWeight: "bold",
-                  marginBottom: "40px",
-                  lineHeight: "1.2",
-                }}
-              >
+              <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "40px" }}>
                 Please Connect Your Wallet to View Marketplace
               </h1>
-              <GridContainer spacing={3} justifyContent="center">
-                {/* First Card */}
+              <GridContainer spacing={4} justifyContent="center">
                 <GridItem xs={12}>
                   <div
                     style={{
                       backgroundColor: "#ffffff",
-                      padding: "30px 30px 0 30px",
+                      padding: "30px",
                       borderRadius: "15px",
                       boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)",
                       textAlign: "center",
                       marginBottom: "30px",
                     }}
                   >
-                    <h3
-                      style={{
-                        fontSize: { xs: "1.5rem", md: "3rem" }, // Reduced for mobile
-                        marginBottom: "15px",
-                      }}
-                    >
+                    <h3 style={{ fontSize: "3rem", marginBottom: "15px" }}>
                       New to Solana or Crypto?
                     </h3>
-                    <h4
-                      style={{
-                        fontSize: { xs: "1.5rem", md: "3.75rem" }, // Reduced for mobile
-                        marginBottom: "20px",
-                      }}
-                    >
+                    <h4 style={{ fontSize: "3.75rem", marginBottom: "20px" }}>
                       Download
                     </h4>
                     <motion.div
-                      variants={{
-                        rest: {
-                          scale: 1,
-                          rotate: 0,
-                          transition: { duration: 0.5 },
-                        },
-                        hover: {
-                          scale: 1.1,
-                          rotate: [0, 5, -5, 5, 0],
-                          transition: {
-                            scale: { duration: 0.2 },
-                            rotate: { repeat: 1, duration: 0.5 },
-                          },
-                        },
-                      }}
+                      variants={logoVariants}
                       initial="rest"
                       whileHover="hover"
                     >
@@ -376,8 +371,8 @@ export default function Marketplace() {
                           src="/img/solflare-logo.png"
                           alt="Solflare Logo"
                           style={{
-                            width: "100%",
-                            maxWidth: "50%",
+                            width: "50%",
+                            maxWidth: "250px",
                             height: "auto",
                             marginBottom: "20px",
                             display: "block",
@@ -387,12 +382,7 @@ export default function Marketplace() {
                         />
                       </a>
                     </motion.div>
-                    <h2
-                      style={{
-                        fontSize: { xs: "1.25rem", md: "2.5rem" }, // Reduced for mobile
-                        marginBottom: "20px",
-                      }}
-                    >
+                    <h2 style={{ fontSize: "2.5rem", marginBottom: "20px" }}>
                       Preferred F4cet Marketplace Wallet
                     </h2>
                     <img
@@ -412,8 +402,8 @@ export default function Marketplace() {
                       src="/img/solflareH.png"
                       alt="Solflare Hand"
                       style={{
-                        width: "100%",
-                        maxWidth: "60%",
+                        width: "60%",
+                        maxWidth: "300px",
                         height: "auto",
                         display: "block",
                         marginLeft: "auto",
@@ -422,8 +412,6 @@ export default function Marketplace() {
                     />
                   </div>
                 </GridItem>
-
-                {/* Second Card */}
                 <GridItem xs={12}>
                   <div
                     style={{
@@ -444,8 +432,8 @@ export default function Marketplace() {
                         src="/img/solflareD.png"
                         alt="Solflare Extension"
                         style={{
-                          width: "100%",
-                          maxWidth: "70%",
+                          width: "70%",
+                          maxWidth: "350px",
                           height: "auto",
                           display: "block",
                           marginLeft: "auto",
@@ -458,10 +446,8 @@ export default function Marketplace() {
               </GridContainer>
             </div>
           )}
-          {publicKey && <div ref={loader} style={{ height: "20px" }} />}
         </div>
       </div>
-
       <Footer theme="dark" content={<div />} />
     </div>
   );
