@@ -12,9 +12,10 @@ import AffiliateSearchBar from "/components/AffiliateSearchBar/AffiliateSearchBa
 import AffiliateCard from "/components/Card/AffiliateCard.js";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/affiliateStyle.js";
 import { db } from "../firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { motion } from "framer-motion"; // Added for shake animation
+import { useUser } from "/contexts/UserContext"; // Import UserContext
+import { motion } from "framer-motion";
 
 const useStyles = makeStyles(styles);
 
@@ -25,7 +26,8 @@ export default function Affiliate() {
   }, []);
 
   const classes = useStyles();
-  const { connected } = useWallet();
+  const { connected, publicKey } = useWallet();
+  const { user } = useUser(); // Get user from context
   const [affiliates, setAffiliates] = useState([]);
   const [filteredAffiliates, setFilteredAffiliates] = useState([]);
   const [visibleAffiliates, setVisibleAffiliates] = useState([]);
@@ -64,6 +66,27 @@ export default function Affiliate() {
       fetchAffiliates();
     }
   }, [connected]);
+
+  // Track affiliate click
+  const trackAffiliateClick = async (affiliate) => {
+    if (!user || !publicKey) {
+      console.log("No user or wallet connected, skipping click tracking");
+      return;
+    }
+    try {
+      const clickId = `${affiliate.id}_${Date.now()}`; // Unique ID for click
+      const clickDocRef = doc(db, `users/${user.walletId}/affiliateClicks`, clickId);
+      await setDoc(clickDocRef, {
+        affiliateId: affiliate.id,
+        affiliateName: affiliate.name,
+        link: affiliate.affiliateLink,
+        timestamp: new Date().toISOString(),
+      });
+      console.log("Affiliate click tracked:", { walletId: user.walletId, affiliateId: affiliate.id });
+    } catch (error) {
+      console.error("Error tracking affiliate click:", error);
+    }
+  };
 
   const applyFilters = useCallback(async () => {
     try {
@@ -183,7 +206,10 @@ export default function Affiliate() {
               {visibleAffiliates.length > 0 ? (
                 visibleAffiliates.map((affiliate) => (
                   <GridItem key={affiliate.id} xs={12} sm={6} md={4} lg={2}>
-                    <AffiliateCard affiliate={affiliate} />
+                    <AffiliateCard
+                      affiliate={affiliate}
+                      onClick={() => trackAffiliateClick(affiliate)} // Add click handler
+                    />
                   </GridItem>
                 ))
               ) : (
@@ -308,7 +334,6 @@ export default function Affiliate() {
                     />
                   </div>
                 </GridItem>
-
                 {/* Second Card */}
                 <GridItem xs={12}>
                   <div
@@ -348,7 +373,6 @@ export default function Affiliate() {
           <div style={{ paddingBottom: "20px" }}></div>
         </div>
       </div>
-
       <Footer theme="dark" content={<div />} />
     </div>
   );
