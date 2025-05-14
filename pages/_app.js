@@ -1,53 +1,42 @@
-/*!
-
+/**
 =========================================================
-* NextJS Material Kit PRO v1.3.1 based on Material Kit PRO - v2.0.2 (Bootstrap 4.0.0 Final Edition) and Material Kit PRO React v1.8.0
+* F4cets Marketplace - NextJS Material Kit PRO v1.3.1
 =========================================================
 
 * Product Page: https://www.creative-tim.com/product/nextjs-material-kit-pro
 * Copyright 2022 Creative Tim (https://www.creative-tim.com)
-
-* Coded by Creative Tim
-
+* Coded by Creative Tim and F4cets Team
 =========================================================
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
 */
+
 import React from "react";
-import App from "next/app";
 import Head from "next/head";
 import Script from "next/script";
 import { ThemeProvider, createTheme, StyledEngineProvider } from "@mui/material/styles";
 import { makeStyles } from "@mui/styles";
 
-import "/styles/scss/nextjs-material-kit-pro.scss";
-import "/styles/css/react-demo.css";
-import "animate.css/animate.min.css";
-
+// Solana Wallet Imports
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { clusterApiUrl } from '@solana/web3.js';
-
 import '@solana/wallet-adapter-react-ui/styles.css';
 
+// User Context
+import { UserContextProvider } from "/contexts/UserContext";
+
+// Styles and Components
+import "/styles/scss/nextjs-material-kit-pro.scss";
+import "/styles/css/react-demo.css";
+import "animate.css/animate.min.css";
 import Footer from "/components/Footer/Footer.js";
 import presentationStyle from "/styles/jss/nextjs-material-kit-pro/pages/presentationStyle.js";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Button from "/components/CustomButtons/Button.js";
-
-// Wallet Context for Persistence
-import { createContext, useContext } from 'react';
-const WalletContext = createContext(null);
-export const WalletContextProvider = ({ children }) => {
-  const { publicKey, connected } = useWallet();
-  return <WalletContext.Provider value={{ publicKey, connected }}>{children}</WalletContext.Provider>;
-};
-export const useWalletContext = () => useContext(WalletContext);
-import { useWallet } from '@solana/wallet-adapter-react';
 
 const theme = createTheme({
   components: {
@@ -79,9 +68,7 @@ function MyApp({ Component, pageProps }) {
 
 * Product Page: https://www.creative-tim.com/product/nextjs-material-kit-pro
 * Copyright 2022 Creative Tim (https://www.creative-tim.com)
-
 * Coded by Creative Tim
-
 =========================================================
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -110,7 +97,7 @@ function MyApp({ Component, pageProps }) {
       <ConnectionProvider endpoint={endpoint}>
         <WalletProvider wallets={wallets} autoConnect>
           <WalletModalProvider>
-            <WalletContextProvider>
+            <UserContextProvider>
               <ThemeProvider theme={theme}>
                 <StyledEngineProvider injectFirst>
                   <Component {...pageProps} />
@@ -213,7 +200,7 @@ function MyApp({ Component, pageProps }) {
                   />
                 </StyledEngineProvider>
               </ThemeProvider>
-            </WalletContextProvider>
+            </UserContextProvider>
           </WalletModalProvider>
         </WalletProvider>
       </ConnectionProvider>
