@@ -56,7 +56,6 @@ export default function Marketplace() {
       try {
         console.log("Starting Firestore fetch...");
 
-        // Fetch unique categories
         const storesQuery = query(collection(db, "stores"), where("isActive", "==", true));
         const productsQuery = query(collection(db, "products"), where("isActive", "==", true));
         const [storesSnapshot, productsSnapshot] = await Promise.all([
@@ -72,8 +71,6 @@ export default function Marketplace() {
         const uniqueCategories = [...new Set([...storeCategories, ...productCategories])].sort();
         setCategories(uniqueCategories);
 
-        // Fetch stores
-        console.log("Executing stores query...");
         const stores = storesSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -82,8 +79,6 @@ export default function Marketplace() {
           image: doc.data().thumbnailUrl || "https://picsum.photos/600/300",
         }));
 
-        // Fetch products
-        console.log("Executing products query...");
         const products = productsSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -93,7 +88,6 @@ export default function Marketplace() {
           image: doc.data().imageUrls && doc.data().imageUrls[0] ? doc.data().imageUrls[0] : "https://picsum.photos/600/300",
         }));
 
-        // Combine and sort
         const combined = [...stores, ...products].sort((a, b) => {
           const priceDiff = (a.price || 0) - (b.price || 0);
           if (priceDiff !== 0) return priceDiff;
@@ -112,37 +106,57 @@ export default function Marketplace() {
 
   const applyFilters = useCallback(async () => {
     try {
-      // Base queries
-      let storesQuery = query(
-        collection(db, "stores"),
-        where("isActive", "==", true)
-      );
-      let productsQuery = query(
-        collection(db, "products"),
-        where("isActive", "==", true),
-        where("quantity", ">", 0)
-      );
+      let storesQuery = query(collection(db, "stores"), where("isActive", "==", true));
+      let productsQuery = query(collection(db, "products"), where("isActive", "==", true), where("quantity", ">", 0));
 
       // Apply filters to stores
       if (filters.categories.length) {
-        storesQuery = query(
-          storesQuery,
-          where("categories", "array-contains-any", filters.categories)
-        );
+        storesQuery = query(storesQuery, where("categories", "array-contains-any", filters.categories));
       }
+      // Handle price range for stores with fallback for missing minPrice/maxPrice
       if (filters.priceRange[0] !== undefined) {
-        storesQuery = query(storesQuery, where("minPrice", ">=", filters.priceRange[0]));
+        // Split into two queries: one for stores with minPrice, one for stores without minPrice
+        const storesWithMinPriceQuery = query(
+          storesQuery,
+          where("minPrice", ">=", filters.priceRange[0])
+        );
+        const storesWithoutMinPriceQuery = query(
+          storesQuery,
+          where("minPrice", "==", null) // Match stores where minPrice is missing
+        );
+        const [storesWithMinPriceSnapshot, storesWithoutMinPriceSnapshot] = await Promise.all([
+          getDocs(storesWithMinPriceQuery),
+          getDocs(storesWithoutMinPriceQuery),
+        ]);
+        const storesWithMinPrice = storesWithMinPriceSnapshot.docs;
+        const storesWithoutMinPrice = storesWithoutMinPriceSnapshot.docs;
+        const storesDocs = [...storesWithMinPrice, ...storesWithoutMinPrice];
+        console.log("Filtered stores (minPrice):", storesDocs.length, "documents");
       }
       if (filters.priceRange[1] !== undefined) {
-        storesQuery = query(storesQuery, where("maxPrice", "<=", filters.priceRange[1]));
+        // Split into two queries: one for stores with maxPrice, one for stores without maxPrice
+        const storesWithMaxPriceQuery = query(
+          storesQuery,
+          where("maxPrice", "<=", filters.priceRange[1])
+        );
+        const storesWithoutMaxPriceQuery = query(
+          storesQuery,
+          where("maxPrice", "==", null) // Match stores where maxPrice is missing
+        );
+        const [storesWithMaxPriceSnapshot, storesWithoutMaxPriceSnapshot] = await Promise.all([
+          getDocs(storesWithMaxPriceQuery),
+          getDocs(storesWithoutMaxPriceQuery),
+        ]);
+        const storesWithMaxPrice = storesWithMaxPriceSnapshot.docs;
+        const storesWithoutMaxPrice = storesWithoutMaxPriceSnapshot.docs;
+        const storesDocs = [...storesWithMaxPrice, ...storesWithoutMaxPrice];
+        console.log("Filtered stores (maxPrice):", storesDocs.length, "documents");
       }
+      const storesSnapshot = await getDocs(storesQuery);
 
       // Apply filters to products
       if (filters.categories.length) {
-        productsQuery = query(
-          productsQuery,
-          where("categories", "array-contains-any", filters.categories)
-        );
+        productsQuery = query(productsQuery, where("categories", "array-contains-any", filters.categories));
       }
       if (filters.priceRange[0] !== undefined) {
         productsQuery = query(productsQuery, where("price", ">=", filters.priceRange[0]));
@@ -154,16 +168,15 @@ export default function Marketplace() {
         productsQuery = query(productsQuery, where("type", "==", filters.type));
       }
 
-      // Fetch data
       console.log("Fetching filtered stores...");
-      const storesSnapshot = await getDocs(storesQuery);
-      console.log("Filtered stores fetched:", storesSnapshot.docs.length, "documents");
+      const finalStoresSnapshot = await getDocs(storesQuery);
+      console.log("Filtered stores fetched:", finalStoresSnapshot.docs.length, "documents");
 
       console.log("Fetching filtered products...");
       const productsSnapshot = await getDocs(productsQuery);
       console.log("Filtered products fetched:", productsSnapshot.docs.length, "documents");
 
-      const stores = storesSnapshot.docs.map((doc) => ({
+      const stores = finalStoresSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
         type: "store",
@@ -179,7 +192,6 @@ export default function Marketplace() {
         image: doc.data().imageUrls && doc.data().imageUrls[0] ? doc.data().imageUrls[0] : "https://picsum.photos/600/300",
       }));
 
-      // Combine and apply search
       let filtered = [...stores, ...products];
       if (searchQuery.trim()) {
         const terms = searchQuery.toLowerCase().split(/\s+/).filter((term) => term);
@@ -202,7 +214,6 @@ export default function Marketplace() {
         });
       }
 
-      // Sort
       filtered.sort((a, b) => {
         const priceDiff = (a.price || 0) - (b.price || 0);
         if (priceDiff !== 0) return priceDiff;
@@ -259,7 +270,6 @@ export default function Marketplace() {
     };
   }, [loadMore]);
 
-  // Animation variants for the Solflare logo shake effect
   const logoVariants = {
     rest: {
       scale: 1,
