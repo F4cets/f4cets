@@ -40,8 +40,13 @@ export default function SellerCard({ seller, className }) {
             />
             <h4 className={classes.cardTitle}>{seller.name || "Unnamed Item"}</h4>
             <p className={classes.description}>
-              {seller.price ? `${seller.price} USDC` : "Price not available"}
+              {seller.description || "No description available"}
             </p>
+            {seller.type === "product" && (
+              <p className={classes.description}>
+                {seller.price ? `${seller.price} USDC` : "Price not available"}
+              </p>
+            )}
           </Card>
         </a>
       </Link>

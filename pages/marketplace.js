@@ -104,95 +104,9 @@ export default function Marketplace() {
     fetchData();
   }, []);
 
-  const applyFilters = useCallback(async () => {
+  const applyFilters = useCallback(() => {
     try {
-      let storesQuery = query(collection(db, "stores"), where("isActive", "==", true));
-      let productsQuery = query(collection(db, "products"), where("isActive", "==", true), where("quantity", ">", 0));
-
-      // Apply filters to stores
-      if (filters.categories.length) {
-        storesQuery = query(storesQuery, where("categories", "array-contains-any", filters.categories));
-      }
-      // Handle price range for stores with fallback for missing minPrice/maxPrice
-      if (filters.priceRange[0] !== undefined) {
-        // Split into two queries: one for stores with minPrice, one for stores without minPrice
-        const storesWithMinPriceQuery = query(
-          storesQuery,
-          where("minPrice", ">=", filters.priceRange[0])
-        );
-        const storesWithoutMinPriceQuery = query(
-          storesQuery,
-          where("minPrice", "==", null) // Match stores where minPrice is missing
-        );
-        const [storesWithMinPriceSnapshot, storesWithoutMinPriceSnapshot] = await Promise.all([
-          getDocs(storesWithMinPriceQuery),
-          getDocs(storesWithoutMinPriceQuery),
-        ]);
-        const storesWithMinPrice = storesWithMinPriceSnapshot.docs;
-        const storesWithoutMinPrice = storesWithoutMinPriceSnapshot.docs;
-        const storesDocs = [...storesWithMinPrice, ...storesWithoutMinPrice];
-        console.log("Filtered stores (minPrice):", storesDocs.length, "documents");
-      }
-      if (filters.priceRange[1] !== undefined) {
-        // Split into two queries: one for stores with maxPrice, one for stores without maxPrice
-        const storesWithMaxPriceQuery = query(
-          storesQuery,
-          where("maxPrice", "<=", filters.priceRange[1])
-        );
-        const storesWithoutMaxPriceQuery = query(
-          storesQuery,
-          where("maxPrice", "==", null) // Match stores where maxPrice is missing
-        );
-        const [storesWithMaxPriceSnapshot, storesWithoutMaxPriceSnapshot] = await Promise.all([
-          getDocs(storesWithMaxPriceQuery),
-          getDocs(storesWithoutMaxPriceQuery),
-        ]);
-        const storesWithMaxPrice = storesWithMaxPriceSnapshot.docs;
-        const storesWithoutMaxPrice = storesWithoutMaxPriceSnapshot.docs;
-        const storesDocs = [...storesWithMaxPrice, ...storesWithoutMaxPrice];
-        console.log("Filtered stores (maxPrice):", storesDocs.length, "documents");
-      }
-      const storesSnapshot = await getDocs(storesQuery);
-
-      // Apply filters to products
-      if (filters.categories.length) {
-        productsQuery = query(productsQuery, where("categories", "array-contains-any", filters.categories));
-      }
-      if (filters.priceRange[0] !== undefined) {
-        productsQuery = query(productsQuery, where("price", ">=", filters.priceRange[0]));
-      }
-      if (filters.priceRange[1] !== undefined) {
-        productsQuery = query(productsQuery, where("price", "<=", filters.priceRange[1]));
-      }
-      if (filters.type !== "all") {
-        productsQuery = query(productsQuery, where("type", "==", filters.type));
-      }
-
-      console.log("Fetching filtered stores...");
-      const finalStoresSnapshot = await getDocs(storesQuery);
-      console.log("Filtered stores fetched:", finalStoresSnapshot.docs.length, "documents");
-
-      console.log("Fetching filtered products...");
-      const productsSnapshot = await getDocs(productsQuery);
-      console.log("Filtered products fetched:", productsSnapshot.docs.length, "documents");
-
-      const stores = finalStoresSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        type: "store",
-        price: doc.data().minPrice || 0,
-        image: doc.data().thumbnailUrl || "https://picsum.photos/600/300",
-      }));
-      const products = productsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        type: "product",
-        productType: doc.data().type || "unknown",
-        price: doc.data().price || 0,
-        image: doc.data().imageUrls && doc.data().imageUrls[0] ? doc.data().imageUrls[0] : "https://picsum.photos/600/300",
-      }));
-
-      let filtered = [...stores, ...products];
+      let filtered = [...sellers];
       if (searchQuery.trim()) {
         const terms = searchQuery.toLowerCase().split(/\s+/).filter((term) => term);
         filtered = filtered.filter((seller) => {
@@ -205,13 +119,20 @@ export default function Marketplace() {
           const descriptionMatch = terms.some((term) =>
             (seller.description || "").toLowerCase().includes(term)
           );
-          const tagsMatch =
-            seller.tags &&
-            terms.some((term) =>
-              seller.tags.some((tag) => (tag.value || "").toLowerCase().includes(term))
-            );
-          return nameMatch || categoryMatch || descriptionMatch || tagsMatch;
+          return nameMatch || categoryMatch || descriptionMatch;
         });
+      }
+
+      if (filters.categories.length) {
+        filtered = filtered.filter((seller) =>
+          (seller.categories || []).some((cat) => filters.categories.includes(cat))
+        );
+      }
+
+      if (filters.type !== "all") {
+        filtered = filtered.filter((seller) =>
+          seller.type === "product" ? seller.productType === filters.type : true
+        );
       }
 
       filtered.sort((a, b) => {
@@ -226,7 +147,7 @@ export default function Marketplace() {
     } catch (error) {
       console.error("Filter error:", error);
     }
-  }, [searchQuery, filters]);
+  }, [searchQuery, filters, sellers]);
 
   const handleSearch = (query) => {
     setSearchQuery(query);
@@ -332,18 +253,24 @@ export default function Marketplace() {
         <div className={classes.grid}>
           {publicKey ? (
             <GridContainer spacing={4} justifyContent="center">
-              {visibleSellers.map((seller) => (
-                <GridItem
-                  key={seller.id}
-                  xs={12}
-                  sm={6}
-                  md={4}
-                  lg={2}
-                  style={{ marginBottom: "24px" }}
-                >
-                  <SellerCard seller={seller} />
+              {visibleSellers.length > 0 ? (
+                visibleSellers.map((seller) => (
+                  <GridItem
+                    key={seller.id}
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    lg={2}
+                    style={{ marginBottom: "24px" }}
+                  >
+                    <SellerCard seller={seller} />
+                  </GridItem>
+                ))
+              ) : (
+                <GridItem>
+                  <p>No stores or products found.</p>
                 </GridItem>
-              ))}
+              )}
               <div ref={loader} style={{ height: "40px" }} />
             </GridContainer>
           ) : (
