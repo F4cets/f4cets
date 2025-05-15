@@ -64,6 +64,9 @@ export default function Marketplace() {
           getDocs(productsQuery),
         ]);
 
+        console.log("Stores fetched:", storesSnapshot.docs.length, "documents");
+        console.log("Products fetched:", productsSnapshot.docs.length, "documents");
+
         const storeCategories = storesSnapshot.docs.flatMap(doc => doc.data().categories || []);
         const productCategories = productsSnapshot.docs.flatMap(doc => doc.data().categories || []);
         const uniqueCategories = [...new Set([...storeCategories, ...productCategories])].sort();
@@ -158,7 +161,7 @@ export default function Marketplace() {
 
       console.log("Fetching filtered products...");
       const productsSnapshot = await getDocs(productsQuery);
-      console.log("Filtered products fetched:", storesSnapshot.docs.length, "documents");
+      console.log("Filtered products fetched:", productsSnapshot.docs.length, "documents");
 
       const stores = storesSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -214,9 +217,8 @@ export default function Marketplace() {
     }
   }, [searchQuery, filters]);
 
-  const handleSearch = (query, currentFilters) => {
+  const handleSearch = (query) => {
     setSearchQuery(query);
-    setFilters(currentFilters || filters);
   };
 
   const handleFilter = (newFilters) => {

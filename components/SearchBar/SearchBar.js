@@ -20,24 +20,24 @@ import InputAdornment from "@mui/material/InputAdornment";
 const useStyles = makeStyles((theme) => ({
   searchContainer: {
     width: "100%",
-    padding: theme.spacing(1),
+    padding: theme.spacing(1, 1, 1, 1), // Reduced padding-bottom to 2px
     [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(0.5),
+      padding: theme.spacing(0.5, 0.5, 1, 0.5), // Reduced to 1px on mobile
     },
   },
   filterContainer: {
     width: "100%",
-    padding: theme.spacing(1),
-    marginTop: theme.spacing(0.25), // Reduced from 0.5 to 0.25 (2px) for tighter gap
+    padding: theme.spacing(0.25, 1, 1, 1), // Reduced padding-top to 2px
+    marginTop: 0, // Eliminated marginTop
     [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(0.5),
-      marginTop: theme.spacing(0.125), // Reduced to 1px on mobile
+      padding: theme.spacing(0.125, 0.5, 0.5, 0.5), // Reduced to 1px on mobile
     },
   },
   card: {
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.1)", // Reduced shadow vertical offset
     borderRadius: "8px",
     backgroundColor: "#ffffff",
+    margin: 0, // Override any default margins
   },
   cardBody: {
     padding: theme.spacing(1, 2),
@@ -219,8 +219,8 @@ export default function SearchBar({ onSearch, onFilter, searchQuery, filters, ca
                         max={1000}
                         step={10}
                         marks={[
-                          { value: 50, label: "$0" },
-                          { value: 950, label: "$1000" },
+                          { value: 50, label: "0 USDC" },
+                          { value: 950, label: "1000 USDC" },
                         ]}
                       />
                     </div>
