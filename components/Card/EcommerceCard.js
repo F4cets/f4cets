@@ -16,7 +16,7 @@ const useStyles = makeStyles({
   card: {
     overflow: 'visible',
     maxWidth: '300px',
-    margin: '0 auto 50px auto', // Increased bottom margin to 40px
+    margin: '0 auto 50px auto',
     height: 'auto',
   },
   cardBody: {
@@ -25,14 +25,26 @@ const useStyles = makeStyles({
   priceContainer: {
     marginBottom: '4px',
     textAlign: 'center',
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '14px', // Subtle
+    fontWeight: 400, // Regular
+    color: '#555', // Mid-gray
   },
   cardTitle: {
     textAlign: 'center',
     marginBottom: '4px',
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '16px', // Clean
+    fontWeight: 500, // Medium
+    color: '#333', // Dark, subtle
   },
   description: {
     textAlign: 'center',
     marginBottom: '4px',
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '12px', // Very subtle
+    fontWeight: 400, // Regular
+    color: '#777', // Light gray
   },
 });
 
@@ -72,7 +84,9 @@ export default function EcommerceCard({ item, className }) {
                 {item.inventory > 0 ? `${item.inventory} in stock` : "Out of stock"}
               </p>
               <div className={classes.priceContainer}>
-                <span className={classes.price}>{item.priceSol} SOL / {item.priceWndo} WNDO</span>
+                <span className={classes.price}>
+                  ${item.priceUsdc.toLocaleString()} USDC
+                </span>
               </div>
             </CardBody>
           </Card>
@@ -87,9 +101,10 @@ EcommerceCard.propTypes = {
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     imageUrl: PropTypes.string.isRequired,
-    priceSol: PropTypes.number.isRequired,
-    priceWndo: PropTypes.number.isRequired,
+    priceUsdc: PropTypes.number.isRequired,
     inventory: PropTypes.number.isRequired,
+    category: PropTypes.string,
+    type: PropTypes.string,
   }).isRequired,
   className: PropTypes.string,
 };

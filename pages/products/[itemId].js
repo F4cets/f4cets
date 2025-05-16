@@ -1,5 +1,6 @@
 /*eslint-disable*/
 import React, { useState, useEffect } from "react";
+import Head from "next/head";
 import classNames from "classnames";
 import ImageGallery from "react-image-gallery";
 import makeStyles from '@mui/styles/makeStyles';
@@ -21,38 +22,83 @@ import InfoArea from "/components/InfoArea/InfoArea.js";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import productStyle from "/styles/jss/nextjs-material-kit-pro/pages/productStyle.js";
+import { db } from "../../firebase";
+import { doc, getDoc } from "firebase/firestore";
 
-const useStyles = makeStyles(productStyle);
+const useStyles = makeStyles({
+  ...productStyle,
+  title: {
+    ...productStyle.title,
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '20px', // Smaller, clean
+    fontWeight: 500, // Medium
+    color: '#333', // Dark, subtle
+  },
+  description: {
+    ...productStyle.description,
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '14px', // Subtle
+    fontWeight: 400, // Regular
+    color: '#777', // Light gray
+  },
+  mainPrice: {
+    ...productStyle.mainPrice,
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '18px', // Subtle
+    fontWeight: 400, // Regular
+    color: '#555', // Mid-gray
+  },
+  selectFormControl: {
+    ...productStyle.selectFormControl,
+    '& label': {
+      fontFamily: '"Quicksand", sans-serif',
+      fontSize: '12px',
+      fontWeight: 400,
+      color: '#777',
+    },
+  },
+  selectMenuItem: {
+    ...productStyle.selectMenuItem,
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '12px',
+    fontWeight: 400,
+  },
+});
 
 export default function ProductPage(props) {
-  const { itemId, sellerId, storeName, headerImage, item } = props;
-  const [colorSelect, setColorSelect] = React.useState("0");
-  const [sizeSelect, setSizeSelect] = React.useState("0");
+  const { itemId, storeName, headerImage, item, variants, availableColors, availableSizes, maxQuantity } = props;
+  const [colorSelect, setColorSelect] = React.useState(availableColors[0] || "");
+  const [sizeSelect, setSizeSelect] = React.useState(availableSizes[0] || "");
   const [quantitySelect, setQuantitySelect] = React.useState("1");
   const classes = useStyles();
-  const { connected, publicKey } = useWallet(); // Use connected and publicKey
-  const [walletId, setWalletId] = useState(null); // Track wallet ID
+  const { connected, publicKey } = useWallet();
+  const [walletId, setWalletId] = useState(null);
 
-  // Update walletId when connected
   useEffect(() => {
     if (connected && publicKey) {
       const walletAddress = publicKey.toBase58();
       setWalletId(walletAddress);
-      console.log("Wallet ID:", walletAddress); // Log for tracking
+      console.log("Wallet ID:", walletAddress);
     } else {
       setWalletId(null);
     }
   }, [connected, publicKey]);
 
-  const images = [
-    { original: item.imageUrl, thumbnail: item.imageUrl },
-    { original: "/img/examples/product4.jpg", thumbnail: "/img/examples/product4.jpg" },
-    { original: "/img/examples/product1.jpg", thumbnail: "/img/examples/product1.jpg" },
-    { original: "/img/examples/product2.jpg", thumbnail: "/img/examples/product2.jpg" },
-  ];
+  // Image gallery using imageUrls
+  const images = item.imageUrls
+    ? item.imageUrls.map(url => ({ original: url, thumbnail: url }))
+    : [{ original: "/img/examples/default.jpg", thumbnail: "/img/examples/default.jpg" }];
 
   return (
     <div className={classes.productPage}>
+      <Head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </Head>
       <Header
         brand="F4cets Marketplace"
         links={<HeaderLinks dropdownHoverColor="dark" />}
@@ -101,7 +147,7 @@ export default function ProductPage(props) {
                   <h4 className={classes.description}>
                     {item.inventory > 0 ? `${item.inventory} in stock` : "Out of stock"}
                   </h4>
-                  <h3 className={classes.mainPrice}>{item.priceSol} SOL</h3>
+                  <h3 className={classes.mainPrice}>${item.priceUsdc.toLocaleString()} USDC</h3>
                   <Accordion
                     active={0}
                     activeColor="rose"
@@ -114,7 +160,7 @@ export default function ProductPage(props) {
                         title: "Seller Information",
                         content: (
                           <p>
-                            Sold by {storeName}. {item.sellerInfo}
+                            Sold by {storeName}. {item.sellerInfo || "Quality guaranteed by F4cets Marketplace."}
                           </p>
                         )
                       },
@@ -122,47 +168,67 @@ export default function ProductPage(props) {
                         title: "Details and Care",
                         content: (
                           <ul>
-                            {item.details.map((detail, index) => (
-                              <li key={index}>{detail}</li>
-                            ))}
+                            {item.details && item.details.length > 0 ? (
+                              item.details.map((detail, index) => (
+                                <li key={index}>{detail}</li>
+                              ))
+                            ) : (
+                              <li>Standard care instructions apply.</li>
+                            )}
                           </ul>
                         )
                       }
                     ]}
                   />
                   <GridContainer className={classes.pickSize}>
-                    <GridItem md={4} sm={4}>
-                      <label>Select color</label>
-                      <FormControl fullWidth className={classes.selectFormControl}>
-                        <Select
-                          MenuProps={{ className: classes.selectMenu }}
-                          classes={{ select: classes.select }}
-                          value={colorSelect}
-                          onChange={(event) => setColorSelect(event.target.value)}
-                          inputProps={{ name: "colorSelect", id: "color-select" }}
-                        >
-                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="0">Blue</MenuItem>
-                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="1">Gray</MenuItem>
-                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="2">White</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </GridItem>
-                    <GridItem md={4} sm={4}>
-                      <label>Select size</label>
-                      <FormControl fullWidth className={classes.selectFormControl}>
-                        <Select
-                          MenuProps={{ className: classes.selectMenu }}
-                          classes={{ select: classes.select }}
-                          value={sizeSelect}
-                          onChange={(event) => setSizeSelect(event.target.value)}
-                          inputProps={{ name: "sizeSelect", id: "size-select" }}
-                        >
-                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="0">Small</MenuItem>
-                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="1">Medium</MenuItem>
-                          <MenuItem classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }} value="2">Large</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </GridItem>
+                    {item.type === "rwi" && (
+                      <>
+                        <GridItem md={4} sm={4}>
+                          <label>Select color</label>
+                          <FormControl fullWidth className={classes.selectFormControl}>
+                            <Select
+                              MenuProps={{ className: classes.selectMenu }}
+                              classes={{ select: classes.select }}
+                              value={colorSelect}
+                              onChange={(event) => setColorSelect(event.target.value)}
+                              inputProps={{ name: "colorSelect", id: "color-select" }}
+                            >
+                              {availableColors.map((color, index) => (
+                                <MenuItem
+                                  key={index}
+                                  classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }}
+                                  value={color}
+                                >
+                                  {color}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </GridItem>
+                        <GridItem md={4} sm={4}>
+                          <label>Select size</label>
+                          <FormControl fullWidth className={classes.selectFormControl}>
+                            <Select
+                              MenuProps={{ className: classes.selectMenu }}
+                              classes={{ select: classes.select }}
+                              value={sizeSelect}
+                              onChange={(event) => setSizeSelect(event.target.value)}
+                              inputProps={{ name: "sizeSelect", id: "size-select" }}
+                            >
+                              {availableSizes.map((size, index) => (
+                                <MenuItem
+                                  key={index}
+                                  classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }}
+                                  value={size}
+                                >
+                                  {size}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </GridItem>
+                      </>
+                    )}
                     <GridItem md={4} sm={4}>
                       <label>Quantity</label>
                       <FormControl fullWidth className={classes.selectFormControl}>
@@ -173,21 +239,24 @@ export default function ProductPage(props) {
                           onChange={(event) => setQuantitySelect(event.target.value)}
                           inputProps={{ name: "quantitySelect", id: "quantity-select" }}
                         >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((qty) => (
-                            <MenuItem
-                              key={qty}
-                              classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }}
-                              value={qty.toString()}
-                            >
-                              {qty}
-                            </MenuItem>
-                          ))}
+                          {[...Array(maxQuantity)].map((_, index) => {
+                            const qty = index + 1;
+                            return (
+                              <MenuItem
+                                key={qty}
+                                classes={{ root: classes.selectMenuItem, selected: classes.selectMenuItemSelected }}
+                                value={qty.toString()}
+                              >
+                                {qty}
+                              </MenuItem>
+                            );
+                          })}
                         </Select>
                       </FormControl>
                     </GridItem>
                   </GridContainer>
                   <GridContainer className={classes.pullRight}>
-                    <Button round color="rose">
+                    <Button round color="rose" disabled={item.inventory === 0}>
                       Add to Cart <ShoppingCart />
                     </Button>
                   </GridContainer>
@@ -243,50 +312,90 @@ export default function ProductPage(props) {
 export async function getServerSideProps(context) {
   const { itemId } = context.params;
 
-  // Placeholder data (to be replaced with Firestore later)
-  const sampleItems = {
-    "1": {
-      name: "Dog Bed",
-      imageUrl: "/img/examples/dogbed.jpg",
-      priceSol: 10, // Placeholder, will convert from USD later
-      inventory: 5,
-      description: "Soft blue dog bed, perfect for pets.",
-      sellerInfo: "Crafted with care by our artisans.",
-      details: [
-        "Blue stretch fabric",
-        "Soft padding, durable stitching",
-        "100% cotton",
-        "Machine washable"
-      ]
-    },
-    "2": {
-      name: "Vase",
-      imageUrl: "/img/examples/vase.jpg",
-      priceSol: 15,
-      inventory: 3,
-      description: "Elegant ceramic vase, crafted by artisans.",
-      sellerInfo: "Handmade with precision.",
-      details: [
-        "White ceramic",
-        "Glossy finish",
-        "Height: 12 inches",
-        "Hand wash only"
-      ]
+  try {
+    // Fetch product data
+    const productRef = doc(db, "products", itemId);
+    console.log("Attempting to fetch product document:", productRef.path);
+    const productDoc = await getDoc(productRef);
+
+    console.log("Product fetch result - exists:", productDoc.exists());
+    if (!productDoc.exists() || !productDoc.data().isActive) {
+      console.log("Product not found or inactive for itemId:", itemId);
+      return {
+        notFound: true,
+      };
     }
-  };
 
-  const item = sampleItems[itemId] || sampleItems["1"]; // Default to "1" if itemId not found
-  const sellerId = "test123"; // Placeholder, tied to e-commerce page
-  const storeName = "Sample Seller Store";
-  const headerImage = "/img/examples/exampleshop1.jpg"; // Matches e-commerce page
+    const productData = productDoc.data();
+    console.log("Product data:", productData);
 
-  return {
-    props: {
-      itemId,
-      sellerId,
-      storeName,
-      headerImage,
-      item,
-    },
-  };
+    // Fetch store data
+    const storeRef = doc(db, "stores", productData.storeId);
+    console.log("Attempting to fetch store document:", storeRef.path);
+    const storeDoc = await getDoc(storeRef);
+
+    console.log("Store fetch result - exists:", storeDoc.exists());
+    if (!storeDoc.exists()) {
+      console.log("Store not found for storeId:", productData.storeId);
+      return {
+        notFound: true,
+      };
+    }
+
+    const storeData = storeDoc.data();
+    console.log("Store data:", storeData);
+
+    // Prepare variants for rwi products
+    let variants = [];
+    let availableColors = [];
+    let availableSizes = [];
+    let maxQuantity = 1;
+
+    if (productData.type === "rwi" && Array.isArray(productData.variants)) {
+      variants = productData.variants;
+      availableColors = [...new Set(variants.map(v => v.color))].sort();
+      availableSizes = [...new Set(variants.map(v => v.size))].sort();
+      maxQuantity = variants.reduce((sum, v) => sum + parseInt(v.quantity, 10), 0);
+    } else if (productData.type === "digital" && typeof productData.quantity === "number") {
+      maxQuantity = Math.min(productData.quantity, 10); // Cap at 10 for selector
+    }
+
+    console.log("Variants:", variants);
+    console.log("Available colors:", availableColors);
+    console.log("Available sizes:", availableSizes);
+    console.log("Max quantity:", maxQuantity);
+
+    // Prepare item object
+    const item = {
+      name: productData.name || "Unnamed Product",
+      imageUrls: productData.imageUrls || [productData.selectedImage || "/img/examples/default.jpg"],
+      priceUsdc: productData.price || 0,
+      inventory: productData.type === "digital" ? productData.quantity || 0 : productData.variants?.reduce((sum, v) => sum + parseInt(v.quantity, 10), 0) || 0,
+      description: productData.description || "No description available.",
+      sellerInfo: storeData.businessInfo?.sellerInfo || "Quality guaranteed by F4cets Marketplace.",
+      details: productData.details || ["Standard care instructions apply."],
+      type: productData.type || "unknown",
+    };
+
+    return {
+      props: {
+        itemId,
+        sellerId: productData.sellerId || "unknown",
+        storeName: storeData.name || "Unnamed Store",
+        headerImage: storeData.bannerUrl || "/img/examples/exampleshop1.jpg",
+        item,
+        variants,
+        availableColors,
+        availableSizes,
+        maxQuantity,
+      },
+    };
+  } catch (error) {
+    console.error("Error in getServerSideProps:", error.message, error.stack);
+    return {
+      props: {
+        error: `Failed to fetch product/store: ${error.message}`,
+      },
+    };
+  }
 }

@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
+import Head from "next/head";
 import classNames from "classnames";
 import Slider from "nouislider";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
 import Cached from "@mui/icons-material/Cached";
 import Check from "@mui/icons-material/Check";
 import Accordion from "/components/Accordion/Accordion.js";
@@ -15,30 +19,37 @@ import Clearfix from "/components/Clearfix/Clearfix.js";
 import EcommerceCard from "/components/Card/EcommerceCard.js";
 
 export default function DynamicProducts(props) {
-  const { sellerId, listings = [] } = props;
-  const [checked, setChecked] = useState([1]);
-  const [priceRange, setPriceRange] = useState([0, 20]);
+  const { storeId, listings = [] } = props;
+  const [checked, setChecked] = useState([]); // Track selected categories
+  // Set max price to highest priceUsdc, minimum 100 if no products
+  const maxPrice = listings.length > 0 ? Math.max(...listings.map(item => item.priceUsdc)) : 100;
+  const [priceRange, setPriceRange] = useState([0, maxPrice]); // Dynamic USDC range
+  const [productType, setProductType] = useState("all"); // all, digital, rwi
   const [visibleListings, setVisibleListings] = useState(listings.slice(0, 3));
   const [page, setPage] = useState(1);
   const itemsPerPage = 3;
 
+  // Extract unique categories from listings
+  const categories = [...new Set(listings.flatMap(item => item.category || []))].sort();
+
   useEffect(() => {
-    if (
-      !document
-        .getElementById("sliderRegular")
-        .classList.contains("noUi-target")
-    ) {
-      Slider.create(document.getElementById("sliderRegular"), {
+    const slider = document.getElementById("sliderRegular");
+    if (slider && !slider.classList.contains("noUi-target")) {
+      Slider.create(slider, {
         start: priceRange,
         connect: true,
-        range: { min: 0, max: 50 },
-        step: 0.01,
+        range: { min: 0, max: maxPrice }, // Dynamic USDC range
+        step: 1,
       }).on("update", function (values) {
-        setPriceRange([parseFloat(values[0]).toFixed(2), parseFloat(values[1]).toFixed(2)]);
+        setPriceRange([parseInt(values[0], 10), parseInt(values[1], 10)]);
       });
     }
-    return function cleanup() {};
-  }, []);
+    return function cleanup() {
+      if (slider && slider.noUiSlider) {
+        slider.noUiSlider.destroy();
+      }
+    };
+  }, [maxPrice]); // Re-run when maxPrice changes
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,12 +79,26 @@ export default function DynamicProducts(props) {
     setChecked(newChecked);
   };
 
-  const filteredListings = visibleListings.filter(
-    (item) => item.priceSol >= priceRange[0] && item.priceSol <= priceRange[1]
-  );
+  const filteredListings = visibleListings.filter((item) => {
+    // Price filter (USDC)
+    const priceInRange = item.priceUsdc >= priceRange[0] && item.priceUsdc <= priceRange[1];
+    // Category filter (only if categories selected)
+    const categoryMatch = checked.length === 0 || checked.includes(item.category);
+    // Product type filter
+    const typeMatch = productType === "all" || item.type === productType;
+    return priceInRange && categoryMatch && typeMatch;
+  });
 
   return (
-    <div className="section" style={{ paddingTop: '40px' }}> {/* Added top padding */}
+    <div className="section" style={{ paddingTop: '40px' }}>
+      <Head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </Head>
       <div className="container">
         <GridContainer>
           <GridItem md={3} sm={3}>
@@ -87,22 +112,22 @@ export default function DynamicProducts(props) {
                   <Clearfix />
                 </h4>
                 <Accordion
-                  active={[0]}
+                  active={[0, 1, 2]}
                   activeColor="rose"
                   collapses={[
                     {
-                      title: "Price Range (SOL)",
+                      title: "Price Range (USDC)",
                       content: (
                         <CardBody className="cardBodyRefine">
-                          <span className={classNames("pullLeft", "priceSlider")}>
-                            {priceRange[0]} SOL
-                          </span>
-                          <span className={classNames("pullRight", "priceSlider")}>
-                            {priceRange[1]} SOL
-                          </span>
-                          <br />
-                          <br />
-                          <div id="sliderRegular" className="slider-rose" />
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span className={classNames("priceSlider")}>
+                              ${priceRange[0].toLocaleString()}
+                            </span>
+                            <span className={classNames("priceSlider")}>
+                              ${priceRange[1].toLocaleString()}
+                            </span>
+                          </div>
+                          <div id="sliderRegular" className="slider-rose" style={{ marginTop: '10px' }} />
                         </CardBody>
                       ),
                     },
@@ -115,44 +140,47 @@ export default function DynamicProducts(props) {
                               "checkboxAndRadio " + "checkboxAndRadioHorizontal"
                             }
                           >
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  disableRipple
-                                  tabIndex={-1}
-                                  onClick={() => handleToggle(1)}
-                                  checked={checked.indexOf(1) !== -1}
-                                  checkedIcon={<Check className="checkedIcon" />}
-                                  icon={<Check className="uncheckedIcon" />}
-                                  classes={{
-                                    checked: "checked",
-                                    root: "checkRoot",
-                                  }}
-                                />
-                              }
-                              classes={{ label: "label" }}
-                              label="Pet Supplies"
-                            />
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  disableRipple
-                                  tabIndex={-1}
-                                  onClick={() => handleToggle(2)}
-                                  checked={checked.indexOf(2) !== -1}
-                                  checkedIcon={<Check className="checkedIcon" />}
-                                  icon={<Check className="uncheckedIcon" />}
-                                  classes={{
-                                    checked: "checked",
-                                    root: "checkRoot",
-                                  }}
-                                />
-                              }
-                              classes={{ label: "label" }}
-                              label="Home Decor"
-                            />
+                            {categories.map((category, index) => (
+                              <FormControlLabel
+                                key={index}
+                                control={
+                                  <Checkbox
+                                    disableRipple
+                                    tabIndex={-1}
+                                    onClick={() => handleToggle(category)}
+                                    checked={checked.includes(category)}
+                                    checkedIcon={<Check className="checkedIcon" />}
+                                    icon={<Check className="uncheckedIcon" />}
+                                    classes={{
+                                      checked: "checked",
+                                      root: "checkRoot",
+                                    }}
+                                  />
+                                }
+                                classes={{ label: "label" }}
+                                label={category}
+                              />
+                            ))}
                           </div>
                         </div>
+                      ),
+                    },
+                    {
+                      title: "Product Type",
+                      content: (
+                        <CardBody className="cardBodyRefine">
+                          <FormControl fullWidth>
+                            <Select
+                              value={productType}
+                              onChange={(e) => setProductType(e.target.value)}
+                              classes={{ select: "select" }}
+                            >
+                              <MenuItem value="all">All</MenuItem>
+                              <MenuItem value="digital">Digital</MenuItem>
+                              <MenuItem value="rwi">Real World Item (RWI)</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </CardBody>
                       ),
                     },
                   ]}
@@ -162,11 +190,17 @@ export default function DynamicProducts(props) {
           </GridItem>
           <GridItem md={9} sm={9}>
             <GridContainer>
-              {filteredListings.map((item) => (
-                <GridItem md={4} sm={4} key={item.id}>
-                  <EcommerceCard item={item} />
+              {filteredListings.length > 0 ? (
+                filteredListings.map((item) => (
+                  <GridItem md={4} sm={4} key={item.id}>
+                    <EcommerceCard item={item} />
+                  </GridItem>
+                ))
+              ) : (
+                <GridItem>
+                  <p>No products match the current filters.</p>
                 </GridItem>
-              ))}
+              )}
             </GridContainer>
           </GridItem>
         </GridContainer>
