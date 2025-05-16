@@ -285,7 +285,7 @@ export default function ProductPage(props) {
                         transition={{ duration: 0.8 }}
                         style={{ color: '#555' }}
                       >
-                        (~{priceSol} SOL)
+                        ({priceSol} SOL)
                       </motion.span>
                     </Box>
                   </h3>
