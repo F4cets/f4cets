@@ -169,7 +169,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           continue;
         }
         const isDomestic = shippingAddress.country.toLowerCase().includes('united states') || shippingAddress.country.toLowerCase() === 'us';
-        const itemShipping = isDomestic ? 7 : 20;
+        const itemShipping = isDomestic ? 14 : 40;
         shippingTotal += itemShipping * item.quantity;
       } catch (err) {
         console.error(`Error fetching product ${item.productId}:`, err);
