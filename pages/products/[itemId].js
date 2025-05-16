@@ -20,33 +20,32 @@ import Button from "/components/CustomButtons/Button.js";
 import Accordion from "/components/Accordion/Accordion.js";
 import InfoArea from "/components/InfoArea/InfoArea.js";
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../../firebase"; // Corrected import
 import productStyle from "/styles/jss/nextjs-material-kit-pro/pages/productStyle.js";
-import { db } from "../../firebase";
-import { doc, getDoc } from "firebase/firestore";
 
 const useStyles = makeStyles({
   ...productStyle,
   title: {
     ...productStyle.title,
     fontFamily: '"Quicksand", sans-serif',
-    fontSize: '20px', // Smaller, clean
-    fontWeight: 500, // Medium
-    color: '#333', // Dark, subtle
+    fontSize: '20px',
+    fontWeight: 500,
+    color: '#333',
   },
   description: {
     ...productStyle.description,
     fontFamily: '"Quicksand", sans-serif',
-    fontSize: '14px', // Subtle
-    fontWeight: 400, // Regular
-    color: '#777', // Light gray
+    fontSize: '14px',
+    fontWeight: 400,
+    color: '#777',
   },
   mainPrice: {
     ...productStyle.mainPrice,
     fontFamily: '"Quicksand", sans-serif',
-    fontSize: '18px', // Subtle
-    fontWeight: 400, // Regular
-    color: '#555', // Mid-gray
+    fontSize: '18px',
+    fontWeight: 400,
+    color: '#555',
   },
   selectFormControl: {
     ...productStyle.selectFormControl,
@@ -67,24 +66,72 @@ const useStyles = makeStyles({
 
 export default function ProductPage(props) {
   const { itemId, storeName, headerImage, item, variants, availableColors, availableSizes, maxQuantity } = props;
-  const [colorSelect, setColorSelect] = React.useState(availableColors[0] || "");
-  const [sizeSelect, setSizeSelect] = React.useState(availableSizes[0] || "");
-  const [quantitySelect, setQuantitySelect] = React.useState("1");
+  const [colorSelect, setColorSelect] = useState(availableColors[0] || "");
+  const [sizeSelect, setSizeSelect] = useState(availableSizes[0] || "");
+  const [quantitySelect, setQuantitySelect] = useState("1");
   const classes = useStyles();
   const { connected, publicKey } = useWallet();
   const [walletId, setWalletId] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (connected && publicKey) {
       const walletAddress = publicKey.toBase58();
       setWalletId(walletAddress);
       console.log("Wallet ID:", walletAddress);
+      syncLocalCartToFirestore(walletAddress);
     } else {
       setWalletId(null);
     }
   }, [connected, publicKey]);
 
-  // Image gallery using imageUrls
+  const addToCart = async () => {
+    if (!walletId) {
+      setError("Please connect your wallet to add items to the cart.");
+      return;
+    }
+
+    try {
+      const cartItem = {
+        productId: itemId,
+        storeId: item.storeId,
+        sellerId: item.sellerId,
+        name: item.name,
+        priceUsdc: item.priceUsdc,
+        quantity: parseInt(quantitySelect, 10),
+        color: item.type === "rwi" ? colorSelect : null,
+        size: item.type === "rwi" ? sizeSelect : null,
+        imageUrl: item.imageUrls?.[0] || "/img/examples/default.jpg",
+        addedAt: serverTimestamp(),
+        walletId,
+      };
+
+      const cartRef = doc(db, `users/${walletId}/cart`, itemId);
+      await setDoc(cartRef, cartItem, { merge: true });
+      console.log("Added to Firestore cart:", cartItem);
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      setError(`Failed to add item to cart: ${err.message}`);
+    }
+  };
+
+  const syncLocalCartToFirestore = async (walletId) => {
+    try {
+      const localCart = JSON.parse(localStorage.getItem('cart') || '{}');
+      if (Object.keys(localCart).length === 0) return;
+
+      for (const itemId in localCart) {
+        const cartItem = localCart[itemId];
+        const cartRef = doc(db, `users/${walletId}/cart`, itemId);
+        await setDoc(cartRef, { ...cartItem, addedAt: serverTimestamp(), walletId }, { merge: true });
+        console.log("Synced local cart item to Firestore:", cartItem);
+      }
+      localStorage.removeItem('cart');
+    } catch (err) {
+      console.error("Error syncing local cart:", err);
+    }
+  };
+
   const images = item.imageUrls
     ? item.imageUrls.map(url => ({ original: url, thumbnail: url }))
     : [{ original: "/img/examples/default.jpg", thumbnail: "/img/examples/default.jpg" }];
@@ -117,7 +164,13 @@ export default function ProductPage(props) {
       <div className={classNames(classes.section, classes.sectionGray)}>
         <div className={classes.container}>
           <div className={classNames(classes.main, classes.mainRaised)}>
-            {connected ? (
+            {error ? (
+              <GridContainer justifyContent="center">
+                <GridItem xs={12} sm={6} md={6} className={classes.textCenter}>
+                  <h2>Error: {error}</h2>
+                </GridItem>
+              </GridContainer>
+            ) : connected ? (
               <GridContainer>
                 <GridItem md={6} sm={6}>
                   <ImageGallery
@@ -256,7 +309,12 @@ export default function ProductPage(props) {
                     </GridItem>
                   </GridContainer>
                   <GridContainer className={classes.pullRight}>
-                    <Button round color="rose" disabled={item.inventory === 0}>
+                    <Button
+                      round
+                      color="rose"
+                      disabled={item.inventory === 0}
+                      onClick={addToCart}
+                    >
                       Add to Cart <ShoppingCart />
                     </Button>
                   </GridContainer>
@@ -313,7 +371,6 @@ export async function getServerSideProps(context) {
   const { itemId } = context.params;
 
   try {
-    // Fetch product data
     const productRef = doc(db, "products", itemId);
     console.log("Attempting to fetch product document:", productRef.path);
     const productDoc = await getDoc(productRef);
@@ -329,7 +386,6 @@ export async function getServerSideProps(context) {
     const productData = productDoc.data();
     console.log("Product data:", productData);
 
-    // Fetch store data
     const storeRef = doc(db, "stores", productData.storeId);
     console.log("Attempting to fetch store document:", storeRef.path);
     const storeDoc = await getDoc(storeRef);
@@ -345,7 +401,6 @@ export async function getServerSideProps(context) {
     const storeData = storeDoc.data();
     console.log("Store data:", storeData);
 
-    // Prepare variants for rwi products
     let variants = [];
     let availableColors = [];
     let availableSizes = [];
@@ -357,7 +412,7 @@ export async function getServerSideProps(context) {
       availableSizes = [...new Set(variants.map(v => v.size))].sort();
       maxQuantity = variants.reduce((sum, v) => sum + parseInt(v.quantity, 10), 0);
     } else if (productData.type === "digital" && typeof productData.quantity === "number") {
-      maxQuantity = Math.min(productData.quantity, 10); // Cap at 10 for selector
+      maxQuantity = Math.min(productData.quantity, 10);
     }
 
     console.log("Variants:", variants);
@@ -365,7 +420,6 @@ export async function getServerSideProps(context) {
     console.log("Available sizes:", availableSizes);
     console.log("Max quantity:", maxQuantity);
 
-    // Prepare item object
     const item = {
       name: productData.name || "Unnamed Product",
       imageUrls: productData.imageUrls || [productData.selectedImage || "/img/examples/default.jpg"],
@@ -375,6 +429,8 @@ export async function getServerSideProps(context) {
       sellerInfo: storeData.businessInfo?.sellerInfo || "Quality guaranteed by F4cets Marketplace.",
       details: productData.details || ["Standard care instructions apply."],
       type: productData.type || "unknown",
+      storeId: productData.storeId,
+      sellerId: productData.sellerId,
     };
 
     return {
