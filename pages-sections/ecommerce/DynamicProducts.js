@@ -19,17 +19,15 @@ import Clearfix from "/components/Clearfix/Clearfix.js";
 import EcommerceCard from "/components/Card/EcommerceCard.js";
 
 export default function DynamicProducts(props) {
-  const { storeId, listings = [] } = props;
-  const [checked, setChecked] = useState([]); // Track selected categories
-  // Set max price to highest priceUsdc, minimum 100 if no products
+  const { storeId, listings = [], solPrice, flash } = props;
+  const [checked, setChecked] = useState([]);
   const maxPrice = listings.length > 0 ? Math.max(...listings.map(item => item.priceUsdc)) : 100;
-  const [priceRange, setPriceRange] = useState([0, maxPrice]); // Dynamic USDC range
-  const [productType, setProductType] = useState("all"); // all, digital, rwi
+  const [priceRange, setPriceRange] = useState([0, maxPrice]);
+  const [productType, setProductType] = useState("all");
   const [visibleListings, setVisibleListings] = useState(listings.slice(0, 3));
   const [page, setPage] = useState(1);
   const itemsPerPage = 3;
 
-  // Extract unique categories from listings
   const categories = [...new Set(listings.flatMap(item => item.category || []))].sort();
 
   useEffect(() => {
@@ -38,7 +36,7 @@ export default function DynamicProducts(props) {
       Slider.create(slider, {
         start: priceRange,
         connect: true,
-        range: { min: 0, max: maxPrice }, // Dynamic USDC range
+        range: { min: 0, max: maxPrice },
         step: 1,
       }).on("update", function (values) {
         setPriceRange([parseInt(values[0], 10), parseInt(values[1], 10)]);
@@ -49,7 +47,7 @@ export default function DynamicProducts(props) {
         slider.noUiSlider.destroy();
       }
     };
-  }, [maxPrice]); // Re-run when maxPrice changes
+  }, [maxPrice]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,11 +78,8 @@ export default function DynamicProducts(props) {
   };
 
   const filteredListings = visibleListings.filter((item) => {
-    // Price filter (USDC)
     const priceInRange = item.priceUsdc >= priceRange[0] && item.priceUsdc <= priceRange[1];
-    // Category filter (only if categories selected)
     const categoryMatch = checked.length === 0 || checked.includes(item.category);
-    // Product type filter
     const typeMatch = productType === "all" || item.type === productType;
     return priceInRange && categoryMatch && typeMatch;
   });
@@ -193,7 +188,7 @@ export default function DynamicProducts(props) {
               {filteredListings.length > 0 ? (
                 filteredListings.map((item) => (
                   <GridItem md={4} sm={4} key={item.id}>
-                    <EcommerceCard item={item} />
+                    <EcommerceCard item={{ ...item, solPrice, flash }} />
                   </GridItem>
                 ))
               ) : (

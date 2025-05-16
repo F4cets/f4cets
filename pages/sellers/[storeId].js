@@ -13,11 +13,12 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/ecommerceStyle.js";
 import { db } from "../../firebase";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { fetchSolPrice } from "/lib/getSolPrice";
 
 const useStyles = makeStyles(styles);
 
 export default function SellerStorePage(props) {
-  const { storeId, storeName, promoText, headerImage, listings, error } = props;
+  const { storeId, storeName, promoText, headerImage, listings, error, solPrice, flash } = props;
   const classes = useStyles();
   const { connected, publicKey } = useWallet();
   const [walletId, setWalletId] = useState(null);
@@ -96,7 +97,7 @@ export default function SellerStorePage(props) {
 
       <div className={classNames(classes.main, classes.mainRaised)}>
         {connected ? (
-          <DynamicProducts storeId={storeId} listings={listings} />
+          <DynamicProducts storeId={storeId} listings={listings} solPrice={solPrice} flash={flash} />
         ) : (
           <GridContainer justifyContent="center">
             <GridItem xs={12} sm={6} md={6} className={classes.textCenter}>
@@ -123,6 +124,13 @@ export async function getServerSideProps(context) {
         },
       };
     }
+
+    // Fetch SOL price
+    const solPrice = await fetchSolPrice();
+    console.log("Fetched SOL price:", solPrice);
+    // Simulate flash based on timestamp
+    const now = Date.now();
+    const flash = (now % 15000) < 500; // True for 0.5s every 15s
 
     // Fetch store data
     const storeRef = doc(db, "stores", storeId);
@@ -167,7 +175,7 @@ export async function getServerSideProps(context) {
 
       // Price in USDC (from database)
       const priceUsdc = data.price || 0;
-      const priceWndo = priceUsdc * 0.9; // 10% discount for WNDO
+      const priceSol = solPrice ? (priceUsdc / solPrice).toFixed(4) : 0;
 
       // Calculate inventory
       let inventory = 0;
@@ -184,12 +192,12 @@ export async function getServerSideProps(context) {
       return {
         id: doc.id,
         name: data.name || "Unnamed Product",
-        priceUsdc, // USDC price
-        priceWndo,
+        priceUsdc,
+        priceSol,
         imageUrl: data.imageUrls?.[0] || data.selectedImage || "/img/examples/default.jpg",
         inventory,
         category: data.categories?.[0] || "Uncategorized",
-        type: data.type || "unknown", // Add type for filtering
+        type: data.type || "unknown",
       };
     });
 
@@ -202,6 +210,8 @@ export async function getServerSideProps(context) {
         promoText: storeData.description || "Explore unique products at great prices!",
         headerImage: storeData.bannerUrl || "/img/examples/exampleshop1.jpg",
         listings,
+        solPrice,
+        flash,
       },
     };
   } catch (error) {
@@ -209,6 +219,8 @@ export async function getServerSideProps(context) {
     return {
       props: {
         error: `Failed to fetch store/products: ${error.message}`,
+        solPrice: 200,
+        flash: false,
       },
     };
   }

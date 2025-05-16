@@ -28,7 +28,6 @@ import { collection, query, getDocs, doc, deleteDoc, setDoc, getDoc } from "fire
 import { db } from "../firebase";
 import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppingCartStyle.js";
 import { motion } from "framer-motion";
-import { useSolPrice } from "/lib/getSolPrice"; // Import SOL price hook
 
 const useStyles = makeStyles({
   ...shoppingCartStyle,
@@ -75,10 +74,9 @@ const useStyles = makeStyles({
   },
 });
 
-export default function ShoppingCartPage() {
+export default function ShoppingCartPage({ solPrice, flash }) {
   const classes = useStyles();
   const { connected, publicKey } = useWallet();
-  const { solPrice, flash } = useSolPrice(); // Get SOL price and flash state
   const [walletId, setWalletId] = useState(null);
   const [isConnected, setIsConnected] = useState(null);
   const [cartItems, setCartItems] = useState([]);
@@ -146,10 +144,10 @@ export default function ShoppingCartPage() {
         }
         const productData = productDoc.data();
         if (productData.type === "digital") {
-          continue; // No shipping cost for digital items
+          continue;
         }
         const isDomestic = shippingAddress.country.toLowerCase().includes('united states') || shippingAddress.country.toLowerCase() === 'us';
-        const itemShipping = isDomestic ? 14 : 40;
+        const itemShipping = isDomestic ? 7 : 20;
         shippingTotal += itemShipping * item.quantity;
       } catch (err) {
         console.error(`Error fetching product ${item.productId}:`, err);
@@ -202,7 +200,7 @@ export default function ShoppingCartPage() {
     0
   );
   const grandTotal = totalAmount + totalShipping;
-  const grandTotalSol = solPrice ? (grandTotal / solPrice).toFixed(4) : 'N/A'; // Convert USDC to SOL
+  const grandTotalSol = solPrice ? (grandTotal / solPrice).toFixed(4) : 'N/A';
 
   const tableData = cartItems.map((item) => [
     <div className={classes.imgContainer} key={item.id}>
@@ -268,12 +266,12 @@ export default function ShoppingCartPage() {
               Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
             </div>
             <div className={classes.shippingTotal}>
-              Grand Total: <small>$</small> {grandTotal.toLocaleString()}&nbsp;
+              Grand Total: <small>$</small> {grandTotal.toLocaleString()} 
               <motion.span
                 animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#e90064', '#212121'] } : {}}
                 transition={{ duration: 0.5 }}
               >
-                ({grandTotalSol} SOL)
+                (~{grandTotalSol} SOL)
               </motion.span>
             </div>
             <GridContainer className={classes.formContainer} spacing={2}>
@@ -573,7 +571,7 @@ export default function ShoppingCartPage() {
                         Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
                       </div>
                       <div className={classes.mobileTotal}>
-                        Grand Total: <small>$</small> {grandTotal.toLocaleString()}&nbsp;
+                        Grand Total: <small>$</small> {grandTotal.toLocaleString()} 
                         <motion.span
                           animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#e90064', '#212121'] } : {}}
                           transition={{ duration: 0.5 }}
@@ -732,4 +730,28 @@ export default function ShoppingCartPage() {
       </div>
     </div>
   );
+}
+
+export async function getServerSideProps(context) {
+  const { fetchSolPrice } = require('../lib/getSolPrice');
+  try {
+    const solPrice = await fetchSolPrice();
+    // Simulate flash based on timestamp (true if within 0.5s of 15s interval)
+    const now = Date.now();
+    const flash = (now % 15000) < 500; // True for 0.5s every 15s
+    return {
+      props: {
+        solPrice,
+        flash,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching SOL price in getServerSideProps:', error);
+    return {
+      props: {
+        solPrice: 200, // Fallback
+        flash: false,
+      },
+    };
+  }
 }
