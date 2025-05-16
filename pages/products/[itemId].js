@@ -23,9 +23,10 @@ import GridItem from "/components/Grid/GridItem.js";
 import Button from "/components/CustomButtons/Button.js";
 import Accordion from "/components/Accordion/Accordion.js";
 import InfoArea from "/components/InfoArea/InfoArea.js";
+import { motion } from "framer-motion";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../../firebase"; // Exact import as specified
+import { db } from "../../firebase";
 import productStyle from "/styles/jss/nextjs-material-kit-pro/pages/productStyle.js";
 
 const useStyles = makeStyles({
@@ -50,6 +51,8 @@ const useStyles = makeStyles({
     fontSize: '18px',
     fontWeight: 400,
     color: '#555',
+    display: 'flex', // Use flex for Box compatibility
+    alignItems: 'center',
   },
   selectFormControl: {
     ...productStyle.selectFormControl,
@@ -68,34 +71,34 @@ const useStyles = makeStyles({
   },
   snackbar: {
     fontFamily: '"Quicksand", sans-serif',
-    fontSize: { xs: '14px', md: '16px' }, // Larger font on desktop
+    fontSize: { xs: '14px', md: '16px' },
     '& .MuiAlert-root': {
-      backgroundColor: '#4d455d', // Dark theme for Phantom aesthetic
+      backgroundColor: '#4d455d',
       color: '#ffffff',
       borderRadius: '8px',
       boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
       display: 'flex',
       alignItems: 'center',
-      padding: { xs: '8px 16px', md: '12px 24px' }, // Larger padding on desktop
-      width: { xs: 'auto', md: '400px' }, // Wider on desktop
-      maxWidth: '90vw', // Prevent overflow
+      padding: { xs: '8px 16px', md: '12px 24px' },
+      width: { xs: 'auto', md: '400px' },
+      maxWidth: '90vw',
       '& .MuiAlert-message': {
         fontWeight: 400,
         display: 'flex',
         alignItems: 'center',
-        paddingLeft: { xs: '12px', md: '16px' }, // Fallback padding-left
+        paddingLeft: { xs: '12px', md: '16px' },
       },
     },
   },
   snackbarAvatar: {
-    width: { xs: '24px', md: '32px' }, // Larger thumbnail on desktop
+    width: { xs: '24px', md: '32px' },
     height: { xs: '24px', md: '32px' },
-    marginRight: { xs: '8px', md: '12px' }, // Original spacing
+    marginRight: { xs: '8px', md: '12px' },
   },
 });
 
 export default function ProductPage(props) {
-  const { itemId, storeName, headerImage, item, variants, availableColors, availableSizes, maxQuantity } = props;
+  const { itemId, storeName, headerImage, item, variants, availableColors, availableSizes, maxQuantity, solPrice: initialSolPrice, flash: initialFlash } = props;
   const [colorSelect, setColorSelect] = useState(availableColors[0] || "");
   const [sizeSelect, setSizeSelect] = useState(availableSizes[0] || "");
   const [quantitySelect, setQuantitySelect] = useState("1");
@@ -106,6 +109,8 @@ export default function ProductPage(props) {
   const { connected, publicKey } = useWallet();
   const [walletId, setWalletId] = useState(null);
   const [error, setError] = useState(null);
+  const [solPrice, setSolPrice] = useState(initialSolPrice);
+  const [flash, setFlash] = useState(initialFlash);
 
   useEffect(() => {
     if (connected && publicKey) {
@@ -117,6 +122,26 @@ export default function ProductPage(props) {
       setWalletId(null);
     }
   }, [connected, publicKey]);
+
+  // Client-side refresh for SOL price
+  useEffect(() => {
+    const updatePrice = async () => {
+      try {
+        const response = await fetch('/api/solPrice');
+        const data = await response.json();
+        setSolPrice(data.solana.usd);
+        console.log('Client-side SOL price update:', data.solana.usd);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 800); // Flash for 0.8s
+      } catch (error) {
+        console.error('Error updating SOL price client-side:', error);
+      }
+    };
+
+    updatePrice(); // Initial update
+    const interval = setInterval(updatePrice, 15000); // Every 15s
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
@@ -182,6 +207,8 @@ export default function ProductPage(props) {
     ? item.imageUrls.map(url => ({ original: url, thumbnail: url }))
     : [{ original: "/img/examples/default.jpg", thumbnail: "/img/examples/default.jpg" }];
 
+  const priceSol = solPrice ? (item.priceUsdc / solPrice).toFixed(4) : 'N/A';
+
   return (
     <div className={classes.productPage}>
       <Head>
@@ -246,7 +273,22 @@ export default function ProductPage(props) {
                   <h4 className={classes.description}>
                     {item.inventory > 0 ? `${item.inventory} in stock` : "Out of stock"}
                   </h4>
-                  <h3 className={classes.mainPrice}>${item.priceUsdc.toLocaleString()} USDC</h3>
+                  <h3 className={classes.mainPrice}>
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      gap="12px"
+                    >
+                      <span>${item.priceUsdc.toLocaleString()} USDC</span>
+                      <motion.span
+                        animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6fcba9', '#555'] } : {}}
+                        transition={{ duration: 0.8 }}
+                        style={{ color: '#555' }}
+                      >
+                        (~{priceSol} SOL)
+                      </motion.span>
+                    </Box>
+                  </h3>
                   <Accordion
                     active={0}
                     activeColor="rose"
@@ -438,8 +480,16 @@ export default function ProductPage(props) {
 
 export async function getServerSideProps(context) {
   const { itemId } = context.params;
+  const { fetchSolPrice } = require('/lib/getSolPrice');
 
   try {
+    // Fetch SOL price
+    const solPrice = await fetchSolPrice();
+    console.log("Fetched SOL price:", solPrice);
+    // Simulate flash based on timestamp
+    const now = Date.now();
+    const flash = (now % 15000) < 500;
+
     const productRef = doc(db, "products", itemId);
     console.log("Attempting to fetch product document:", productRef.path);
     const productDoc = await getDoc(productRef);
@@ -513,6 +563,8 @@ export async function getServerSideProps(context) {
         availableColors,
         availableSizes,
         maxQuantity,
+        solPrice,
+        flash,
       },
     };
   } catch (error) {
@@ -520,6 +572,8 @@ export async function getServerSideProps(context) {
     return {
       props: {
         error: `Failed to fetch product/store: ${error.message}`,
+        solPrice: 200,
+        flash: false,
       },
     };
   }
