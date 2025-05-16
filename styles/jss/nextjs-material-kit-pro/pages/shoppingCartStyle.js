@@ -82,7 +82,7 @@ const styles = {
   tdName: {
     minWidth: "200px",
     fontWeight: "400",
-    fontSize: "1.5em"
+    fontSize: "1.125em" // Reduced for smaller product name
   },
   tdNameAnchor: {
     color: grayColor[1]
@@ -96,7 +96,7 @@ const styles = {
     textAlign: "right",
     minWidth: "150px",
     fontWeight: "300",
-    fontSize: "1.125em !important"
+    fontSize: "1em !important" // Unified font size for Price
   },
   tdNumberSmall: {
     marginRight: "3px"
@@ -107,7 +107,7 @@ const styles = {
     lineHeight: "1.5em"
   },
   customFont: {
-    fontSize: "16px !important"
+    fontSize: "1em !important" // Unified font size for Color/Size
   },
   actionButton: {
     margin: "0px",
@@ -169,7 +169,8 @@ const styles = {
   // Quantity styles
   quantityNumber: {
     fontWeight: "bold",
-    margin: "0 5px"
+    margin: "0 5px",
+    fontSize: "1em" // Unified font size for Qty
   },
   mobileQuantityNumber: {
     fontWeight: "bold"
@@ -229,7 +230,34 @@ const styles = {
     justifyContent: "center",
     width: "100%",
     marginTop: "10px"
-  }
+  },
+  // Override tableShopping to remove "Total" text
+  tableShopping: {
+    '& tfoot::before': {
+      display: 'none !important',
+    },
+    '& .table-shopping-total': {
+      display: 'none !important',
+    },
+    '& .table-shopping-amount': {
+      display: 'none !important',
+    },
+    '& .table-total': {
+      display: 'none !important',
+    },
+    '& .table-shopping-footer': {
+      display: 'none !important',
+    },
+    '& tfoot': {
+      display: 'none !important',
+    },
+    '& .makeStyles-tableCellTotal-649': {
+      display: 'none !important', // Target specific tableCellTotal class
+    },
+    '& [class*="makeStyles-tableCellTotal-"]': {
+      display: 'none !important', // Target dynamic tableCellTotal classes
+    },
+  },
 };
 
 export default styles;

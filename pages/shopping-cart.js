@@ -9,6 +9,10 @@ import Close from "@mui/icons-material/Close";
 import Remove from "@mui/icons-material/Remove";
 import Add from "@mui/icons-material/Add";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
+import Home from "@mui/icons-material/Home";
+import LocationCity from "@mui/icons-material/LocationCity";
+import PinDrop from "@mui/icons-material/PinDrop";
+import Public from "@mui/icons-material/Public";
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import Parallax from "/components/Parallax/Parallax.js";
@@ -18,21 +22,75 @@ import Table from "/components/Table/Table.js";
 import Button from "/components/CustomButtons/Button.js";
 import Card from "/components/Card/Card.js";
 import CardBody from "/components/Card/CardBody.js";
+import CustomInput from "/components/CustomInput/CustomInput.js";
 import { useWallet } from '@solana/wallet-adapter-react';
-import { collection, query, getDocs, doc, deleteDoc, setDoc } from "firebase/firestore";
+import { collection, query, getDocs, doc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppingCartStyle.js";
 import { motion } from "framer-motion";
+import { useSolPrice } from "/lib/getSolPrice"; // Import SOL price hook
 
-const useStyles = makeStyles(shoppingCartStyle);
+const useStyles = makeStyles({
+  ...shoppingCartStyle,
+  shippingInput: {
+    "& input": {
+      fontFamily: '"Quicksand", sans-serif',
+      fontSize: '14px',
+      color: '#212121',
+      padding: '10px',
+      '&:hover': {
+        boxShadow: 'none',
+      },
+      '&:focus': {
+        boxShadow: 'none',
+        outline: 'none',
+      },
+    },
+    "& label": {
+      fontFamily: '"Quicksand", sans-serif',
+      fontSize: '14px',
+      color: '#4d455d',
+    },
+    marginBottom: '15px',
+  },
+  shippingTotal: {
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '16px',
+    fontWeight: 500,
+    color: '#212121',
+    textAlign: 'right',
+    margin: '10px 0',
+  },
+  formContainer: {
+    marginTop: '20px',
+    marginBottom: '20px',
+  },
+  tablePurchase: {
+    '& td': {
+      fontFamily: '"Quicksand", sans-serif',
+      fontSize: '16px',
+      fontWeight: 500,
+      color: '#212121',
+    },
+  },
+});
 
 export default function ShoppingCartPage() {
   const classes = useStyles();
   const { connected, publicKey } = useWallet();
+  const { solPrice, flash } = useSolPrice(); // Get SOL price and flash state
   const [walletId, setWalletId] = useState(null);
   const [isConnected, setIsConnected] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [error, setError] = useState(null);
+  const [shippingAddress, setShippingAddress] = useState({
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
+  });
+  const [totalShipping, setTotalShipping] = useState(0);
 
   useEffect(() => {
     setIsConnected(connected);
@@ -44,6 +102,7 @@ export default function ShoppingCartPage() {
     } else {
       setWalletId(null);
       setCartItems([]);
+      setTotalShipping(0);
     }
   }, [connected, publicKey]);
 
@@ -51,6 +110,14 @@ export default function ShoppingCartPage() {
     window.scrollTo(0, 0);
     document.body.scrollTop = 0;
   }, []);
+
+  useEffect(() => {
+    if (cartItems.length > 0 && shippingAddress.zip && shippingAddress.country) {
+      calculateShippingCosts();
+    } else {
+      setTotalShipping(0);
+    }
+  }, [cartItems, shippingAddress]);
 
   const fetchCartItems = async (walletId) => {
     try {
@@ -65,6 +132,37 @@ export default function ShoppingCartPage() {
       console.error("Error fetching cart items:", err);
       setError(`Failed to load cart: ${err.message}`);
     }
+  };
+
+  const calculateShippingCosts = async () => {
+    let shippingTotal = 0;
+    for (const item of cartItems) {
+      try {
+        const productRef = doc(db, "products", item.productId);
+        const productDoc = await getDoc(productRef);
+        if (!productDoc.exists()) {
+          console.warn(`Product ${item.productId} not found`);
+          continue;
+        }
+        const productData = productDoc.data();
+        if (productData.type === "digital") {
+          continue; // No shipping cost for digital items
+        }
+        const isDomestic = shippingAddress.country.toLowerCase().includes('united states') || shippingAddress.country.toLowerCase() === 'us';
+        const itemShipping = isDomestic ? 14 : 40;
+        shippingTotal += itemShipping * item.quantity;
+      } catch (err) {
+        console.error(`Error fetching product ${item.productId}:`, err);
+      }
+    }
+    setTotalShipping(shippingTotal);
+  };
+
+  const handleShippingChange = (field) => (event) => {
+    setShippingAddress(prev => ({
+      ...prev,
+      [field]: event.target.value,
+    }));
   };
 
   const handleQuantityChange = async (itemId, delta) => {
@@ -103,6 +201,8 @@ export default function ShoppingCartPage() {
     (sum, item) => sum + item.priceUsdc * item.quantity,
     0
   );
+  const grandTotal = totalAmount + totalShipping;
+  const grandTotalSol = solPrice ? (grandTotal / solPrice).toFixed(4) : 'N/A'; // Convert USDC to SOL
 
   const tableData = cartItems.map((item) => [
     <div className={classes.imgContainer} key={item.id}>
@@ -112,13 +212,11 @@ export default function ShoppingCartPage() {
       <a href={`/products/${item.productId}`} className={classes.tdNameAnchor}>
         {item.name}
       </a>
-      <br />
-      <small className={classes.tdNameSmall}>by {item.seller}</small>
     </span>,
     item.color || "N/A",
     item.size || "N/A",
     <span key={item.id}>
-      <small className={classes.tdNumberSmall}>$</small> {item.priceUsdc.toLocaleString()}
+      <small>$</small> {item.priceUsdc.toLocaleString()}
     </span>,
     <span key={item.id}>
       <div className={classes.buttonGroup}>
@@ -142,7 +240,7 @@ export default function ShoppingCartPage() {
       </div>
     </span>,
     <span key={item.id}>
-      <small className={classes.tdNumberSmall}>$</small> {(item.priceUsdc * item.quantity).toLocaleString()}
+      <small>$</small> {(item.priceUsdc * item.quantity).toLocaleString()}
     </span>,
     <Tooltip
       key={item.id}
@@ -159,17 +257,106 @@ export default function ShoppingCartPage() {
     {
       purchase: true,
       colspan: "3",
-      amount: (
-        <span>
-          <small>$</small> {totalAmount.toLocaleString()}
-        </span>
-      ),
       col: {
         colspan: 3,
         text: (
-          <Button color="rose" round>
-            Complete Purchase <KeyboardArrowRight />
-          </Button>
+          <>
+            <div className={classes.shippingTotal}>
+              Items Total: <small>$</small> {totalAmount.toLocaleString()}
+            </div>
+            <div className={classes.shippingTotal}>
+              Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
+            </div>
+            <div className={classes.shippingTotal}>
+              Grand Total: <small>$</small> {grandTotal.toLocaleString()}&nbsp;
+              <motion.span
+                animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#e90064', '#212121'] } : {}}
+                transition={{ duration: 0.5 }}
+              >
+                ({grandTotalSol} SOL)
+              </motion.span>
+            </div>
+            <GridContainer className={classes.formContainer} spacing={2}>
+              <GridItem xs={12} sm={6}>
+                <CustomInput
+                  labelText="Street Address"
+                  id="street"
+                  formControlProps={{
+                    fullWidth: true,
+                    className: classes.shippingInput,
+                  }}
+                  inputProps={{
+                    value: shippingAddress.street,
+                    onChange: handleShippingChange('street'),
+                    startAdornment: <Home style={{ color: '#4d455d' }} />,
+                  }}
+                />
+              </GridItem>
+              <GridItem xs={12} sm={6}>
+                <CustomInput
+                  labelText="City"
+                  id="city"
+                  formControlProps={{
+                    fullWidth: true,
+                    className: classes.shippingInput,
+                  }}
+                  inputProps={{
+                    value: shippingAddress.city,
+                    onChange: handleShippingChange('city'),
+                    startAdornment: <LocationCity style={{ color: '#4d455d' }} />,
+                  }}
+                />
+              </GridItem>
+              <GridItem xs={12} sm={6}>
+                <CustomInput
+                  labelText="State/Province"
+                  id="state"
+                  formControlProps={{
+                    fullWidth: true,
+                    className: classes.shippingInput,
+                  }}
+                  inputProps={{
+                    value: shippingAddress.state,
+                    onChange: handleShippingChange('state'),
+                    startAdornment: <PinDrop style={{ color: '#4d455d' }} />,
+                  }}
+                />
+              </GridItem>
+              <GridItem xs={12} sm={6}>
+                <CustomInput
+                  labelText="ZIP/Postal Code"
+                  id="zip"
+                  formControlProps={{
+                    fullWidth: true,
+                    className: classes.shippingInput,
+                  }}
+                  inputProps={{
+                    value: shippingAddress.zip,
+                    onChange: handleShippingChange('zip'),
+                    startAdornment: <PinDrop style={{ color: '#4d455d' }} />,
+                  }}
+                />
+              </GridItem>
+              <GridItem xs={12}>
+                <CustomInput
+                  labelText="Country"
+                  id="country"
+                  formControlProps={{
+                    fullWidth: true,
+                    className: classes.shippingInput,
+                  }}
+                  inputProps={{
+                    value: shippingAddress.country,
+                    onChange: handleShippingChange('country'),
+                    startAdornment: <Public style={{ color: '#4d455d' }} />,
+                  }}
+                />
+              </GridItem>
+            </GridContainer>
+            <Button color="rose" round style={{ marginTop: '20px' }}>
+              Complete Purchase <KeyboardArrowRight />
+            </Button>
+          </>
         )
       }
     }
@@ -182,8 +369,6 @@ export default function ShoppingCartPage() {
         <a href={`/products/${item.productId}`} className={classes.tdNameAnchor}>
           {item.name}
         </a>
-        <br />
-        <small className={classes.tdNameSmall}>by {item.seller}</small>
         <p>Color: {item.color || "N/A"}</p>
         <p>Size: {item.size || "N/A"}</p>
         <p>Price: <small>$</small> {item.priceUsdc.toLocaleString()}</p>
@@ -215,6 +400,86 @@ export default function ShoppingCartPage() {
       </div>
     </div>
   ));
+
+  const mobileShippingForm = (
+    <GridContainer className={classes.formContainer} spacing={2}>
+      <GridItem xs={12}>
+        <CustomInput
+          labelText="Street Address"
+          id="street"
+          formControlProps={{
+            fullWidth: true,
+            className: classes.shippingInput,
+          }}
+          inputProps={{
+            value: shippingAddress.street,
+            onChange: handleShippingChange('street'),
+            startAdornment: <Home style={{ color: '#4d455d' }} />,
+          }}
+        />
+      </GridItem>
+      <GridItem xs={12}>
+        <CustomInput
+          labelText="City"
+          id="city"
+          formControlProps={{
+            fullWidth: true,
+            className: classes.shippingInput,
+          }}
+          inputProps={{
+            value: shippingAddress.city,
+            onChange: handleShippingChange('city'),
+            startAdornment: <LocationCity style={{ color: '#4d455d' }} />,
+          }}
+        />
+      </GridItem>
+      <GridItem xs={12}>
+        <CustomInput
+          labelText="State/Province"
+          id="state"
+          formControlProps={{
+            fullWidth: true,
+            className: classes.shippingInput,
+          }}
+          inputProps={{
+            value: shippingAddress.state,
+            onChange: handleShippingChange('state'),
+            startAdornment: <PinDrop style={{ color: '#4d455d' }} />,
+          }}
+        />
+      </GridItem>
+      <GridItem xs={12}>
+        <CustomInput
+          labelText="ZIP/Postal Code"
+          id="zip"
+          formControlProps={{
+            fullWidth: true,
+            className: classes.shippingInput,
+          }}
+          inputProps={{
+            value: shippingAddress.zip,
+            onChange: handleShippingChange('zip'),
+            startAdornment: <PinDrop style={{ color: '#4d455d' }} />,
+          }}
+        />
+      </GridItem>
+      <GridItem xs={12}>
+        <CustomInput
+          labelText="Country"
+          id="country"
+          formControlProps={{
+            fullWidth: true,
+            className: classes.shippingInput,
+          }}
+          inputProps={{
+            value: shippingAddress.country,
+            onChange: handleShippingChange('country'),
+            startAdornment: <Public style={{ color: '#4d455d' }} />,
+          }}
+        />
+      </GridItem>
+    </GridContainer>
+  );
 
   const logoVariants = {
     rest: { scale: 1, rotate: 0, transition: { duration: 0.3 } },
@@ -302,8 +567,21 @@ export default function ShoppingCartPage() {
                     <div className={classes.mobileView}>
                       {mobileCartView}
                       <div className={classes.mobileTotal}>
-                        Total: <small>$</small> {totalAmount.toLocaleString()}
+                        Items Total: <small>$</small> {totalAmount.toLocaleString()}
                       </div>
+                      <div className={classes.mobileTotal}>
+                        Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
+                      </div>
+                      <div className={classes.mobileTotal}>
+                        Grand Total: <small>$</small> {grandTotal.toLocaleString()}&nbsp;
+                        <motion.span
+                          animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#e90064', '#212121'] } : {}}
+                          transition={{ duration: 0.5 }}
+                        >
+                          (~{grandTotalSol} SOL)
+                        </motion.span>
+                      </div>
+                      {mobileShippingForm}
                       <Button color="rose" round fullWidth>
                         Complete Purchase <KeyboardArrowRight />
                       </Button>

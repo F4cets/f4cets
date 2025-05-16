@@ -26,7 +26,8 @@ export default function CustomTable(props) {
     striped,
     tableShopping,
     customHeadCellClasses,
-    customHeadClassesForCells
+    customHeadClassesForCells,
+    hideTotalText,
   } = props;
   const classes = useStyles();
   return (
@@ -45,7 +46,7 @@ export default function CustomTable(props) {
                     [customHeadCellClasses[
                       customHeadClassesForCells.indexOf(key)
                     ]]: customHeadClassesForCells.indexOf(key) !== -1,
-                    [classes.tableShoppingHead]: tableShopping
+                    [classes.tableShoppingHead]: tableShopping,
                   });
                 return (
                   <TableCell className={tableCellClasses} key={key}>
@@ -68,7 +69,7 @@ export default function CustomTable(props) {
             const tableRowClasses = cx({
               [classes.tableRowHover]: hover,
               [classes[rowColor + "Row"]]: rowColored,
-              [classes.tableStripedRow]: striped && key % 2 === 0
+              [classes.tableStripedRow]: striped && key % 2 === 0,
             });
             if (prop.total) {
               return (
@@ -106,20 +107,14 @@ export default function CustomTable(props) {
                     colSpan={prop.colspan}
                   />
                   <TableCell
-                    className={classes.tableCell + " " + classes.tableCellTotal}
-                  >
-                    Total
-                  </TableCell>
-                  <TableCell
                     className={
-                      classes.tableCell + " " + classes.tableCellAmount
+                      classes.tableCell +
+                      " " +
+                      classes.tableCellAmount +
+                      " " +
+                      classes.right
                     }
-                  >
-                    {prop.amount}
-                  </TableCell>
-                  <TableCell
-                    className={classes.tableCell + " " + classes.right}
-                    colSpan={prop.col.colspan}
+                    colSpan={prop.colspan + 1} // Adjusted to fill space
                   >
                     {prop.col.text}
                   </TableCell>
@@ -140,7 +135,7 @@ export default function CustomTable(props) {
                       [classes[colorsColls[coloredColls.indexOf(key)]]]:
                         coloredColls.indexOf(key) !== -1,
                       [customCellClasses[customClassesForCells.indexOf(key)]]:
-                        customClassesForCells.indexOf(key) !== -1
+                        customClassesForCells.indexOf(key) !== -1,
                     });
                   return (
                     <TableCell className={tableCellClasses} key={key}>
@@ -166,7 +161,8 @@ CustomTable.defaultProps = {
   customCellClasses: [],
   customClassesForCells: [],
   customHeadCellClasses: [],
-  customHeadClassesForCells: []
+  customHeadClassesForCells: [],
+  hideTotalText: false,
 };
 
 CustomTable.propTypes = {
@@ -177,20 +173,18 @@ CustomTable.propTypes = {
     "success",
     "info",
     "rose",
-    "gray"
+    "gray",
   ]),
   tableHead: PropTypes.arrayOf(PropTypes.string),
-  // Of(PropTypes.arrayOf(PropTypes.node)) || Of(PropTypes.object),
   tableData: PropTypes.array,
   hover: PropTypes.bool,
   coloredColls: PropTypes.arrayOf(PropTypes.number),
-  // Of(["warning","primary","danger","success","info","rose","gray"]) - colorsColls
   colorsColls: PropTypes.array,
   customCellClasses: PropTypes.arrayOf(PropTypes.string),
   customClassesForCells: PropTypes.arrayOf(PropTypes.number),
   customHeadCellClasses: PropTypes.arrayOf(PropTypes.string),
   customHeadClassesForCells: PropTypes.arrayOf(PropTypes.number),
   striped: PropTypes.bool,
-  // this will cause some changes in font
-  tableShopping: PropTypes.bool
+  tableShopping: PropTypes.bool,
+  hideTotalText: PropTypes.bool,
 };
