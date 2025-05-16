@@ -74,7 +74,7 @@ const useStyles = makeStyles({
   },
 });
 
-export default function ShoppingCartPage({ solPrice, flash }) {
+export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: initialFlash }) {
   const classes = useStyles();
   const { connected, publicKey } = useWallet();
   const [walletId, setWalletId] = useState(null);
@@ -89,6 +89,8 @@ export default function ShoppingCartPage({ solPrice, flash }) {
     country: '',
   });
   const [totalShipping, setTotalShipping] = useState(0);
+  const [solPrice, setSolPrice] = useState(initialSolPrice);
+  const [flash, setFlash] = useState(initialFlash);
 
   useEffect(() => {
     setIsConnected(connected);
@@ -116,6 +118,26 @@ export default function ShoppingCartPage({ solPrice, flash }) {
       setTotalShipping(0);
     }
   }, [cartItems, shippingAddress]);
+
+  // Client-side refresh for SOL price
+  useEffect(() => {
+    const updatePrice = async () => {
+      try {
+        const response = await fetch('/api/solPrice');
+        const data = await response.json();
+        setSolPrice(data.solana.usd);
+        console.log('Client-side SOL price update:', data.solana.usd);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 500); // Flash for 0.5s
+      } catch (error) {
+        console.error('Error updating SOL price client-side:', error);
+      }
+    };
+
+    updatePrice(); // Initial update
+    const interval = setInterval(updatePrice, 15000); // Every 15s
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchCartItems = async (walletId) => {
     try {
@@ -268,10 +290,10 @@ export default function ShoppingCartPage({ solPrice, flash }) {
             <div className={classes.shippingTotal}>
               Grand Total: <small>$</small> {grandTotal.toLocaleString()} 
               <motion.span
-                animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#e90064', '#212121'] } : {}}
+                animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#6fcba9', '#212121'] } : {}}
                 transition={{ duration: 0.5 }}
               >
-                (~{grandTotalSol} SOL)
+                ({grandTotalSol} SOL)
               </motion.span>
             </div>
             <GridContainer className={classes.formContainer} spacing={2}>
@@ -573,10 +595,10 @@ export default function ShoppingCartPage({ solPrice, flash }) {
                       <div className={classes.mobileTotal}>
                         Grand Total: <small>$</small> {grandTotal.toLocaleString()} 
                         <motion.span
-                          animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#e90064', '#212121'] } : {}}
+                          animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#6fcba9', '#212121'] } : {}}
                           transition={{ duration: 0.5 }}
                         >
-                          (~{grandTotalSol} SOL)
+                          ({grandTotalSol} SOL)
                         </motion.span>
                       </div>
                       {mobileShippingForm}

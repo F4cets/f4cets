@@ -18,10 +18,12 @@ import { fetchSolPrice } from "/lib/getSolPrice";
 const useStyles = makeStyles(styles);
 
 export default function SellerStorePage(props) {
-  const { storeId, storeName, promoText, headerImage, listings, error, solPrice, flash } = props;
+  const { storeId, storeName, promoText, headerImage, listings, error, solPrice: initialSolPrice, flash: initialFlash } = props;
   const classes = useStyles();
   const { connected, publicKey } = useWallet();
   const [walletId, setWalletId] = useState(null);
+  const [solPrice, setSolPrice] = useState(initialSolPrice);
+  const [flash, setFlash] = useState(initialFlash);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -37,6 +39,26 @@ export default function SellerStorePage(props) {
       setWalletId(null);
     }
   }, [connected, publicKey]);
+
+  // Client-side refresh for SOL price
+  useEffect(() => {
+    const updatePrice = async () => {
+      try {
+        const response = await fetch('/api/solPrice');
+        const data = await response.json();
+        setSolPrice(data.solana.usd);
+        console.log('Client-side SOL price update:', data.solana.usd);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 500); // Flash for 0.5s
+      } catch (error) {
+        console.error('Error updating SOL price client-side:', error);
+      }
+    };
+
+    updatePrice(); // Initial update
+    const interval = setInterval(updatePrice, 15000); // Every 15s
+    return () => clearInterval(interval);
+  }, []);
 
   if (error) {
     return (
@@ -130,7 +152,7 @@ export async function getServerSideProps(context) {
     console.log("Fetched SOL price:", solPrice);
     // Simulate flash based on timestamp
     const now = Date.now();
-    const flash = (now % 15000) < 500; // True for 0.5s every 15s
+    const flash = (now % 15000) < 500;
 
     // Fetch store data
     const storeRef = doc(db, "stores", storeId);
