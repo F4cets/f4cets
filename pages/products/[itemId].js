@@ -1,6 +1,7 @@
 /*eslint-disable*/
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
+import Link from "next/link";
 import classNames from "classnames";
 import ImageGallery from "react-image-gallery";
 import makeStyles from '@mui/styles/makeStyles';
@@ -29,7 +30,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase";
 import productStyle from "/styles/jss/nextjs-material-kit-pro/pages/productStyle.js";
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   ...productStyle,
   title: {
     ...productStyle.title,
@@ -51,7 +52,7 @@ const useStyles = makeStyles({
     fontSize: '18px',
     fontWeight: 400,
     color: '#555',
-    display: 'flex', // Use flex for Box compatibility
+    display: 'flex',
     alignItems: 'center',
   },
   selectFormControl: {
@@ -82,11 +83,16 @@ const useStyles = makeStyles({
       padding: { xs: '8px 16px', md: '12px 24px' },
       width: { xs: 'auto', md: '400px' },
       maxWidth: '90vw',
+      cursor: 'pointer',
       '& .MuiAlert-message': {
         fontWeight: 400,
         display: 'flex',
         alignItems: 'center',
         paddingLeft: { xs: '12px', md: '16px' },
+        width: '100%',
+      },
+      '& .MuiAlert-action': {
+        paddingLeft: theme.spacing(1), // Now properly defined
       },
     },
   },
@@ -95,7 +101,7 @@ const useStyles = makeStyles({
     height: { xs: '24px', md: '32px' },
     marginRight: { xs: '8px', md: '12px' },
   },
-});
+}));
 
 export default function ProductPage(props) {
   const { itemId, storeName, headerImage, item, variants, availableColors, availableSizes, maxQuantity, solPrice: initialSolPrice, flash: initialFlash } = props;
@@ -130,20 +136,23 @@ export default function ProductPage(props) {
         const response = await fetch('/api/solPrice');
         const data = await response.json();
         setSolPrice(data.solana.usd);
-        console.log('Client-side SOL price update:', data.solana.usd);
+        console.log('Product page - Client-side SOL price update:', data.solana.usd);
         setFlash(true);
-        setTimeout(() => setFlash(false), 800); // Flash for 0.8s
+        setTimeout(() => setFlash(false), 800);
       } catch (error) {
-        console.error('Error updating SOL price client-side:', error);
+        console.error('Product page - Error updating SOL price client-side:', error);
       }
     };
 
-    updatePrice(); // Initial update
-    const interval = setInterval(updatePrice, 15000); // Every 15s
+    updatePrice();
+    const interval = setInterval(updatePrice, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleSnackbarClose = () => {
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
     setSnackbarOpen(false);
   };
 
@@ -281,11 +290,11 @@ export default function ProductPage(props) {
                     >
                       <span>${item.priceUsdc.toLocaleString()} USDC</span>
                       <motion.span
-                        animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6fcba9', '#555'] } : {}}
+                        animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#e90064', '#555'] } : {}}
                         transition={{ duration: 0.8 }}
                         style={{ color: '#555' }}
                       >
-                        ({priceSol} SOL)
+                        (~{priceSol} SOL)
                       </motion.span>
                     </Box>
                   </h3>
@@ -464,14 +473,21 @@ export default function ProductPage(props) {
           severity={snackbarSeverity}
           icon={false}
         >
-          <Box display="flex" alignItems="center" gap={{ xs: '12px', md: '16px' }}>
-            <Avatar
-              src={item.imageUrls?.[0] || "/img/examples/default.jpg"}
-              className={classes.snackbarAvatar}
-              alt={item.name}
-            />
-            {snackbarMessage}
-          </Box>
+          <Link href="/shopping-cart" passHref style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+            <Box
+              display="flex"
+              alignItems="center"
+              gap={{ xs: '12px', md: '16px' }}
+              onClick={() => console.log('Navigating to shopping cart')}
+            >
+              <Avatar
+                src={item.imageUrls?.[0] || "/img/examples/default.jpg"}
+                className={classes.snackbarAvatar}
+                alt={item.name}
+              />
+              {snackbarMessage}
+            </Box>
+          </Link>
         </Alert>
       </Snackbar>
     </div>
@@ -480,13 +496,11 @@ export default function ProductPage(props) {
 
 export async function getServerSideProps(context) {
   const { itemId } = context.params;
-  const { fetchSolPrice } = require('/lib/getSolPrice');
+  const { fetchSolPrice } = require('../../lib/getSolPrice');
 
   try {
-    // Fetch SOL price
     const solPrice = await fetchSolPrice();
     console.log("Fetched SOL price:", solPrice);
-    // Simulate flash based on timestamp
     const now = Date.now();
     const flash = (now % 15000) < 500;
 
