@@ -11,6 +11,10 @@ import ShoppingCart from "@mui/icons-material/ShoppingCart";
 import LocalShipping from "@mui/icons-material/LocalShipping";
 import VerifiedUser from "@mui/icons-material/VerifiedUser";
 import Favorite from "@mui/icons-material/Favorite";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import Parallax from "/components/Parallax/Parallax.js";
@@ -21,7 +25,7 @@ import Accordion from "/components/Accordion/Accordion.js";
 import InfoArea from "/components/InfoArea/InfoArea.js";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../../firebase"; // Corrected import
+import { db } from "../../firebase"; // Exact import as specified
 import productStyle from "/styles/jss/nextjs-material-kit-pro/pages/productStyle.js";
 
 const useStyles = makeStyles({
@@ -62,6 +66,32 @@ const useStyles = makeStyles({
     fontSize: '12px',
     fontWeight: 400,
   },
+  snackbar: {
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: { xs: '14px', md: '16px' }, // Larger font on desktop
+    '& .MuiAlert-root': {
+      backgroundColor: '#4d455d', // Dark theme for Phantom aesthetic
+      color: '#ffffff',
+      borderRadius: '8px',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      padding: { xs: '8px 16px', md: '12px 24px' }, // Larger padding on desktop
+      width: { xs: 'auto', md: '400px' }, // Wider on desktop
+      maxWidth: '90vw', // Prevent overflow
+      '& .MuiAlert-message': {
+        fontWeight: 400,
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: { xs: '12px', md: '16px' }, // Fallback padding-left
+      },
+    },
+  },
+  snackbarAvatar: {
+    width: { xs: '24px', md: '32px' }, // Larger thumbnail on desktop
+    height: { xs: '24px', md: '32px' },
+    marginRight: { xs: '8px', md: '12px' }, // Original spacing
+  },
 });
 
 export default function ProductPage(props) {
@@ -69,6 +99,9 @@ export default function ProductPage(props) {
   const [colorSelect, setColorSelect] = useState(availableColors[0] || "");
   const [sizeSelect, setSizeSelect] = useState(availableSizes[0] || "");
   const [quantitySelect, setQuantitySelect] = useState("1");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
   const classes = useStyles();
   const { connected, publicKey } = useWallet();
   const [walletId, setWalletId] = useState(null);
@@ -85,9 +118,16 @@ export default function ProductPage(props) {
     }
   }, [connected, publicKey]);
 
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
   const addToCart = async () => {
     if (!walletId) {
       setError("Please connect your wallet to add items to the cart.");
+      setSnackbarMessage("Please connect your wallet.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
       return;
     }
 
@@ -109,9 +149,15 @@ export default function ProductPage(props) {
       const cartRef = doc(db, `users/${walletId}/cart`, itemId);
       await setDoc(cartRef, cartItem, { merge: true });
       console.log("Added to Firestore cart:", cartItem);
+      setSnackbarMessage(`${item.name} added to cart!`);
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
     } catch (err) {
       console.error("Error adding to cart:", err);
       setError(`Failed to add item to cart: ${err.message}`);
+      setSnackbarMessage(`Failed to add ${item.name} to cart.`);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
@@ -363,6 +409,29 @@ export default function ProductPage(props) {
           )}
         </div>
       </div>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        className={classes.snackbar}
+        data-testid="cart-snackbar"
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          icon={false}
+        >
+          <Box display="flex" alignItems="center" gap={{ xs: '12px', md: '16px' }}>
+            <Avatar
+              src={item.imageUrls?.[0] || "/img/examples/default.jpg"}
+              className={classes.snackbarAvatar}
+              alt={item.name}
+            />
+            {snackbarMessage}
+          </Box>
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
