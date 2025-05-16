@@ -46,6 +46,7 @@ export default function Marketplace() {
     priceRange: [0, 1000],
     categories: [],
     type: "all",
+    view: "all",
   });
   const [categories, setCategories] = useState([]);
   const loader = useRef(null);
@@ -94,6 +95,7 @@ export default function Marketplace() {
           return (a.name || "").localeCompare(b.name || "");
         });
 
+        console.log("Combined sellers:", combined.map(s => ({ id: s.id, type: s.type })));
         setSellers(combined);
         setFilteredSellers(combined);
         setVisibleSellers(combined.slice(0, 20));
@@ -107,6 +109,8 @@ export default function Marketplace() {
   const applyFilters = useCallback(() => {
     try {
       let filtered = [...sellers];
+      console.log("Applying filters:", filters);
+
       if (searchQuery.trim()) {
         const terms = searchQuery.toLowerCase().split(/\s+/).filter((term) => term);
         filtered = filtered.filter((seller) => {
@@ -123,6 +127,11 @@ export default function Marketplace() {
         });
       }
 
+      if (filters.view !== "all") {
+        const viewType = filters.view === "store" ? "store" : "product"; // Map toggle value to seller.type
+        filtered = filtered.filter((seller) => seller.type === viewType);
+      }
+
       if (filters.categories.length) {
         filtered = filtered.filter((seller) =>
           (seller.categories || []).some((cat) => filters.categories.includes(cat))
@@ -135,12 +144,17 @@ export default function Marketplace() {
         );
       }
 
+      filtered = filtered.filter((seller) =>
+        seller.price >= filters.priceRange[0] && seller.price <= filters.priceRange[1]
+      );
+
       filtered.sort((a, b) => {
         const priceDiff = (a.price || 0) - (b.price || 0);
         if (priceDiff !== 0) return priceDiff;
         return (a.name || "").localeCompare(b.name || "");
       });
 
+      console.log("Filtered sellers:", filtered.map(s => ({ id: s.id, type: s.type })));
       setFilteredSellers(filtered);
       setVisibleSellers(filtered.slice(0, 20));
       setPage(1);

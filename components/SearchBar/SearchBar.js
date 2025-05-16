@@ -20,24 +20,24 @@ import InputAdornment from "@mui/material/InputAdornment";
 const useStyles = makeStyles((theme) => ({
   searchContainer: {
     width: "100%",
-    padding: theme.spacing(1, 1, 1, 1), // Reduced padding-bottom to 2px
+    padding: theme.spacing(1, 1, 1, 1),
     [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(0.5, 0.5, 1, 0.5), // Reduced to 1px on mobile
+      padding: theme.spacing(0.5, 0.5, 1, 0.5),
     },
   },
   filterContainer: {
     width: "100%",
-    padding: theme.spacing(0.25, 1, 1, 1), // Reduced padding-top to 2px
-    marginTop: 0, // Eliminated marginTop
+    padding: theme.spacing(0.25, 1, 1, 1),
+    marginTop: 0,
     [theme.breakpoints.down('sm')]: {
-      padding: theme.spacing(0.125, 0.5, 0.5, 0.5), // Reduced to 1px on mobile
+      padding: theme.spacing(0.125, 0.5, 0.5, 0.5),
     },
   },
   card: {
-    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.1)", // Reduced shadow vertical offset
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.1)",
     borderRadius: "8px",
     backgroundColor: "#ffffff",
-    margin: 0, // Override any default margins
+    margin: 0,
   },
   cardBody: {
     padding: theme.spacing(1, 2),
@@ -54,10 +54,36 @@ const useStyles = makeStyles((theme) => ({
     },
     '& .MuiInputLabel-root': {
       fontSize: '0.75rem',
-      top: '-4px',
+      top: '-40px', // Moved up ~20px from -8px
+      transform: 'translate(0, 24px) scale(1)', // Adjusted starting position
+      '&.MuiInputLabel-shrink': {
+        transform: 'translate(0, -8px) scale(0.75)', // Adjusted shrink position
+      },
     },
     [theme.breakpoints.down('sm')]: {
       margin: theme.spacing(0.5, 0),
+      '& .MuiInputLabel-root': {
+        top: '-8px', // Revert to original for mobile
+        transform: 'translate(0, 16px) scale(1)',
+        '&.MuiInputLabel-shrink': {
+          transform: 'translate(0, -6px) scale(0.75)',
+        },
+      },
+    },
+  },
+  toggle: {
+    margin: theme.spacing(0.5),
+    width: "100%",
+    paddingTop: theme.spacing(1.5), // Increased padding for label clearance
+    '& .MuiToggleButton-root': {
+      fontSize: '0.7rem',
+      padding: '4px 8px',
+    },
+    [theme.breakpoints.down('sm')]: {
+      margin: theme.spacing(0.5, 0),
+      display: "flex",
+      justifyContent: "center",
+      paddingTop: theme.spacing(0.5),
     },
   },
   input: {
@@ -70,19 +96,6 @@ const useStyles = makeStyles((theme) => ({
     },
     [theme.breakpoints.down('sm')]: {
       margin: theme.spacing(0.5, 0),
-    },
-  },
-  toggle: {
-    margin: theme.spacing(0.5),
-    width: "100%",
-    '& .MuiToggleButton-root': {
-      fontSize: '0.7rem',
-      padding: '4px 8px',
-    },
-    [theme.breakpoints.down('sm')]: {
-      margin: theme.spacing(0.5, 0),
-      display: "flex",
-      justifyContent: "center",
     },
   },
   sliderContainer: {
@@ -145,6 +158,12 @@ export default function SearchBar({ onSearch, onFilter, searchQuery, filters, ca
     }
   };
 
+  const handleViewChange = (e, newView) => {
+    if (newView !== null) {
+      setLocalFilters({ ...localFilters, view: newView });
+    }
+  };
+
   const handlePriceRangeChange = (e, newValue) => {
     setLocalFilters({ ...localFilters, priceRange: newValue });
   };
@@ -195,20 +214,38 @@ export default function SearchBar({ onSearch, onFilter, searchQuery, filters, ca
             <Card raised className={classes.card}>
               <CardBody className={classes.cardBody}>
                 <GridContainer spacing={1} justifyContent="center" alignItems="center">
-                  {/* Top Row: RWI Toggle and Price Slider */}
-                  <GridItem xs={12} sm={6} md={5}>
-                    <ToggleButtonGroup
-                      value={localFilters.type}
-                      exclusive
-                      onChange={handleTypeChange}
-                      className={classes.toggle}
-                    >
-                      <ToggleButton value="all">All</ToggleButton>
-                      <ToggleButton value="digital">Digital</ToggleButton>
-                      <ToggleButton value="rwi">RWI</ToggleButton>
-                    </ToggleButtonGroup>
+                  {/* Top Row: Product Type Toggle, View Toggle, and Price Slider */}
+                  <GridItem xs={12} sm={6} md={4}>
+                    <FormControl fullWidth className={classes.formControl}>
+                      <InputLabel>Product Type</InputLabel>
+                      <ToggleButtonGroup
+                        value={localFilters.type}
+                        exclusive
+                        onChange={handleTypeChange}
+                        className={classes.toggle}
+                      >
+                        <ToggleButton value="all">All</ToggleButton>
+                        <ToggleButton value="digital">Digital</ToggleButton>
+                        <ToggleButton value="rwi">RWI</ToggleButton>
+                      </ToggleButtonGroup>
+                    </FormControl>
                   </GridItem>
-                  <GridItem xs={12} sm={6} md={5}>
+                  <GridItem xs={12} sm={6} md={4}>
+                    <FormControl fullWidth className={classes.formControl}>
+                      <InputLabel>View</InputLabel>
+                      <ToggleButtonGroup
+                        value={localFilters.view || "all"}
+                        exclusive
+                        onChange={handleViewChange}
+                        className={classes.toggle}
+                      >
+                        <ToggleButton value="all">All</ToggleButton>
+                        <ToggleButton value="store">Stores</ToggleButton>
+                        <ToggleButton value="product">Products</ToggleButton>
+                      </ToggleButtonGroup>
+                    </FormControl>
+                  </GridItem>
+                  <GridItem xs={12} sm={6} md={4}>
                     <div className={classes.sliderContainer}>
                       <InputLabel>Price Range (USDC)</InputLabel>
                       <Slider
@@ -219,14 +256,14 @@ export default function SearchBar({ onSearch, onFilter, searchQuery, filters, ca
                         max={1000}
                         step={10}
                         marks={[
-                          { value: 50, label: "0 USDC" },
-                          { value: 950, label: "1000 USDC" },
+                          { value: 50, label: "$0" },
+                          { value: 950, label: "$1000" },
                         ]}
                       />
                     </div>
                   </GridItem>
                   {/* Bottom Row: Categories and Apply Button */}
-                  <GridItem xs={12} sm={6} md={5}>
+                  <GridItem xs={12} sm={6} md={6}>
                     <FormControl fullWidth className={classes.formControl}>
                       <InputLabel>Categories</InputLabel>
                       <Select
@@ -243,7 +280,7 @@ export default function SearchBar({ onSearch, onFilter, searchQuery, filters, ca
                       </Select>
                     </FormControl>
                   </GridItem>
-                  <GridItem xs={12} sm={6} md={5}>
+                  <GridItem xs={12} sm={6} md={6}>
                     <Button
                       color="info"
                       onClick={handleApply}
