@@ -290,7 +290,7 @@ export default function ProductPage(props) {
                     >
                       <span>${item.priceUsdc.toLocaleString()} USDC</span>
                       <motion.span
-                        animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#e90064', '#555'] } : {}}
+                        animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
                         transition={{ duration: 0.8 }}
                         style={{ color: '#555' }}
                       >
