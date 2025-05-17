@@ -27,7 +27,7 @@ export default function SectionDescription() {
               find the RWA and click Buy we take care of everything else. 
               Want to Mint your own RWA NFT?  Simple create an account with F4cet
               Marketplace and we walk you through the Minting process. 
-              Want to Sell RWA NFTs on our MarketPace? This is simple too!
+              Want to Sell RWA NFTs on our MarketPlace? This is simple too!
               Create a seller account and we will walk you through the process.
             </h4>
           </GridItem>
