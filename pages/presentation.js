@@ -86,7 +86,7 @@ const useStyles = makeStyles({
     wordBreak: "normal", // Ensure whole words wrap
     overflowWrap: "anywhere", // Allow wrapping at any point if needed
     "@media (max-width: 576px)": {
-      fontSize: "2.2rem", // Adjusted for mobile
+      fontSize: "1.8rem !important", // Smaller on mobile
     },
   },
   commerceDescription: {
@@ -99,7 +99,7 @@ const useStyles = makeStyles({
     wordBreak: "normal", // Ensure whole words wrap
     overflowWrap: "anywhere", // Allow wrapping at any point if needed
     "@media (max-width: 576px)": {
-      fontSize: "1.3rem", // Adjusted for mobile
+      fontSize: "1.1rem !important", // Smaller on mobile
     },
   },
   brand: {
@@ -217,7 +217,7 @@ const useStyles = makeStyles({
     textAlign: "center",
     borderRadius: "12px",
     "@media (max-width: 576px)": {
-      padding: "20px", // Reduced padding on mobile
+      padding: "15px", // Reduced padding on mobile
     },
   },
   swipeAnimation: {
@@ -530,9 +530,9 @@ export default function PresentationPage() {
               <GridItem xs={12}>
                 <Card className={classes.entrepreneurCard}>
                   <CardBody>
-                    <h2 className={classes.commerceTitle}>
+                    <h6 className={classes.commerceTitle}>
                       Entrepreneurs to enterprise, F4cet is for everyone
-                    </h2>
+                    </h6>
                     <p className={classes.commerceDescription}>
                       Build fast, dream big, and grow now on F4cet.
                     </p>
@@ -656,7 +656,7 @@ export default function PresentationPage() {
                       <CardBody background className={classes.cardBodyRotate}>
                         <h5 className={classes.cardTitleWhite}>Join Affiliates</h5>
                         <h4 className={classes.cardDescriptionWhite}>
-                          Partner with top brands and earn crypto rewards.
+                          Shop with top brands and earn crypto rewards.
                         </h4>
                         <div className={classes.textCenter}>
                           <Button round justIcon color="info" href="/affiliate">
@@ -703,13 +703,13 @@ export default function PresentationPage() {
                   >
                     <CardBody background>
                       <div className="card-content">
-                        <h6 className={classes.cardCategoryWhite}>DECENTRALIZED COMMERCE</h6>
+                        <h4 className={classes.cardCategoryWhite}>DECENTRALIZED COMMERCE</h4>
                         <a href="/marketplace" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Shop Securely with Solana</h3>
                         </a>
-                        <p className={classes.cardDescriptionWhite}>
+                        <h4 className={classes.cardDescriptionWhite}>
                           Experience fast, low-cost transactions powered by Solana’s blockchain for a seamless shopping experience.
-                        </p>
+                        </h4>
                         <Button simple color="white" href="/marketplace">
                           <Subject /> Start Shopping
                         </Button>
@@ -729,13 +729,13 @@ export default function PresentationPage() {
                   >
                     <CardBody background>
                       <div className="card-content">
-                        <h6 className={classes.cardCategoryWhite}>NFT RECEIPTS</h6>
+                        <h4 className={classes.cardCategoryWhite}>NFT RECEIPTS</h4>
                         <a href="/about" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Own Your Purchases</h3>
                         </a>
-                        <p className={classes.cardDescriptionWhite}>
+                        <h4 className={classes.cardDescriptionWhite}>
                           Every purchase comes with a dynamic MetaPlex Core NFT receipt, securely stored by F4cet, proving ownership.
-                        </p>
+                        </h4>
                         <Button simple color="white" href="/marketplace">
                           <Subject /> Check it out
                         </Button>
@@ -755,13 +755,13 @@ export default function PresentationPage() {
                   >
                     <CardBody background>
                       <div className="card-content">
-                        <h6 className={classes.cardCategoryWhite}>CRYPTO CASHBACK</h6>
+                        <h4 className={classes.cardCategoryWhite}>CRYPTO CASHBACK</h4>
                         <a href="/affiliate" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Earn Rewards with Affiliates</h3>
                         </a>
-                        <p className={classes.cardDescriptionWhite}>
+                        <h4 className={classes.cardDescriptionWhite}>
                           Shop through our affiliate program and earn up to 85% crypto cashback dropped into your Solflare wallet.
-                        </p>
+                        </h4>
                         <Button simple color="white" href="/affiliate">
                           <Subject /> Shop Affiliates
                         </Button>
@@ -788,7 +788,7 @@ export default function PresentationPage() {
                   Start buying or selling in no time.
                 </h2>
                 <p className={classes.commerceDescription}>
-                  Buyers, sellers, or affiliates... the F4cets web3 world waits...
+                  Buyers, sellers, and affiliates... the F4cets web3 world waits...
                 </p>
                 <div className={classes.ctaButtonWrapper}>
                   <motion.button
