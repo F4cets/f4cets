@@ -219,6 +219,7 @@ export async function getServerSideProps(context) {
         imageUrl: data.imageUrls?.[0] || data.selectedImage || "/img/examples/default.jpg",
         inventory,
         category: data.categories?.[0] || "Uncategorized",
+        categories: data.categories || ["Uncategorized"],
         type: data.type || "unknown",
       };
     });

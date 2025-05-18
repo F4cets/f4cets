@@ -79,7 +79,7 @@ export default function DynamicProducts(props) {
 
   const filteredListings = visibleListings.filter((item) => {
     const priceInRange = item.priceUsdc >= priceRange[0] && item.priceUsdc <= priceRange[1];
-    const categoryMatch = checked.length === 0 || checked.includes(item.category);
+    const categoryMatch = checked.length === 0 || checked.some(cat => item.categories.includes(cat));
     const typeMatch = productType === "all" || item.type === productType;
     return priceInRange && categoryMatch && typeMatch;
   });
