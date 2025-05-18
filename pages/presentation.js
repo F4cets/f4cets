@@ -470,7 +470,7 @@ export default function PresentationPage() {
                     <Card profile style={{ maxWidth: "360px" }}>
                       <CardHeader image>
                         <img
-                          src="/img/examples/solF4.png"
+                          src="/img/examples/solfd.png"
                           alt="Solana F4cet"
                         />
                         <div
