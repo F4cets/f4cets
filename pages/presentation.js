@@ -14,6 +14,7 @@ import Head from "next/head";
 import classNames from "classnames";
 import makeStyles from "@mui/styles/makeStyles";
 import { motion } from "framer-motion";
+import Lottie from "lottie-react";
 
 // core components
 import Header from "/components/Header/Header.js";
@@ -27,6 +28,9 @@ import CardHeader from "/components/Card/CardHeader.js";
 import CardBody from "/components/Card/CardBody.js";
 import Icon from "@mui/material/Icon";
 import Subject from "@mui/icons-material/Subject";
+
+// Lottie animation
+import swipeAnimation from "/public/lottie/swipe-animation.json";
 
 // Styles
 import presentationStyle from "/styles/jss/nextjs-material-kit-pro/pages/presentationStyle.js";
@@ -204,6 +208,15 @@ const useStyles = makeStyles({
     borderRadius: "12px",
     "@media (max-width: 576px)": {
       padding: "20px", // Reduced padding on mobile
+    },
+  },
+  swipeAnimation: {
+    display: "none", // Hidden on desktop
+    "@media (max-width: 960px)": {
+      display: "block", // Visible on mobile
+      width: "200px",
+      height: "100px",
+      margin: "1px auto", // Centered, close to cards
     },
   },
 });
@@ -466,7 +479,7 @@ export default function PresentationPage() {
               </div>
               <div className={classes.cardItem}>
                 <motion.div className="motion-card" variants={cardVariants} initial="rest" whileHover="hover">
-                  <a href="/marketplace">
+                  <a href="/market  /marketplace">
                     <Card profile style={{ maxWidth: "360px" }}>
                       <CardHeader image>
                         <img
@@ -476,7 +489,7 @@ export default function PresentationPage() {
                         <div
                           className={classes.coloredShadow}
                           style={{
-                            backgroundImage: `url(/img/examples/solF4.png)`,
+                            backgroundImage: `url(/img/examples/solfd.png)`,
                             opacity: "1",
                           }}
                         />
@@ -492,6 +505,11 @@ export default function PresentationPage() {
                 </motion.div>
               </div>
             </div>
+            <Lottie
+              animationData={swipeAnimation}
+              loop={true}
+              className={classes.swipeAnimation}
+            />
           </div>
         </div>
 
@@ -743,6 +761,11 @@ export default function PresentationPage() {
                 </motion.div>
               </div>
             </div>
+            <Lottie
+              animationData={swipeAnimation}
+              loop={true}
+              className={classes.swipeAnimation}
+            />
           </div>
         </div>
 
