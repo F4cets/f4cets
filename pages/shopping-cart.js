@@ -85,13 +85,62 @@ const useStyles = makeStyles({
     marginTop: '20px',
     marginBottom: '10px',
     width: '100%',
+    textAlign: 'left',
     '@media (min-width: 960px)': {
       '& button': {
         padding: '12px 30px',
         fontSize: '18px',
         lineHeight: '1.5em',
-        width: 'auto',
         minWidth: '200px',
+        width: '200px',
+        borderRadius: '30px',
+      },
+      '& .MuiMenu-paper': {
+        width: '200px',
+        '& .MuiMenuItem-root': {
+          fontSize: '16px',
+          padding: '10px 20px',
+          justifyContent: 'center',
+        },
+      },
+    },
+    '@media (max-width: 959px)': {
+      '& button': {
+        width: '100%',
+        padding: '12px 20px',
+        fontSize: '16px',
+        borderRadius: '30px',
+      },
+      '& .MuiMenu-paper': {
+        width: '100%',
+        '& .MuiMenuItem-root': {
+          fontSize: '14px',
+          padding: '10px 20px',
+          justifyContent: 'center',
+        },
+      },
+    },
+  },
+  completePurchaseButton: {
+    marginTop: '20px',
+    width: '100%',
+    textAlign: 'left',
+    '@media (min-width: 960px)': {
+      '& button': {
+        padding: '12px 30px',
+        fontSize: '18px',
+        lineHeight: '1.5em',
+        minWidth: '200px',
+        width: '200px',
+        borderRadius: '30px',
+      },
+    },
+    '@media (max-width: 959px)': {
+      '& button': {
+        width: '100%',
+        padding: '12px 20px',
+        fontSize: '16px',
+        borderRadius: '30px',
       },
     },
   },
@@ -491,7 +540,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                   }}
                 />
               </GridItem>
-              <GridItem xs={12}>
+              <GridItem xs={12} style={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <CustomDropdown
                   buttonText={`Pay with ${paymentCurrency}`}
                   buttonProps={{
@@ -503,15 +552,17 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                   onClick={handlePaymentSelect}
                 />
               </GridItem>
+              <GridItem xs={12} style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <Button 
+                  color="rose" 
+                  round 
+                  className={classes.completePurchaseButton}
+                  onClick={handleCheckout}
+                >
+                  Complete Purchase <KeyboardArrowRight />
+                </Button>
+              </GridItem>
             </GridContainer>
-            <Button 
-              color="rose" 
-              round 
-              style={{ marginTop: '20px' }}
-              onClick={handleCheckout}
-            >
-              Complete Purchase <KeyboardArrowRight />
-            </Button>
           </>
         )
       }
@@ -634,7 +685,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           }}
         />
       </GridItem>
-      <GridItem xs={12}>
+      <GridItem xs={12} style={{ display: 'flex', justifyContent: 'flex-start' }}>
         <CustomDropdown
           buttonText={`Pay with ${paymentCurrency}`}
           buttonProps={{
@@ -645,6 +696,16 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           dropdownList={["USDC", "SOL"]}
           onClick={handlePaymentSelect}
         />
+      </GridItem>
+      <GridItem xs={12} style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <Button 
+          color="rose" 
+          round 
+          className={classes.completePurchaseButton}
+          onClick={handleCheckout}
+        >
+          Complete Purchase <KeyboardArrowRight />
+        </Button>
       </GridItem>
     </GridContainer>
   );
@@ -764,14 +825,6 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                         </motion.span>
                       </div>
                       {mobileShippingForm}
-                      <Button 
-                        color="rose" 
-                        round 
-                        fullWidth
-                        onClick={handleCheckout}
-                      >
-                        Complete Purchase <KeyboardArrowRight />
-                      </Button>
                     </div>
                   </>
                 ) : (
