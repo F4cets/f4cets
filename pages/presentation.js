@@ -470,13 +470,13 @@ export default function PresentationPage() {
                     <Card profile style={{ maxWidth: "360px" }}>
                       <CardHeader image>
                         <img
-                          src="/img/examples/SolF4.png"
+                          src="/img/examples/solF4.png"
                           alt="Solana F4cet"
                         />
                         <div
                           className={classes.coloredShadow}
                           style={{
-                            backgroundImage: `url(/img/examples/SolF4.png)`,
+                            backgroundImage: `url(/img/examples/solF4.png)`,
                             opacity: "1",
                           }}
                         />
