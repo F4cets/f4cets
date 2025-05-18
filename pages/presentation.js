@@ -619,7 +619,7 @@ export default function PresentationPage() {
                           <h3 className={classes.cardTitleWhite}>Sell Globally</h3>
                         </a>
                         <h4 className={classes.cardDescriptionWhite}>
-                          Create your store, manage inventory, and reach global customers with our intuitive dashboard on Solana.
+                          Create your store, manage inventory, and reach global customers with our intuitive dashboard built on Solana.
                         </h4>
                       </CardBody>
                     </div>
@@ -659,7 +659,7 @@ export default function PresentationPage() {
                           <h3 className={classes.cardTitleWhite}>Earn Rewards</h3>
                         </a>
                         <h4 className={classes.cardDescriptionWhite}>
-                          Join our program and earn up to 85% crypto cashback on referrals, powered by top affiliates.
+                          Shop with our web2 affiliates and earn up to 85% crypto cashback on purchases, powered by top affiliates.
                         </h4>
                       </CardBody>
                     </div>
@@ -672,7 +672,7 @@ export default function PresentationPage() {
                       <CardBody background className={classes.cardBodyRotate}>
                         <h5 className={classes.cardTitleWhite}>Join Affiliates</h5>
                         <h4 className={classes.cardDescriptionWhite}>
-                          Partner with top brands and earn crypto rewards.
+                          Shop with top brands and earn crypto rewards.
                         </h4>
                         <div className={classes.textCenter}>
                           <Button round justIcon color="info" href="/affiliate">
@@ -719,13 +719,13 @@ export default function PresentationPage() {
                   >
                     <CardBody background>
                       <div className="card-content">
-                        <h6 className={classes.cardCategoryWhite}>DECENTRALIZED COMMERCE</h6>
+                        <h4 className={classes.cardCategoryWhite}>DECENTRALIZED COMMERCE</h4>
                         <a href="/marketplace" onClick={(e) => e.preventDefault()}>
-                          <h3 className={classes.cardTitleWhite}>Shop Securely with Solana</h3>
+                          <h3 className={classes.cardTitleWhite}>Shop Securely with F4cets</h3>
                         </a>
-                        <p className={classes.cardDescriptionWhite}>
-                          Experience fast, low-cost transactions powered by Solana’s blockchain for a seamless shopping experience.
-                        </p>
+                        <h4 className={classes.cardDescriptionWhite}>
+                          Experience fast, low-cost transactions powered by Solana’s blockchain for a seamless shopping experience. Solana Preferred blockchain on F4cets.market
+                        </h4>
                         <Button simple color="white" href="/marketplace">
                           <Subject /> Start Shopping
                         </Button>
@@ -745,13 +745,13 @@ export default function PresentationPage() {
                   >
                     <CardBody background>
                       <div className="card-content">
-                        <h6 className={classes.cardCategoryWhite}>NFT RECEIPTS</h6>
+                        <h4 className={classes.cardCategoryWhite}>NFT RECEIPTS</h4>
                         <a href="/about" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Own Your Purchases</h3>
                         </a>
-                        <p className={classes.cardDescriptionWhite}>
-                          Every purchase comes with a dynamic MetaPlex Core NFT receipt, securely stored by F4cet, proving ownership.
-                        </p>
+                        <h4 className={classes.cardDescriptionWhite}>
+                          Every purchase comes with a dynamic MetaPlex Core NFT receipt, securely managed by F4cet, proving ownership. Metaplex Preferred protocol provider on F4cets.market
+                        </h4>
                         <Button simple color="white" href="/marketplace">
                           <Subject /> Check it out
                         </Button>
@@ -771,13 +771,13 @@ export default function PresentationPage() {
                   >
                     <CardBody background>
                       <div className="card-content">
-                        <h6 className={classes.cardCategoryWhite}>CRYPTO CASHBACK</h6>
+                        <h4 className={classes.cardCategoryWhite}>CRYPTO CASHBACK</h4>
                         <a href="/affiliate" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Earn Rewards with Affiliates</h3>
                         </a>
-                        <p className={classes.cardDescriptionWhite}>
-                          Shop through our affiliate program and earn up to 85% crypto cashback dropped into your Solflare wallet.
-                        </p>
+                        <h4 className={classes.cardDescriptionWhite}>
+                          Shop through our affiliate program and earn up to 85% crypto cashback dropped into your Solflare wallet. Solflare - Preferred wallet provider on F4cets.market
+                        </h4>
                         <Button simple color="white" href="/affiliate">
                           <Subject /> Shop Affiliates
                         </Button>
@@ -804,7 +804,7 @@ export default function PresentationPage() {
                   Start buying or selling in no time.
                 </h2>
                 <p className={classes.commerceDescription}>
-                  Buyers, sellers, or affiliates... the F4cets web3 world waits...
+                  Buyers, sellers, and affiliates... the F4cets web3 world waits...
                 </p>
                 <div className={classes.ctaButtonWrapper}>
                   <motion.button
