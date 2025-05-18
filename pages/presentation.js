@@ -723,9 +723,9 @@ export default function PresentationPage() {
                         <a href="/marketplace" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Shop Securely with F4cets</h3>
                         </a>
-                        <h4 className={classes.cardDescriptionWhite}>
+                        <h3 className={classes.cardDescriptionWhite}>
                           Experience fast, low-cost transactions powered by Solana’s blockchain for a seamless shopping experience. Solana Preferred blockchain on F4cets.market
-                        </h4>
+                        </h3>
                         <Button simple color="white" href="/marketplace">
                           <Subject /> Start Shopping
                         </Button>
@@ -749,9 +749,9 @@ export default function PresentationPage() {
                         <a href="/about" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Own Your Purchases</h3>
                         </a>
-                        <h4 className={classes.cardDescriptionWhite}>
+                        <h3 className={classes.cardDescriptionWhite}>
                           Every purchase comes with a dynamic MetaPlex Core NFT receipt, securely managed by F4cet, proving ownership. Metaplex Preferred protocol provider on F4cets.market
-                        </h4>
+                        </h3>
                         <Button simple color="white" href="/marketplace">
                           <Subject /> Check it out
                         </Button>
@@ -775,9 +775,9 @@ export default function PresentationPage() {
                         <a href="/affiliate" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Earn Rewards with Affiliates</h3>
                         </a>
-                        <h4 className={classes.cardDescriptionWhite}>
+                        <h3 className={classes.cardDescriptionWhite}>
                           Shop through our affiliate program and earn up to 85% crypto cashback dropped into your Solflare wallet. Solflare - Preferred wallet provider on F4cets.market
-                        </h4>
+                        </h3>
                         <Button simple color="white" href="/affiliate">
                           <Subject /> Shop Affiliates
                         </Button>

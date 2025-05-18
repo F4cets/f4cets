@@ -318,8 +318,8 @@ export default function Marketplace() {
                   #download-title {
                     font-size: 1.1rem;
                   }
-                  #solflare-hand-image {
-                    max-width: 100%;
+                  img#solflare-hand-image {
+                    max-width: 100% !important;
                   }
                 }
               `}</style>
