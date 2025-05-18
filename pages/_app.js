@@ -16,6 +16,7 @@ import Head from "next/head";
 import Script from "next/script";
 import { ThemeProvider, createTheme, StyledEngineProvider } from "@mui/material/styles";
 import { makeStyles } from "@mui/styles";
+import { useRouter } from "next/router";
 
 // Solana Wallet Imports
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
@@ -60,6 +61,8 @@ const theme = createTheme({
 const useFooterStyles = makeStyles(presentationStyle);
 
 function MyApp({ Component, pageProps }) {
+  const router = useRouter();
+
   React.useEffect(() => {
     const comment = document.createComment(`
 =========================================================
@@ -74,7 +77,21 @@ function MyApp({ Component, pageProps }) {
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
     `);
     document.insertBefore(comment, document.documentElement);
-  }, []);
+
+    // Google Analytics page view tracking
+    const handleRouteChange = (url) => {
+      if (window.gtag) {
+        window.gtag("config", process.env.NEXT_PUBLIC_MEASUREMENT_ID, {
+          page_path: url,
+        });
+      }
+    };
+
+    router.events.on("routeChangeComplete", handleRouteChange);
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [router.events]);
 
   const network = WalletAdapterNetwork.Mainnet;
   const endpoint = clusterApiUrl(network);

@@ -374,7 +374,7 @@ export default function PresentationPage() {
                   <span className={classes.proBadge}>PRO</span>
                 </h1>
                 <h3 className={classes.title}>
-                  Where Crypto Meets Commerce{" "}
+                  Where Crypto Meets Commerce -{" "}
                   <span className={classes.builtOnWrapper}>
                     <span>Built on</span>{" "}
                     <img
