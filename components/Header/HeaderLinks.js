@@ -11,10 +11,13 @@ import { useUser } from "/contexts/UserContext";
 import makeStyles from "@mui/styles/makeStyles";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import Icon from "@mui/material/Icon";
-import Hidden from "@mui/material/Hidden";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 
 // Material-UI icons
+import Storefront from "@mui/icons-material/Storefront";
+import Group from "@mui/icons-material/Group";
+import AccountCircle from "@mui/icons-material/AccountCircle";
 import ShoppingCart from "@mui/icons-material/ShoppingCart";
 
 // Core components
@@ -35,25 +38,28 @@ export default function HeaderLinks(props) {
   const { dropdownHoverColor } = props;
   const classes = useStyles();
   const { user } = useUser();
+  const theme = useTheme();
+  const isLgUp = useMediaQuery(theme.breakpoints.up("lg"));
+  const isMdDown = useMediaQuery(theme.breakpoints.down("md"));
 
   return (
     <List className={classes.list + " " + classes.mlAuto}>
       <ListItem className={classes.listItem}>
         <Link href="/marketplace">
-          <a className={classes.navLink}>
-            <Icon className={classes.icons}>store</Icon> Marketplace
-          </a>
+          <Button color="transparent" className={classes.navButton}>
+            <Storefront className={classes.icons} /> Marketplace
+          </Button>
         </Link>
       </ListItem>
       <ListItem className={classes.listItem}>
         <Link href="/affiliate">
-          <a className={classes.navLink}>
-            <Icon className={classes.icons}>group</Icon> Affiliate
-          </a>
+          <Button color="transparent" className={classes.navButton}>
+            <Group className={classes.icons} /> Affiliate
+          </Button>
         </Link>
       </ListItem>
       <ListItem className={classes.listItem}>
-        <Hidden lgDown>
+        {isLgUp && (
           <Button
             href="/shopping-cart"
             color="white"
@@ -62,8 +68,8 @@ export default function HeaderLinks(props) {
           >
             <ShoppingCart className={classes.icons} /> Cart
           </Button>
-        </Hidden>
-        <Hidden mdUp>
+        )}
+        {isMdDown && (
           <Button
             href="/shopping-cart"
             color="rose"
@@ -72,7 +78,7 @@ export default function HeaderLinks(props) {
           >
             <ShoppingCart className={classes.icons} /> Cart
           </Button>
-        </Hidden>
+        )}
       </ListItem>
       {user && (
         <ListItem className={classes.listItem}>
@@ -82,7 +88,7 @@ export default function HeaderLinks(props) {
             className={classes.navButton}
             round
           >
-            <Icon className={classes.icons}>account_circle</Icon> Account
+            <AccountCircle className={classes.icons} /> Account
           </Button>
         </ListItem>
       )}

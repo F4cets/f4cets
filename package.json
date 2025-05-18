@@ -6,7 +6,7 @@
     "@emotion/react": "11.11.0",
     "@emotion/styled": "11.11.0",
     "@firebase/firestore": "^4.7.9",
-    "@mui/icons-material": "5.11.16",
+    "@mui/icons-material": "^5.11.16",
     "@mui/material": "5.13.0",
     "@mui/styles": "^5.16.14",
     "@solana/wallet-adapter-react": "^0.15.35",
