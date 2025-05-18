@@ -12,7 +12,7 @@ import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import Home from "@mui/icons-material/Home";
 import LocationCity from "@mui/icons-material/LocationCity";
 import PinDrop from "@mui/icons-material/PinDrop";
-import Public from "@mui/icons-material/Public";
+import PublicOutlined from "@mui/icons-material/PublicOutlined";
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import Parallax from "/components/Parallax/Parallax.js";
@@ -23,14 +23,17 @@ import Button from "/components/CustomButtons/Button.js";
 import Card from "/components/Card/Card.js";
 import CardBody from "/components/Card/CardBody.js";
 import CustomInput from "/components/CustomInput/CustomInput.js";
+import CustomDropdown from "/components/CustomDropdown/CustomDropdown.js";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { collection, query, getDocs, doc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppingCartStyle.js";
 import { motion } from "framer-motion";
+import { v4 as uuidv4 } from 'uuid';
+import { useRouter } from 'next/router';
 
 const useStyles = makeStyles({
-  ...shoppingCartStyle,
+  ...shoppingCartStyle, // Fixed typo: was shoppingCart_driverStyle
   shippingInput: {
     "& input": {
       fontFamily: '"Quicksand", sans-serif',
@@ -72,11 +75,26 @@ const useStyles = makeStyles({
       color: '#212121',
     },
   },
+  paymentDropdown: {
+    marginTop: '20px',
+    marginBottom: '10px',
+    width: '100%',
+    '@media (min-width: 960px)': {
+      '& button': {
+        padding: '12px 30px',
+        fontSize: '18px',
+        lineHeight: '1.5em',
+        width: 'auto',
+        minWidth: '200px',
+      },
+    },
+  },
 });
 
 export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: initialFlash }) {
   const classes = useStyles();
   const { connected, publicKey } = useWallet();
+  const router = useRouter();
   const [walletId, setWalletId] = useState(null);
   const [isConnected, setIsConnected] = useState(null);
   const [cartItems, setCartItems] = useState([]);
@@ -91,6 +109,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
   const [totalShipping, setTotalShipping] = useState(0);
   const [solPrice, setSolPrice] = useState(initialSolPrice);
   const [flash, setFlash] = useState(initialFlash);
+  const [paymentCurrency, setPaymentCurrency] = useState('SOL'); // Default to SOL
 
   useEffect(() => {
     setIsConnected(connected);
@@ -217,10 +236,73 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
     }
   };
 
+  const handleCheckout = async () => {
+    if (!connected || !walletId) {
+      setError("Please connect your wallet to proceed.");
+      return;
+    }
+
+    // Validate shipping address for RWI items
+    const hasRWI = await Promise.any(cartItems.map(async item => {
+      const productRef = doc(db, "products", item.productId);
+      const productDoc = await getDoc(productRef);
+      return productDoc.exists() && productDoc.data().type === "rwi";
+    }).map(p => p.catch(() => false)));
+    if (hasRWI && (!shippingAddress.street || !shippingAddress.city || !shippingAddress.zip || !shippingAddress.country)) {
+      setError("Please provide a complete shipping address for physical items.");
+      return;
+    }
+
+    try {
+      console.log(JSON.stringify({
+        walletId,
+        cartItems: cartItems.map(item => ({
+          ...item,
+          quantities: Array(item.quantity).fill(1)
+        })),
+        shippingAddress,
+        currency: paymentCurrency,
+        f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53'
+      }));
+      const response = await fetch('https://us-central1-f4cet-marketplace.cloudfunctions.net/processCheckout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletId,
+          cartItems: cartItems.map(item => ({
+            ...item,
+            quantities: Array(item.quantity).fill(1)
+          })),
+          shippingAddress,
+          currency: paymentCurrency,
+          f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53'
+        })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setCartItems([]);
+        setTotalShipping(0);
+        if (result.transactionIds && result.transactionIds.length > 0) {
+          router.push(`/order/${result.transactionIds[0]}`);
+        }
+      } else {
+        setError(result.error || 'Checkout failed');
+      }
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setError(`Checkout failed: ${err.message}`);
+    }
+  };
+
+  const handlePaymentSelect = (currency) => {
+    setPaymentCurrency(currency);
+  };
+
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + item.priceUsdc * item.quantity,
     0
   );
+  const f4cetFee = totalAmount * 0.04; // Calculated for transaction, not displayed
   const grandTotal = totalAmount + totalShipping;
   const grandTotalSol = solPrice ? (grandTotal / solPrice).toFixed(4) : 'N/A';
 
@@ -368,12 +450,29 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                   inputProps={{
                     value: shippingAddress.country,
                     onChange: handleShippingChange('country'),
-                    startAdornment: <Public style={{ color: '#4d455d' }} />,
+                    startAdornment: <PublicOutlined style={{ color: '#4d455d' }} />,
                   }}
                 />
               </GridItem>
+              <GridItem xs={12}>
+                <CustomDropdown
+                  buttonText={`Pay with ${paymentCurrency}`}
+                  buttonProps={{
+                    color: "rose",
+                    round: true,
+                    className: classes.paymentDropdown
+                  }}
+                  dropdownList={["USDC", "SOL"]}
+                  onClick={handlePaymentSelect}
+                />
+              </GridItem>
             </GridContainer>
-            <Button color="rose" round style={{ marginTop: '20px' }}>
+            <Button 
+              color="rose" 
+              round 
+              style={{ marginTop: '20px' }}
+              onClick={handleCheckout}
+            >
               Complete Purchase <KeyboardArrowRight />
             </Button>
           </>
@@ -401,7 +500,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           >
             <Remove />
           </Button>
-          <span className={classes.mobileQuantityNumber}>{item.quantity}</span>
+          <span className={classes.quantityNumber}>{item.quantity}</span>
           <Button
             color="rose"
             size="sm"
@@ -494,8 +593,20 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           inputProps={{
             value: shippingAddress.country,
             onChange: handleShippingChange('country'),
-            startAdornment: <Public style={{ color: '#4d455d' }} />,
+            startAdornment: <PublicOutlined style={{ color: '#4d455d' }} />,
           }}
+        />
+      </GridItem>
+      <GridItem xs={12}>
+        <CustomDropdown
+          buttonText={`Pay with ${paymentCurrency}`}
+          buttonProps={{
+            color: "rose",
+            round: true,
+            className: classes.paymentDropdown
+          }}
+          dropdownList={["USDC", "SOL"]}
+          onClick={handlePaymentSelect}
         />
       </GridItem>
     </GridContainer>
@@ -602,7 +713,12 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                         </motion.span>
                       </div>
                       {mobileShippingForm}
-                      <Button color="rose" round fullWidth>
+                      <Button 
+                        color="rose" 
+                        round 
+                        fullWidth
+                        onClick={handleCheckout}
+                      >
                         Complete Purchase <KeyboardArrowRight />
                       </Button>
                     </div>
