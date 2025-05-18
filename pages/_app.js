@@ -185,7 +185,7 @@ function MyApp({ Component, pageProps }) {
                             </li>
                             <li>
                               <Button
-                                href="https://discord.gg/GAd75fa7"
+                                href="https://discord.gg/TdFGbcTt2C"
                                 target="_blank"
                                 color="discord"
                                 justIcon
