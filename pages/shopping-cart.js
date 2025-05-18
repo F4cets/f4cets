@@ -13,6 +13,8 @@ import Home from "@mui/icons-material/Home";
 import LocationCity from "@mui/icons-material/LocationCity";
 import PinDrop from "@mui/icons-material/PinDrop";
 import PublicOutlined from "@mui/icons-material/PublicOutlined";
+import CheckCircle from "@mui/icons-material/CheckCircle";
+import Error from "@mui/icons-material/Error";
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import Parallax from "/components/Parallax/Parallax.js";
@@ -24,6 +26,10 @@ import Card from "/components/Card/Card.js";
 import CardBody from "/components/Card/CardBody.js";
 import CustomInput from "/components/CustomInput/CustomInput.js";
 import CustomDropdown from "/components/CustomDropdown/CustomDropdown.js";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { collection, query, getDocs, doc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -33,7 +39,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/router';
 
 const useStyles = makeStyles({
-  ...shoppingCartStyle, // Fixed typo: was shoppingCart_driverStyle
+  ...shoppingCartStyle,
   shippingInput: {
     "& input": {
       fontFamily: '"Quicksand", sans-serif',
@@ -89,6 +95,25 @@ const useStyles = makeStyles({
       },
     },
   },
+  checkoutPopup: {
+    textAlign: 'center',
+    padding: '20px',
+  },
+  checkoutIcon: {
+    fontSize: '60px',
+    marginBottom: '20px',
+  },
+  successIcon: {
+    color: '#6fcba9',
+  },
+  errorIcon: {
+    color: '#e57373',
+  },
+  checkoutMessage: {
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '18px',
+    marginBottom: '20px',
+  },
 });
 
 export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: initialFlash }) {
@@ -109,7 +134,10 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
   const [totalShipping, setTotalShipping] = useState(0);
   const [solPrice, setSolPrice] = useState(initialSolPrice);
   const [flash, setFlash] = useState(initialFlash);
-  const [paymentCurrency, setPaymentCurrency] = useState('SOL'); // Default to SOL
+  const [paymentCurrency, setPaymentCurrency] = useState('SOL');
+  const [checkoutStatus, setCheckoutStatus] = useState(null); // null, 'success', 'error'
+  const [checkoutMessage, setCheckoutMessage] = useState('');
+  const [transactionId, setTransactionId] = useState(null);
 
   useEffect(() => {
     setIsConnected(connected);
@@ -138,7 +166,6 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
     }
   }, [cartItems, shippingAddress]);
 
-  // Client-side refresh for SOL price
   useEffect(() => {
     const updatePrice = async () => {
       try {
@@ -147,14 +174,14 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
         setSolPrice(data.solana.usd);
         console.log('Client-side SOL price update:', data.solana.usd);
         setFlash(true);
-        setTimeout(() => setFlash(false), 500); // Flash for 0.5s
+        setTimeout(() => setFlash(false), 500);
       } catch (error) {
         console.error('Error updating SOL price client-side:', error);
       }
     };
 
-    updatePrice(); // Initial update
-    const interval = setInterval(updatePrice, 15000); // Every 15s
+    updatePrice();
+    const interval = setInterval(updatePrice, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -238,7 +265,8 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
 
   const handleCheckout = async () => {
     if (!connected || !walletId) {
-      setError("Please connect your wallet to proceed.");
+      setCheckoutStatus('error');
+      setCheckoutMessage("Please connect your wallet to proceed.");
       return;
     }
 
@@ -249,7 +277,8 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       return productDoc.exists() && productDoc.data().type === "rwi";
     }).map(p => p.catch(() => false)));
     if (hasRWI && (!shippingAddress.street || !shippingAddress.city || !shippingAddress.zip || !shippingAddress.country)) {
-      setError("Please provide a complete shipping address for physical items.");
+      setCheckoutStatus('error');
+      setCheckoutMessage("Please provide a complete shipping address for physical items.");
       return;
     }
 
@@ -264,7 +293,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
         currency: paymentCurrency,
         f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53'
       }));
-      const response = await fetch('https://us-central1-f4cet-marketplace.cloudfunctions.net/processCheckout', {
+      const response = await fetch('https://process-checkout-232592911911.us-central1.run.app/processCheckout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -282,15 +311,17 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       if (response.ok) {
         setCartItems([]);
         setTotalShipping(0);
-        if (result.transactionIds && result.transactionIds.length > 0) {
-          router.push(`/order/${result.transactionIds[0]}`);
-        }
+        setCheckoutStatus('success');
+        setCheckoutMessage('Checkout completed successfully!');
+        setTransactionId(result.transactionIds && result.transactionIds.length > 0 ? result.transactionIds[0] : null);
       } else {
-        setError(result.error || 'Checkout failed');
+        setCheckoutStatus('error');
+        setCheckoutMessage(result.error || 'Checkout failed');
       }
     } catch (err) {
       console.error("Checkout error:", err);
-      setError(`Checkout failed: ${err.message}`);
+      setCheckoutStatus('error');
+      setCheckoutMessage(`Checkout failed: ${err.message}`);
     }
   };
 
@@ -298,11 +329,17 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
     setPaymentCurrency(currency);
   };
 
+  const handleClosePopup = () => {
+    setCheckoutStatus(null);
+    setCheckoutMessage('');
+    setTransactionId(null);
+  };
+
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + item.priceUsdc * item.quantity,
     0
   );
-  const f4cetFee = totalAmount * 0.04; // Calculated for transaction, not displayed
+  const f4cetFee = totalAmount * 0.04;
   const grandTotal = totalAmount + totalShipping;
   const grandTotalSol = solPrice ? (grandTotal / solPrice).toFixed(4) : 'N/A';
 
@@ -621,6 +658,20 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
     },
   };
 
+  const successAnimation = {
+    initial: { opacity: 0, scale: 0.5 },
+    animate: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: "easeOut" } },
+  };
+
+  const errorAnimation = {
+    initial: { opacity: 0, x: 0 },
+    animate: {
+      opacity: 1,
+      x: [0, -10, 10, -10, 0],
+      transition: { duration: 0.5, ease: "easeInOut" },
+    },
+  };
+
   return (
     <div>
       <Head>
@@ -659,7 +710,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           <Card plain>
             <CardBody plain>
               <h3 className={classes.cardTitle}>Shopping Cart</h3>
-              {error ? (
+              {error && !checkoutStatus ? (
                 <div className={classes.textCenter}>
                   <h4>Error: {error}</h4>
                 </div>
@@ -862,6 +913,47 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                   </GridContainer>
                 </div>
               )}
+              <Dialog
+                open={checkoutStatus !== null}
+                onClose={handleClosePopup}
+                classes={{ paper: classes.checkoutPopup }}
+              >
+                <DialogTitle>
+                  {checkoutStatus === 'success' ? (
+                    <motion.div {...successAnimation}>
+                      <CheckCircle className={`${classes.checkoutIcon} ${classes.successIcon}`} />
+                    </motion.div>
+                  ) : (
+                    <motion.div {...errorAnimation}>
+                      <Error className={`${classes.checkoutIcon} ${classes.errorIcon}`} />
+                    </motion.div>
+                  )}
+                </DialogTitle>
+                <DialogContent>
+                  <div className={classes.checkoutMessage}>
+                    {checkoutMessage}
+                  </div>
+                  {checkoutStatus === 'success' && transactionId && (
+                    <div className={classes.checkoutMessage}>
+                      Review your transaction and confirmation at:
+                      <br />
+                      <a
+                        href={`https://user.f4cets.market/dashboards/buyer/marketplace/details/${transactionId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#6fcba9', textDecoration: 'underline' }}
+                      >
+                        user.f4cets.market
+                      </a>
+                    </div>
+                  )}
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={handleClosePopup} color="rose" round>
+                    Close
+                  </Button>
+                </DialogActions>
+              </Dialog>
             </CardBody>
           </Card>
         </div>
@@ -874,9 +966,8 @@ export async function getServerSideProps(context) {
   const { fetchSolPrice } = require('../lib/getSolPrice');
   try {
     const solPrice = await fetchSolPrice();
-    // Simulate flash based on timestamp (true if within 0.5s of 15s interval)
     const now = Date.now();
-    const flash = (now % 15000) < 500; // True for 0.5s every 15s
+    const flash = (now % 15000) < 500;
     return {
       props: {
         solPrice,
@@ -887,7 +978,7 @@ export async function getServerSideProps(context) {
     console.error('Error fetching SOL price in getServerSideProps:', error);
     return {
       props: {
-        solPrice: 200, // Fallback
+        solPrice: 200,
         flash: false,
       },
     };
