@@ -104,7 +104,7 @@ const useStyles = makeStyles({
   },
   brand: {
     color: "#fff", // Hero text color
-    textAlign: "center", // Default (mobile)
+    textAlign: "center", // Center all content
     "@media (min-width: 960px)": { // Desktop
       textAlign: "left",
     },
@@ -130,13 +130,12 @@ const useStyles = makeStyles({
       whiteSpace: "normal", // Ensure text wraps correctly
       color: "#fff !important", // Enforce white color
       "@media (max-width: 576px)": {
-        fontSize: "1.3rem", // Adjusted for readability
-        maxWidth: "100%", // Removed maxWidth for centering
-        margin: "5px auto 10px", // Center text block
-        lineHeight: "1.3",
-        "& span": {
-          display: "block", // New line for "Built on" and icon
-        },
+        fontSize: "1.2rem", // Slightly smaller for fit
+        maxWidth: "100%", // Full width for centering
+        margin: "10px auto", // Balanced spacing
+        lineHeight: "1.2", // Tighter line height
+        display: "block", // Stack vertically
+        textAlign: "center", // Center text
       },
     },
   },
@@ -145,11 +144,25 @@ const useStyles = makeStyles({
     height: "40px",
     verticalAlign: "middle",
     marginLeft: "4px",
+    "@media (max-width: 576px)": {
+      width: "25px", // Smaller on mobile
+      height: "25px",
+    },
+  },
+  builtOnWrapper: {
+    display: "inline-flex",
+    alignItems: "center",
+    "@media (max-width: 576px)": {
+      display: "inline-flex",
+      alignItems: "center",
+    },
   },
   buttonWrapper: {
     marginTop: "20px",
     "@media (max-width: 576px)": {
-      marginTop: "15px", // Slightly more space on mobile
+      marginTop: "10px", // Closer to subtitle
+      display: "flex",
+      justifyContent: "center", // Center button
     },
   },
   cardContainer: {
@@ -189,16 +202,16 @@ const useStyles = makeStyles({
     overflow: "hidden",
     "@media (min-width: 960px)": {
       "& .card-content": {
-        opacity: 0,
+        opacity: "0",
         transition: "opacity 0.3s ease",
       },
       "&:hover .card-content": {
-        opacity: 1,
+        opacity: "1",
       },
     },
     "@media (max-width: 960px)": {
       "& .card-content": {
-        opacity: 1,
+        opacity: "1",
       },
     },
   },
@@ -217,7 +230,7 @@ const useStyles = makeStyles({
     textAlign: "center",
     borderRadius: "12px",
     "@media (max-width: 576px)": {
-      padding: "15px", // Reduced padding on mobile
+      padding: "20px", // Reduced padding on mobile
     },
   },
   swipeAnimation: {
@@ -361,12 +374,15 @@ export default function PresentationPage() {
                   <span className={classes.proBadge}>PRO</span>
                 </h1>
                 <h3 className={classes.title}>
-                  Where Crypto Meets Commerce <span>Built on</span>{" "}
-                  <img
-                    src="/img/solana-icon.png"
-                    alt="Solana Icon"
-                    className={classes.solanaIcon}
-                  />
+                  Where Crypto Meets Commerce{" "}
+                  <span className={classes.builtOnWrapper}>
+                    <span>Built on</span>{" "}
+                    <img
+                      src="/img/solana-icon.png"
+                      alt="Solana Icon"
+                      className={classes.solanaIcon}
+                    />
+                  </span>
                 </h3>
                 <div className={classes.buttonWrapper}>
                   <motion.button
@@ -499,7 +515,7 @@ export default function PresentationPage() {
                         <div
                           className={classes.coloredShadow}
                           style={{
-                            backgroundImage: `url(/img/examples/solfd.png)`,
+                            backgroundImage: `url(/img/examples/solF4.png)`,
                             opacity: "1",
                           }}
                         />
@@ -530,9 +546,9 @@ export default function PresentationPage() {
               <GridItem xs={12}>
                 <Card className={classes.entrepreneurCard}>
                   <CardBody>
-                    <h6 className={classes.commerceTitle}>
+                    <h2 className={classes.commerceTitle}>
                       Entrepreneurs to enterprise, F4cet is for everyone
-                    </h6>
+                    </h2>
                     <p className={classes.commerceDescription}>
                       Build fast, dream big, and grow now on F4cet.
                     </p>
@@ -656,7 +672,7 @@ export default function PresentationPage() {
                       <CardBody background className={classes.cardBodyRotate}>
                         <h5 className={classes.cardTitleWhite}>Join Affiliates</h5>
                         <h4 className={classes.cardDescriptionWhite}>
-                          Shop with top brands and earn crypto rewards.
+                          Partner with top brands and earn crypto rewards.
                         </h4>
                         <div className={classes.textCenter}>
                           <Button round justIcon color="info" href="/affiliate">
@@ -703,13 +719,13 @@ export default function PresentationPage() {
                   >
                     <CardBody background>
                       <div className="card-content">
-                        <h4 className={classes.cardCategoryWhite}>DECENTRALIZED COMMERCE</h4>
+                        <h6 className={classes.cardCategoryWhite}>DECENTRALIZED COMMERCE</h6>
                         <a href="/marketplace" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Shop Securely with Solana</h3>
                         </a>
-                        <h4 className={classes.cardDescriptionWhite}>
+                        <p className={classes.cardDescriptionWhite}>
                           Experience fast, low-cost transactions powered by Solana’s blockchain for a seamless shopping experience.
-                        </h4>
+                        </p>
                         <Button simple color="white" href="/marketplace">
                           <Subject /> Start Shopping
                         </Button>
@@ -729,13 +745,13 @@ export default function PresentationPage() {
                   >
                     <CardBody background>
                       <div className="card-content">
-                        <h4 className={classes.cardCategoryWhite}>NFT RECEIPTS</h4>
+                        <h6 className={classes.cardCategoryWhite}>NFT RECEIPTS</h6>
                         <a href="/about" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Own Your Purchases</h3>
                         </a>
-                        <h4 className={classes.cardDescriptionWhite}>
+                        <p className={classes.cardDescriptionWhite}>
                           Every purchase comes with a dynamic MetaPlex Core NFT receipt, securely stored by F4cet, proving ownership.
-                        </h4>
+                        </p>
                         <Button simple color="white" href="/marketplace">
                           <Subject /> Check it out
                         </Button>
@@ -755,13 +771,13 @@ export default function PresentationPage() {
                   >
                     <CardBody background>
                       <div className="card-content">
-                        <h4 className={classes.cardCategoryWhite}>CRYPTO CASHBACK</h4>
+                        <h6 className={classes.cardCategoryWhite}>CRYPTO CASHBACK</h6>
                         <a href="/affiliate" onClick={(e) => e.preventDefault()}>
                           <h3 className={classes.cardTitleWhite}>Earn Rewards with Affiliates</h3>
                         </a>
-                        <h4 className={classes.cardDescriptionWhite}>
+                        <p className={classes.cardDescriptionWhite}>
                           Shop through our affiliate program and earn up to 85% crypto cashback dropped into your Solflare wallet.
-                        </h4>
+                        </p>
                         <Button simple color="white" href="/affiliate">
                           <Subject /> Shop Affiliates
                         </Button>
@@ -788,7 +804,7 @@ export default function PresentationPage() {
                   Start buying or selling in no time.
                 </h2>
                 <p className={classes.commerceDescription}>
-                  Buyers, sellers, and affiliates... the F4cets web3 world waits...
+                  Buyers, sellers, or affiliates... the F4cets web3 world waits...
                 </p>
                 <div className={classes.ctaButtonWrapper}>
                   <motion.button
@@ -852,7 +868,7 @@ const styles = `
     opacity: 1;
     transform: translateY(0);
   }
-  * {
+  *:not(.fab) {
     font-family: 'Quicksand', sans-serif !important;
   }
 `;

@@ -127,7 +127,7 @@ function MyApp({ Component, pageProps }) {
                             </ListItem>
                             <ListItem className={footerClasses.inlineBlock}>
                               <a
-                                href="https://www.f4cets.com/"
+                                href="https://www.f4cets.com/mission/"
                                 target="_blank"
                                 className={footerClasses.block}
                               >
@@ -136,7 +136,7 @@ function MyApp({ Component, pageProps }) {
                             </ListItem>
                             <ListItem className={footerClasses.inlineBlock}>
                               <a
-                                href="https://www.f4cets.com/"
+                                href="https://www.f4cets.com/mint/"
                                 className={footerClasses.block}
                               >
                                 Mint
@@ -144,7 +144,7 @@ function MyApp({ Component, pageProps }) {
                             </ListItem>
                             <ListItem className={footerClasses.inlineBlock}>
                               <a
-                                href="https://www.f4cets.com/"
+                                href="https://www.f4cets.com/contact/"
                                 target="_blank"
                                 className={footerClasses.block}
                               >
