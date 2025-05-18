@@ -399,7 +399,7 @@ export default function PresentationPage() {
                   The only web3 commerce platform you need.
                 </h2>
                 <p className={classes.commerceDescription}>
-                  Reach local and global markets. Offer direct and wholesale options. Sell online and in person. Connect on mobile, desktop, or in Solflare Explore.
+                  Reach local and global markets. Offer direct and wholesale options. Sell online and in person. Connect on mobile, desktop, or in Solflare explore.
                 </p>
               </GridItem>
             </GridContainer>
