@@ -11,10 +11,10 @@ Built with NextJS Material Kit PRO
 
 import React, { useEffect, useRef } from "react";
 import Head from "next/head";
+import dynamic from "next/dynamic";
 import classNames from "classnames";
 import makeStyles from "@mui/styles/makeStyles";
 import { motion } from "framer-motion";
-import Lottie from "lottie-react";
 
 // core components
 import Header from "/components/Header/Header.js";
@@ -28,6 +28,9 @@ import CardHeader from "/components/Card/CardHeader.js";
 import CardBody from "/components/Card/CardBody.js";
 import Icon from "@mui/material/Icon";
 import Subject from "@mui/icons-material/Subject";
+
+// Dynamically import Lottie with SSR disabled
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 // Lottie animation
 import swipeAnimation from "/public/lottie/swipe-animation.json";
@@ -81,6 +84,7 @@ const useStyles = makeStyles({
     color: "#2b2634 !important", // Updated from #212121
     hyphens: "none", // Prevent word breaking
     wordBreak: "normal", // Ensure whole words wrap
+    overflowWrap: "anywhere", // Allow wrapping at any point if needed
     "@media (max-width: 576px)": {
       fontSize: "2.2rem", // Adjusted for mobile
     },
@@ -93,6 +97,7 @@ const useStyles = makeStyles({
     color: "#2b2634 !important", // Updated from #212121
     hyphens: "none", // Prevent word breaking
     wordBreak: "normal", // Ensure whole words wrap
+    overflowWrap: "anywhere", // Allow wrapping at any point if needed
     "@media (max-width: 576px)": {
       fontSize: "1.3rem", // Adjusted for mobile
     },
@@ -109,7 +114,7 @@ const useStyles = makeStyles({
       fontWeight: 700,
       display: "inline-block",
       position: "relative",
-      "@media (max-width: 576px)": {
+      "@media (max-width: 960px)": {
         fontSize: "2.4rem",
         lineHeight: "1.2",
         display: "none", // Hide title on mobile
