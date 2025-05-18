@@ -79,6 +79,8 @@ const useStyles = makeStyles({
     lineHeight: "1.4", // Taller appearance
     marginBottom: "20px",
     color: "#2b2634 !important", // Updated from #212121
+    hyphens: "none", // Prevent word breaking
+    wordBreak: "normal", // Ensure whole words wrap
     "@media (max-width: 576px)": {
       fontSize: "2.2rem", // Adjusted for mobile
     },
@@ -87,8 +89,10 @@ const useStyles = makeStyles({
     fontFamily: "'Quicksand', sans-serif",
     fontSize: "1.8rem", // Taller text
     fontWeight: 500,
-    lineHeight: "1.6", // Taller appearance,
+    lineHeight: "1.6", // Taller appearance
     color: "#2b2634 !important", // Updated from #212121
+    hyphens: "none", // Prevent word breaking
+    wordBreak: "normal", // Ensure whole words wrap
     "@media (max-width: 576px)": {
       fontSize: "1.3rem", // Adjusted for mobile
     },
@@ -108,6 +112,7 @@ const useStyles = makeStyles({
       "@media (max-width: 576px)": {
         fontSize: "2.4rem",
         lineHeight: "1.2",
+        display: "none", // Hide title on mobile
       },
     },
     "& h3": {
@@ -216,7 +221,7 @@ const useStyles = makeStyles({
       display: "block", // Visible on mobile
       width: "200px",
       height: "100px",
-      margin: "1px auto", // Centered, close to cards
+      margin: "1px auto", // Tighter margin for proximity
     },
   },
 });
@@ -479,7 +484,7 @@ export default function PresentationPage() {
               </div>
               <div className={classes.cardItem}>
                 <motion.div className="motion-card" variants={cardVariants} initial="rest" whileHover="hover">
-                  <a href="/market  /marketplace">
+                  <a href="/marketplace">
                     <Card profile style={{ maxWidth: "360px" }}>
                       <CardHeader image>
                         <img
