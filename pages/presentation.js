@@ -331,7 +331,7 @@ export default function PresentationPage() {
         <title>F4cets Marketplace - Web3 E-Commerce on Solana</title>
         <meta
           name="description"
-          content="Discover F4cets, a decentralized marketplace built on Solana. Shop, sell, and earn crypto cashback with Solflare."
+          content="Discover F4cets, a decentralized marketplace built on Solana. Shop, sell, and earn crypto cashback - Solflare Preferred Wallet Provider for F4cet."
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
