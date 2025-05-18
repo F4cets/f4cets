@@ -515,7 +515,7 @@ export default function PresentationPage() {
                         <div
                           className={classes.coloredShadow}
                           style={{
-                            backgroundImage: `url(/img/examples/solF4.png)`,
+                            backgroundImage: `url(/img/examples/solfd.png)`,
                             opacity: "1",
                           }}
                         />
