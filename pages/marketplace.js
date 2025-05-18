@@ -289,25 +289,77 @@ export default function Marketplace() {
             </GridContainer>
           ) : (
             <div style={{ textAlign: "center", padding: "40px 20px", color: "#212121" }}>
-              <h1 style={{ fontSize: "2.5rem", fontWeight: "bold", marginBottom: "40px" }}>
+              <style jsx>{`
+                #wallet-connect-title {
+                  font-size: 2.5rem;
+                }
+                #preferred-wallet-title {
+                  font-size: 2.5rem;
+                }
+                #new-to-solana-title {
+                  font-size: 3rem;
+                }
+                #download-title {
+                  font-size: 3.75rem;
+                }
+                #solflare-hand-image {
+                  max-width: 60%;
+                }
+                @media (max-width: 576px) {
+                  #wallet-connect-title {
+                    font-size: 1.3rem;
+                  }
+                  #preferred-wallet-title {
+                    font-size: 1.1rem;
+                  }
+                  #new-to-solana-title {
+                    font-size: 1.1rem;
+                  }
+                  #download-title {
+                    font-size: 1.1rem;
+                  }
+                  #solflare-hand-image {
+                    max-width: 100%;
+                  }
+                }
+              `}</style>
+              <h1
+                id="wallet-connect-title"
+                style={{
+                  fontWeight: "bold",
+                  marginBottom: "40px",
+                  lineHeight: "1.2",
+                }}
+              >
                 Please Connect Your Wallet to View Marketplace
               </h1>
-              <GridContainer spacing={4} justifyContent="center">
+              <GridContainer spacing={3} justifyContent="center">
+                {/* First Card */}
                 <GridItem xs={12}>
                   <div
                     style={{
                       backgroundColor: "#ffffff",
-                      padding: "30px",
+                      padding: "30px 30px 0 30px",
                       borderRadius: "15px",
                       boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)",
                       textAlign: "center",
                       marginBottom: "30px",
                     }}
                   >
-                    <h3 style={{ fontSize: "3rem", marginBottom: "15px" }}>
+                    <h3
+                      id="new-to-solana-title"
+                      style={{
+                        marginBottom: "15px",
+                      }}
+                    >
                       New to Solana or Crypto?
                     </h3>
-                    <h4 style={{ fontSize: "3.75rem", marginBottom: "20px" }}>
+                    <h4
+                      id="download-title"
+                      style={{
+                        marginBottom: "20px",
+                      }}
+                    >
                       Download
                     </h4>
                     <motion.div
@@ -324,8 +376,8 @@ export default function Marketplace() {
                           src="/img/solflare-logo.png"
                           alt="Solflare Logo"
                           style={{
-                            width: "50%",
-                            maxWidth: "250px",
+                            width: "100%",
+                            maxWidth: "50%",
                             height: "auto",
                             marginBottom: "20px",
                             display: "block",
@@ -335,7 +387,12 @@ export default function Marketplace() {
                         />
                       </a>
                     </motion.div>
-                    <h2 style={{ fontSize: "2.5rem", marginBottom: "20px" }}>
+                    <h2
+                      id="preferred-wallet-title"
+                      style={{
+                        marginBottom: "20px",
+                      }}
+                    >
                       Preferred F4cet Marketplace Wallet
                     </h2>
                     <img
@@ -352,11 +409,12 @@ export default function Marketplace() {
                       }}
                     />
                     <img
+                      id="solflare-hand-image"
                       src="/img/solflareH.png"
                       alt="Solflare Hand"
                       style={{
-                        width: "60%",
-                        maxWidth: "300px",
+                        width: "100%",
+                        maxWidth: "60%",
                         height: "auto",
                         display: "block",
                         marginLeft: "auto",
@@ -365,6 +423,7 @@ export default function Marketplace() {
                     />
                   </div>
                 </GridItem>
+                {/* Second Card */}
                 <GridItem xs={12}>
                   <div
                     style={{
@@ -385,8 +444,8 @@ export default function Marketplace() {
                         src="/img/solflareD.png"
                         alt="Solflare Extension"
                         style={{
-                          width: "70%",
-                          maxWidth: "350px",
+                          width: "100%",
+                          maxWidth: "70%",
                           height: "auto",
                           display: "block",
                           marginLeft: "auto",
@@ -399,6 +458,8 @@ export default function Marketplace() {
               </GridContainer>
             </div>
           )}
+          {/* Add wrapper div with padding below the last row */}
+          <div style={{ paddingBottom: "20px" }}></div>
         </div>
       </div>
       <Footer theme="dark" content={<div />} />

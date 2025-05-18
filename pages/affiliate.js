@@ -177,7 +177,7 @@ export default function Affiliate() {
           color: "info",
         }}
       />
-      <Parallax image="/img/examples/affiliate.jpg" filter="null" small>
+      <Parallax image="/img/examples/affiliate.jpg" filter={null} small>
         <div
           style={{
             display: "flex",
@@ -221,9 +221,43 @@ export default function Affiliate() {
             </GridContainer>
           ) : (
             <div style={{ textAlign: "center", padding: "40px 20px", color: "#212121" }}>
+              <style jsx>{`
+                #wallet-connect-title {
+                  font-size: 2.5rem;
+                }
+                #preferred-wallet-title {
+                  font-size: 2.5rem;
+                }
+                #new-to-solana-title {
+                  font-size: 3rem;
+                }
+                #download-title {
+                  font-size: 3.75rem;
+                }
+                #solflare-hand-image {
+                  max-width: 60%;
+                }
+                @media (max-width: 576px) {
+                  #wallet-connect-title {
+                    font-size: 1.3rem;
+                  }
+                  #preferred-wallet-title {
+                    font-size: 1.1rem;
+                  }
+                  #new-to-solana-title {
+                    font-size: 1.1rem;
+                  }
+                  #download-title {
+                    font-size: 1.1rem;
+                  }
+                  #solflare-hand-image {
+                    max-width: 100%;
+                  }
+                }
+              `}</style>
               <h1
+                id="wallet-connect-title"
                 style={{
-                  fontSize: { xs: "1.5rem", md: "2.5rem" },
                   fontWeight: "bold",
                   marginBottom: "40px",
                   lineHeight: "1.2",
@@ -245,16 +279,16 @@ export default function Affiliate() {
                     }}
                   >
                     <h3
+                      id="new-to-solana-title"
                       style={{
-                        fontSize: { xs: "1.5rem", md: "3rem" },
                         marginBottom: "15px",
                       }}
                     >
                       New to Solana or Crypto?
                     </h3>
                     <h4
+                      id="download-title"
                       style={{
-                        fontSize: { xs: "1.5rem", md: "3.75rem" },
                         marginBottom: "20px",
                       }}
                     >
@@ -300,8 +334,8 @@ export default function Affiliate() {
                       </a>
                     </motion.div>
                     <h2
+                      id="preferred-wallet-title"
                       style={{
-                        fontSize: { xs: "1.25rem", md: "2.5rem" },
                         marginBottom: "20px",
                       }}
                     >
@@ -321,11 +355,11 @@ export default function Affiliate() {
                       }}
                     />
                     <img
+                      id="solflare-hand-image"
                       src="/img/solflareH.png"
                       alt="Solflare Hand"
                       style={{
                         width: "100%",
-                        maxWidth: "60%",
                         height: "auto",
                         display: "block",
                         marginLeft: "auto",
