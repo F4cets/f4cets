@@ -223,7 +223,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
         setSolPrice(data.solana.usd);
         console.log('Client-side SOL price update:', data.solana.usd);
         setFlash(true);
-        setTimeout(() => setFlash(false), 500);
+        setTimeout(() => setFlash(false), 800);
       } catch (error) {
         console.error('Error updating SOL price client-side:', error);
       }
@@ -286,6 +286,30 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       if (!item) return;
 
       const newQuantity = Math.max(1, item.quantity + delta);
+      if (delta > 0) {
+        // Check inventory for increments
+        const productRef = doc(db, "products", item.productId);
+        const productDoc = await getDoc(productRef);
+        if (!productDoc.exists()) {
+          console.warn(`Product ${item.productId} not found`);
+          return;
+        }
+        const productData = productDoc.data();
+
+        let availableQuantity = 0;
+        if (productData.type === "digital") {
+          availableQuantity = productData.quantity || 0;
+        } else if (productData.type === "rwi") {
+          const variant = productData.variants?.find(v => v.size === item.size && v.color === item.color);
+          availableQuantity = variant ? variant.quantity || 0 : 0;
+        }
+
+        if (newQuantity > availableQuantity) {
+          console.log(`Cannot add more of ${item.name}. Only ${availableQuantity} units available.`);
+          return; // Silently block the increment
+        }
+      }
+
       const cartRef = doc(db, `users/${walletId}/cart`, itemId);
       await setDoc(cartRef, { quantity: newQuantity, walletId }, { merge: true });
       setCartItems(prevItems =>
@@ -456,10 +480,9 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
               Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
             </div>
             <div className={classes.shippingTotal}>
-              Grand Total: <small>$</small> {grandTotal.toLocaleString()} 
-              <motion.span
-                animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#6fcba9', '#212121'] } : {}}
-                transition={{ duration: 0.5 }}
+              Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
+                animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
+                transition={{ duration: 0.8 }}
               >
                 ({grandTotalSol} SOL)
               </motion.span>
@@ -816,10 +839,9 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                         Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
                       </div>
                       <div className={classes.mobileTotal}>
-                        Grand Total: <small>$</small> {grandTotal.toLocaleString()} 
-                        <motion.span
-                          animate={flash ? { scale: [1, 1.1, 1], color: ['#212121', '#6fcba9', '#212121'] } : {}}
-                          transition={{ duration: 0.5 }}
+                        Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
+                          animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
+                          transition={{ duration: 0.8 }}
                         >
                           ({grandTotalSol} SOL)
                         </motion.span>
@@ -1023,7 +1045,7 @@ export async function getServerSideProps(context) {
     const flash = (now % 15000) < 500;
     return {
       props: {
-        solPrice,
+        solPrice: solPrice || 200, // Fallback to 200 if solPrice is undefined
         flash,
       },
     };
