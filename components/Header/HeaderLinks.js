@@ -58,29 +58,31 @@ export default function HeaderLinks(props) {
           </Button>
         </Link>
       </ListItem>
-      <ListItem className={classes.listItem}>
-        {isLgUp && (
-          <Button
-            href="/shopping-cart"
-            color="white"
-            className={classes.navButton}
-            round
-          >
-            <ShoppingCart className={classes.icons} /> Cart
-          </Button>
-        )}
-        {isMdDown && (
-          <Button
-            href="/shopping-cart"
-            color="rose"
-            className={classes.navButton}
-            round
-          >
-            <ShoppingCart className={classes.icons} /> Cart
-          </Button>
-        )}
-      </ListItem>
-      {user && (
+      {user && user.isActive && (
+        <ListItem className={classes.listItem}>
+          {isLgUp && (
+            <Button
+              href="/shopping-cart"
+              color="white"
+              className={classes.navButton}
+              round
+            >
+              <ShoppingCart className={classes.icons} /> Cart
+            </Button>
+          )}
+          {isMdDown && (
+            <Button
+              href="/shopping-cart"
+              color="rose"
+              className={classes.navButton}
+              round
+            >
+              <ShoppingCart className={classes.icons} /> Cart
+            </Button>
+          )}
+        </ListItem>
+      )}
+      {user && user.isActive && (
         <ListItem className={classes.listItem}>
           <Button
             href={`https://user.f4cets.market/${user.role}/${user.walletId}`}

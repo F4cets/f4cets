@@ -30,18 +30,20 @@ export function UserContextProvider({ children }) {
             setUser({
               walletId,
               role: data.role || "buyer",
+              isActive: data.isActive !== false, // Default to true if undefined
               profile: {
                 name: data.name || "User",
                 avatar: data.avatar || "/assets/images/default-avatar.png",
                 email: data.email || "",
               },
             });
-            console.log("UserContext: User data fetched:", { walletId, role: data.role });
+            console.log("UserContext: User data fetched:", { walletId, role: data.role, isActive: data.isActive });
           } else {
             console.log("UserContext: No user found, creating new user with role: buyer");
             const newUser = {
               walletId,
               role: "buyer",
+              isActive: true, // New field for user activation status
               email: "",
               name: "User",
               avatar: "/assets/images/default-avatar.png",
@@ -58,13 +60,14 @@ export function UserContextProvider({ children }) {
             setUser({
               walletId,
               role: "buyer",
+              isActive: true,
               profile: {
                 name: "User",
                 avatar: "/assets/images/default-avatar.png",
                 email: "",
               },
             });
-            console.log("UserContext: New user created:", { walletId, role: "buyer" });
+            console.log("UserContext: New user created:", { walletId, role: "buyer", isActive: true });
           }
         } catch (error) {
           console.error("UserContext: Error fetching or creating user data:", error);

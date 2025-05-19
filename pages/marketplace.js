@@ -14,7 +14,10 @@ import styles from "/styles/jss/nextjs-material-kit-pro/pages/marketplaceStyle.j
 import { db } from "../firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useUser } from "/contexts/UserContext";
 import { motion } from "framer-motion";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 const useStyles = makeStyles({
   ...styles,
@@ -37,6 +40,7 @@ export default function Marketplace() {
 
   const classes = useStyles();
   const { publicKey } = useWallet();
+  const { user } = useUser();
   const [sellers, setSellers] = useState([]);
   const [filteredSellers, setFilteredSellers] = useState([]);
   const [visibleSellers, setVisibleSellers] = useState([]);
@@ -49,6 +53,7 @@ export default function Marketplace() {
     view: "all",
   });
   const [categories, setCategories] = useState([]);
+  const [showBanned, setShowBanned] = useState(false);
   const loader = useRef(null);
 
   // Fetch categories and sellers
@@ -57,21 +62,43 @@ export default function Marketplace() {
       try {
         console.log("Starting Firestore fetch...");
 
+        // Fetch active stores
         const storesQuery = query(collection(db, "stores"), where("isActive", "==", true));
-        const productsQuery = query(collection(db, "products"), where("isActive", "==", true));
-        const [storesSnapshot, productsSnapshot] = await Promise.all([
-          getDocs(storesQuery),
-          getDocs(productsQuery),
-        ]);
-
+        const storesSnapshot = await getDocs(storesQuery);
         console.log("Stores fetched:", storesSnapshot.docs.length, "documents");
-        console.log("Products fetched:", productsSnapshot.docs.length, "documents");
 
+        // Get active store IDs
+        const activeStoreIds = storesSnapshot.docs.map(doc => doc.id);
+        console.log("Active store IDs:", activeStoreIds);
+
+        // Fetch products from active stores
+        let products = [];
+        if (activeStoreIds.length > 0) {
+          // Firestore 'in' query supports up to 10 IDs; batch if needed
+          const maxInQueryLength = 10;
+          for (let i = 0; i < activeStoreIds.length; i += maxInQueryLength) {
+            const batchIds = activeStoreIds.slice(i, i + maxInQueryLength);
+            const productsQuery = query(
+              collection(db, "products"),
+              where("isActive", "==", true),
+              where("storeId", "in", batchIds)
+            );
+            const productsSnapshot = await getDocs(productsQuery);
+            products.push(...productsSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            })));
+          }
+        }
+        console.log("Products fetched:", products.length, "documents");
+
+        // Process categories
         const storeCategories = storesSnapshot.docs.flatMap(doc => doc.data().categories || []);
-        const productCategories = productsSnapshot.docs.flatMap(doc => doc.data().categories || []);
+        const productCategories = products.flatMap(doc => doc.categories || []);
         const uniqueCategories = [...new Set([...storeCategories, ...productCategories])].sort();
         setCategories(uniqueCategories);
 
+        // Process stores
         const stores = storesSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -80,16 +107,17 @@ export default function Marketplace() {
           image: doc.data().thumbnailUrl || "https://picsum.photos/600/300",
         }));
 
-        const products = productsSnapshot.docs.map((doc) => ({
+        // Process products
+        const processedProducts = products.map((doc) => ({
           id: doc.id,
-          ...doc.data(),
+          ...doc,
           type: "product",
-          productType: doc.data().type || "unknown",
-          price: doc.data().price || 0,
-          image: doc.data().imageUrls && doc.data().imageUrls[0] ? doc.data().imageUrls[0] : "https://picsum.photos/600/300",
+          productType: doc.type || "unknown",
+          price: doc.price || 0,
+          image: doc.imageUrls && doc.imageUrls[0] ? doc.imageUrls[0] : "https://picsum.photos/600/300",
         }));
 
-        const combined = [...stores, ...products].sort((a, b) => {
+        const combined = [...stores, ...processedProducts].sort((a, b) => {
           const priceDiff = (a.price || 0) - (b.price || 0);
           if (priceDiff !== 0) return priceDiff;
           return (a.name || "").localeCompare(b.name || "");
@@ -103,8 +131,18 @@ export default function Marketplace() {
         console.error("Firestore fetch error:", error);
       }
     };
-    fetchData();
-  }, []);
+    if (publicKey && user) {
+      // Add a minimal delay to ensure isActive is fetched
+      const timer = setTimeout(() => {
+        if (user.isActive) {
+          fetchData();
+        } else {
+          setShowBanned(true);
+        }
+      }, 100); // 100ms delay to allow UserContext to fetch isActive
+      return () => clearTimeout(timer);
+    }
+  }, [publicKey, user]);
 
   const applyFilters = useCallback(() => {
     try {
@@ -128,7 +166,7 @@ export default function Marketplace() {
       }
 
       if (filters.view !== "all") {
-        const viewType = filters.view === "store" ? "store" : "product"; // Map toggle value to seller.type
+        const viewType = filters.view === "store" ? "store" : "product";
         filtered = filtered.filter((seller) => seller.type === viewType);
       }
 
@@ -255,18 +293,20 @@ export default function Marketplace() {
       </Parallax>
 
       <div className={classNames(classes.main, classes.mainRaised)}>
-        <div className={classNames(classes.searchContainer, classes.searchPadding)}>
-          <SearchBar
-            onSearch={handleSearch}
-            onFilter={handleFilter}
-            searchQuery={searchQuery}
-            filters={filters}
-            categories={categories}
-          />
-        </div>
         <div className={classes.grid}>
-          {publicKey ? (
+          {publicKey && user && user.isActive ? (
             <GridContainer spacing={4} justifyContent="center">
+              <GridItem xs={12}>
+                <div className={classNames(classes.searchContainer, classes.searchPadding)}>
+                  <SearchBar
+                    onSearch={handleSearch}
+                    onFilter={handleFilter}
+                    searchQuery={searchQuery}
+                    filters={filters}
+                    categories={categories}
+                  />
+                </div>
+              </GridItem>
               {visibleSellers.length > 0 ? (
                 visibleSellers.map((seller) => (
                   <GridItem
@@ -427,7 +467,7 @@ export default function Marketplace() {
                 <GridItem xs={12}>
                   <div
                     style={{
-                      backgroundColor: "#ffffff",
+                      backgroundColor: "rgba(255, 255, 255, 0.95)",
                       padding: "30px",
                       borderRadius: "15px",
                       boxShadow: "0 8px 30px rgba(0, 0, 0, 0.15)",
@@ -462,6 +502,20 @@ export default function Marketplace() {
           <div style={{ paddingBottom: "20px" }}></div>
         </div>
       </div>
+      <Snackbar
+        open={showBanned}
+        autoHideDuration={6000}
+        onClose={() => setShowBanned(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setShowBanned(false)}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
+          Your account has been banned. Please contact support.
+        </Alert>
+      </Snackbar>
       <Footer theme="dark" content={<div />} />
     </div>
   );

@@ -16,6 +16,8 @@ import { collection, query, where, getDocs, doc, setDoc } from "firebase/firesto
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useUser } from "/contexts/UserContext"; // Import UserContext
 import { motion } from "framer-motion";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 const useStyles = makeStyles(styles);
 
@@ -33,39 +35,42 @@ export default function Affiliate() {
   const [visibleAffiliates, setVisibleAffiliates] = useState([]);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showBanned, setShowBanned] = useState(false);
   const loader = useRef(null);
 
   // Fetch affiliates only when wallet is connected
   useEffect(() => {
-    if (connected) {
-      const fetchAffiliates = async () => {
-        try {
-          console.log("Starting Firestore fetch for affiliates...");
-          const affiliatesQuery = query(collection(db, "affiliates"), where("isActive", "==", true));
-          console.log("Executing affiliates query...");
-          const affiliatesSnapshot = await getDocs(affiliatesQuery);
-          console.log("Affiliates fetched:", affiliatesSnapshot.docs.length, "documents");
+    const fetchAffiliates = async () => {
+      try {
+        console.log("Starting Firestore fetch for affiliates...");
+        const affiliatesQuery = query(collection(db, "affiliates"), where("isActive", "==", true));
+        console.log("Executing affiliates query...");
+        const affiliatesSnapshot = await getDocs(affiliatesQuery);
+        console.log("Affiliates fetched:", affiliatesSnapshot.docs.length, "documents");
 
-          const affiliatesData = affiliatesSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
+        const affiliatesData = affiliatesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-          affiliatesData.forEach((affiliate) => {
-            console.log("Full logoUrl:", affiliate.logoUrl);
-          });
+        affiliatesData.forEach((affiliate) => {
+          console.log("Full logoUrl:", affiliate.logoUrl);
+        });
 
-          console.log("Affiliates data:", affiliatesData);
-          setAffiliates(affiliatesData);
-          setFilteredAffiliates(affiliatesData);
-          setVisibleAffiliates(affiliatesData.slice(0, 30));
-        } catch (error) {
-          console.error("Detailed Firestore error for affiliates:", error);
-        }
-      };
+        console.log("Affiliates data:", affiliatesData);
+        setAffiliates(affiliatesData);
+        setFilteredAffiliates(affiliatesData);
+        setVisibleAffiliates(affiliatesData.slice(0, 30));
+      } catch (error) {
+        console.error("Detailed Firestore error for affiliates:", error);
+      }
+    };
+    if (connected && user && user.isActive) {
       fetchAffiliates();
+    } else if (connected && user && !user.isActive) {
+      setShowBanned(true);
     }
-  }, [connected]);
+  }, [connected, user]);
 
   // Track affiliate click
   const trackAffiliateClick = async (affiliate) => {
@@ -201,7 +206,7 @@ export default function Affiliate() {
           <AffiliateSearchBar onSearch={handleSearch} searchQuery={searchQuery} />
         </div>
         <div className={classes.grid}>
-          {connected ? (
+          {connected && user && user.isActive ? (
             <GridContainer spacing={2} justifyContent="center">
               {visibleAffiliates.length > 0 ? (
                 visibleAffiliates.map((affiliate) => (
@@ -407,6 +412,20 @@ export default function Affiliate() {
           <div style={{ paddingBottom: "20px" }}></div>
         </div>
       </div>
+      <Snackbar
+        open={showBanned}
+        autoHideDuration={6000}
+        onClose={() => setShowBanned(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setShowBanned(false)}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
+          Your account has been banned. Please contact support.
+        </Alert>
+      </Snackbar>
       <Footer theme="dark" content={<div />} />
     </div>
   );
