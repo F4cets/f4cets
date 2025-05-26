@@ -38,7 +38,7 @@ import { collection, query, getDocs, doc, deleteDoc, setDoc, getDoc } from "fire
 import { db } from "../firebase";
 import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppingCartStyle.js";
 import { motion } from "framer-motion";
-import { v4 as uuidv4 } from 'uuid';
+import { v4, uuidv4 } from 'uuid';
 import { useRouter } from 'next/router';
 import { Connection, Transaction } from '@solana/web3.js';
 
@@ -399,7 +399,6 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       };
       console.log("Checkout data:", JSON.stringify(checkoutData, null, 2));
 
-      // Call process-checkout to create payment transaction
       const response = await fetch('https://process-checkout-232592911911.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -424,22 +423,6 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       const signedTx = await signTransaction(tx);
       const signature = await connection.sendRawTransaction(signedTx.serialize());
       await connection.confirmTransaction({ signature, lastValidBlockHeight }, 'confirmed');
-
-      // Call finalize-checkout to transfer NFTs and update Firestore
-      const finalizeResponse = await fetch('https://finalize-checkout-232592911911.us-central1.run.app', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transactionIds,
-          walletId,
-          paymentSignature: signature
-        })
-      });
-
-      const finalizeResult = await finalizeResponse.json();
-      if (!finalizeResponse.ok) {
-        throw new Error(finalizeResult.error || 'Finalize checkout failed');
-      }
 
       setCartItems([]);
       setTotalShipping(0);
