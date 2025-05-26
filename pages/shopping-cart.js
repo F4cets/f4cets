@@ -37,7 +37,7 @@ import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppin
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/router';
-import * as web3 from '@solana/web3.js';
+import { Connection, Transaction } from '@solana/web3.js';
 
 const useStyles = makeStyles({
   ...shoppingCartStyle,
@@ -407,8 +407,14 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
 
       // Sign and send the payment transaction
       const { transaction, lastValidBlockHeight, transactionIds } = result;
-      const connection = new web3.Connection('https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
-      const tx = web3.Transaction.from(Buffer.from(transaction, 'base64'));
+      const connection = new Connection('https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
+      let tx;
+      try {
+        tx = Transaction.from(Buffer.from(transaction, 'base64'));
+      } catch (err) {
+        console.error('Failed to parse transaction:', err);
+        throw new Error('Invalid transaction data');
+      }
       const signedTx = await signTransaction(tx);
       const signature = await connection.sendRawTransaction(signedTx.serialize());
       await connection.confirmTransaction({ signature, lastValidBlockHeight }, 'confirmed');
