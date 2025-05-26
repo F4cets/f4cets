@@ -38,7 +38,7 @@ import { collection, query, getDocs, doc, deleteDoc, setDoc, getDoc } from "fire
 import { db } from "../firebase";
 import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppingCartStyle.js";
 import { motion } from "framer-motion";
-import { v4, uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/router';
 import { Connection, Transaction } from '@solana/web3.js';
 
@@ -399,19 +399,20 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       };
       console.log("Checkout data:", JSON.stringify(checkoutData, null, 2));
 
-      const response = await fetch('https://process-checkout-232592911911.us-central1.run.app', {
+      // Call processCheckout
+      const processResponse = await fetch('https://process-checkout-232592911911.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(checkoutData)
       });
 
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Checkout failed');
+      const processResult = await processResponse.json();
+      if (!processResponse.ok) {
+        throw new Error(processResult.error || 'Checkout failed');
       }
 
       // Sign and send the payment transaction
-      const { transaction, lastValidBlockHeight, transactionIds } = result;
+      const { transaction, lastValidBlockHeight } = processResult;
       const connection = new Connection('https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
       let tx;
       try {
@@ -424,6 +425,22 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       const signature = await connection.sendRawTransaction(signedTx.serialize());
       await connection.confirmTransaction({ signature, lastValidBlockHeight }, 'confirmed');
 
+      // Call confirmCheckout with payment signature
+      const confirmResponse = await fetch('https://confirm-checkout-232592911911.us-central1.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...checkoutData,
+          paymentSignature: signature
+        })
+      });
+
+      const confirmResult = await confirmResponse.json();
+      if (!confirmResponse.ok) {
+        throw new Error(confirmResult.error || 'Checkout confirmation failed');
+      }
+
+      const { transactionIds } = confirmResult;
       setCartItems([]);
       setTotalShipping(0);
       setHasRWI(false);
@@ -911,7 +928,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                         Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
                       </div>
                       <div className={classes.mobileTotal}>
-                        Grand Total: <small>$</small> {totalAmount.toLocaleString()} <motion.span
+                        Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
                           animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
                           transition={{ duration: 0.8 }}
                         >
