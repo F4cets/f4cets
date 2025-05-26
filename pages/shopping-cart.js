@@ -394,7 +394,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       };
       console.log("Checkout data:", JSON.stringify(checkoutData, null, 2));
 
-      const response = await fetch('https://us-central1-f4cet-marketplace.cloudfunctions.net/processCheckout', {
+      const response = await fetch('https://process-checkout-232592911911.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(checkoutData)
