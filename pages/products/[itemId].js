@@ -180,7 +180,9 @@ export default function ProductPage(props) {
         walletId,
       };
 
-      const cartRef = doc(db, `users/${walletId}/cart`, itemId);
+      // Generate unique cart item ID including size and color for RWI
+      const cartItemId = item.type === "rwi" ? `${itemId}-${sizeSelect}-${colorSelect}` : itemId;
+      const cartRef = doc(db, `users/${walletId}/cart`, cartItemId);
       await setDoc(cartRef, cartItem, { merge: true });
       console.log("Added to Firestore cart:", cartItem);
       setSnackbarMessage(`${item.name} added to cart!`);

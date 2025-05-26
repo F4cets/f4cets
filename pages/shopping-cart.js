@@ -37,6 +37,7 @@ import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppin
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/router';
+import * as web3 from '@solana/web3.js';
 
 const useStyles = makeStyles({
   ...shoppingCartStyle,
@@ -167,11 +168,12 @@ const useStyles = makeStyles({
 
 export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: initialFlash }) {
   const classes = useStyles();
-  const { connected, publicKey } = useWallet();
+  const { connected, publicKey, signTransaction } = useWallet();
   const router = useRouter();
   const [walletId, setWalletId] = useState(null);
   const [isConnected, setIsConnected] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  const [hasRWI, setHasRWI] = useState(false);
   const [error, setError] = useState(null);
   const [shippingAddress, setShippingAddress] = useState({
     street: '',
@@ -199,6 +201,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       setWalletId(null);
       setCartItems([]);
       setTotalShipping(0);
+      setHasRWI(false);
     }
   }, [connected, publicKey]);
 
@@ -208,12 +211,12 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
   }, []);
 
   useEffect(() => {
-    if (cartItems.length > 0 && shippingAddress.zip && shippingAddress.country) {
+    if (cartItems.length > 0 && shippingAddress.zip && shippingAddress.country && hasRWI) {
       calculateShippingCosts();
     } else {
       setTotalShipping(0);
     }
-  }, [cartItems, shippingAddress]);
+  }, [cartItems, shippingAddress, hasRWI]);
 
   useEffect(() => {
     const updatePrice = async () => {
@@ -243,6 +246,14 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       const items = cartSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setCartItems(items);
       console.log("Cart items:", items);
+
+      // Check if any item is RWI
+      const itemChecks = await Promise.all(items.map(async item => {
+        const productRef = doc(db, "products", item.productId);
+        const productDoc = await getDoc(productRef);
+        return productDoc.exists() && productDoc.data().type === "rwi";
+      }));
+      setHasRWI(itemChecks.some(isRWI => isRWI));
     } catch (err) {
       console.error("Error fetching cart items:", err);
       setError(`Failed to load cart: ${err.message}`);
@@ -317,6 +328,15 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           item.id === itemId ? { ...item, quantity: newQuantity } : item
         )
       );
+
+      // Re-check if any item is RWI after quantity change
+      const itemChecks = await Promise.all(cartItems.map(async item => {
+        const productRef = doc(db, "products", item.productId);
+        const productDoc = await getDoc(productRef);
+        return productDoc.exists() && productDoc.data().type === "rwi";
+      }));
+      setHasRWI(itemChecks.some(isRWI => isRWI));
+
       console.log("Updated quantity for item:", itemId, newQuantity);
     } catch (err) {
       console.error("Error updating quantity:", err);
@@ -330,6 +350,16 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       await deleteDoc(cartRef);
       setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
       console.log("Removed item from cart:", itemId);
+
+      // Re-check if any item is RWI after removal
+      const itemChecks = await Promise.all(cartItems
+        .filter(item => item.id !== itemId)
+        .map(async item => {
+          const productRef = doc(db, "products", item.productId);
+          const productDoc = await getDoc(productRef);
+          return productDoc.exists() && productDoc.data().type === "rwi";
+        }));
+      setHasRWI(itemChecks.some(isRWI => isRWI));
     } catch (err) {
       console.error("Error removing item:", err);
       setError(`Failed to remove item: ${err.message}`);
@@ -337,18 +367,13 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
   };
 
   const handleCheckout = async () => {
-    if (!connected || !walletId) {
+    if (!connected || !walletId || !publicKey || !signTransaction) {
       setCheckoutStatus('error');
       setCheckoutMessage("Please connect your wallet to proceed.");
       return;
     }
 
     // Validate shipping address for RWI items
-    const hasRWI = await Promise.any(cartItems.map(async item => {
-      const productRef = doc(db, "products", item.productId);
-      const productDoc = await getDoc(productRef);
-      return productDoc.exists() && productDoc.data().type === "rwi";
-    }).map(p => p.catch(() => false)));
     if (hasRWI && (!shippingAddress.street || !shippingAddress.city || !shippingAddress.zip || !shippingAddress.country)) {
       setCheckoutStatus('error');
       setCheckoutMessage("Please provide a complete shipping address for physical items.");
@@ -356,41 +381,44 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
     }
 
     try {
-      console.log(JSON.stringify({
+      const checkoutData = {
         walletId,
         cartItems: cartItems.map(item => ({
           ...item,
           quantities: Array(item.quantity).fill(1)
         })),
-        shippingAddress,
+        shippingAddress: hasRWI ? shippingAddress : {},
         currency: paymentCurrency,
-        f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53'
-      }));
-      const response = await fetch('https://process-checkout-232592911911.us-central1.run.app/processCheckout', {
+        f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53',
+        solPrice
+      };
+      console.log("Checkout data:", JSON.stringify(checkoutData, null, 2));
+
+      const response = await fetch('https://us-central1-f4cet-marketplace.cloudfunctions.net/processCheckout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          walletId,
-          cartItems: cartItems.map(item => ({
-            ...item,
-            quantities: Array(item.quantity).fill(1)
-          })),
-          shippingAddress,
-          currency: paymentCurrency,
-          f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53'
-        })
+        body: JSON.stringify(checkoutData)
       });
+
       const result = await response.json();
-      if (response.ok) {
-        setCartItems([]);
-        setTotalShipping(0);
-        setCheckoutStatus('success');
-        setCheckoutMessage('Checkout completed successfully!');
-        setTransactionId(result.transactionIds && result.transactionIds.length > 0 ? result.transactionIds[0] : null);
-      } else {
-        setCheckoutStatus('error');
-        setCheckoutMessage(result.error || 'Checkout failed');
+      if (!response.ok) {
+        throw new Error(result.error || 'Checkout failed');
       }
+
+      // Sign and send the payment transaction
+      const { transaction, lastValidBlockHeight, transactionIds } = result;
+      const connection = new web3.Connection('https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
+      const tx = web3.Transaction.from(Buffer.from(transaction, 'base64'));
+      const signedTx = await signTransaction(tx);
+      const signature = await connection.sendRawTransaction(signedTx.serialize());
+      await connection.confirmTransaction({ signature, lastValidBlockHeight }, 'confirmed');
+
+      setCartItems([]);
+      setTotalShipping(0);
+      setHasRWI(false);
+      setCheckoutStatus('success');
+      setCheckoutMessage('Checkout completed successfully!');
+      setTransactionId(transactionIds && transactionIds.length > 0 ? transactionIds[0] : null);
     } catch (err) {
       console.error("Checkout error:", err);
       setCheckoutStatus('error');
@@ -412,7 +440,6 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
     (sum, item) => sum + item.priceUsdc * item.quantity,
     0
   );
-  const f4cetFee = totalAmount * 0.04;
   const grandTotal = totalAmount + totalShipping;
   const grandTotalSol = solPrice ? (grandTotal / solPrice).toFixed(4) : 'N/A';
 
@@ -487,82 +514,86 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                 ({grandTotalSol} SOL)
               </motion.span>
             </div>
+            {hasRWI && (
+              <GridContainer className={classes.formContainer} spacing={2}>
+                <GridItem xs={12} sm={6}>
+                  <CustomInput
+                    labelText="Street Address"
+                    id="street"
+                    formControlProps={{
+                      fullWidth: true,
+                      className: classes.shippingInput,
+                    }}
+                    inputProps={{
+                      value: shippingAddress.street,
+                      onChange: handleShippingChange('street'),
+                      startAdornment: <Home style={{ color: '#4d455d' }} />,
+                    }}
+                  />
+                </GridItem>
+                <GridItem xs={12} sm={6}>
+                  <CustomInput
+                    labelText="City"
+                    id="city"
+                    formControlProps={{
+                      fullWidth: true,
+                      className: classes.shippingInput,
+                    }}
+                    inputProps={{
+                      value: shippingAddress.city,
+                      onChange: handleShippingChange('city'),
+                      startAdornment: <LocationCity style={{ color: '#4d455d' }} />,
+                    }}
+                  />
+                </GridItem>
+                <GridItem xs={12} sm={6}>
+                  <CustomInput
+                    labelText="State/Province"
+                    id="state"
+                    formControlProps={{
+                      fullWidth: true,
+                      className: classes.shippingInput,
+                    }}
+                    inputProps={{
+                      value: shippingAddress.state,
+                      onChange: handleShippingChange('state'),
+                      startAdornment: <PinDrop style={{ color: '#4d455d' }} />,
+                    }}
+                  />
+                </GridItem>
+                <GridItem xs={12} sm={6}>
+                  <CustomInput
+                    labelText="ZIP/Postal Code"
+                    id="zip"
+                    formControlProps={{
+                      fullWidth: true,
+                      className: classes.shippingInput,
+                    }}
+                    inputProps={{
+                      value: shippingAddress.zip,
+                      onChange: handleShippingChange('zip'),
+                      startAdornment: <PinDrop style={{ color: '#4d455d' }} />,
+                    }}
+                  />
+                </GridItem>
+                <GridItem xs={12}>
+                  <CustomInput
+                    labelText="Country"
+                    id="country"
+                    formControlProps={{
+                      fullWidth: true,
+                      className: classes.shippingInput,
+                    }}
+                    inputProps={{
+                      value: shippingAddress.country,
+                      onChange: handleShippingChange('country'),
+                      startAdornment: <PublicOutlined style={{ color: '#4d455d' }} />,
+                    }}
+                  />
+                </GridItem>
+              </GridContainer>
+            )}
             <GridContainer className={classes.formContainer} spacing={2}>
-              <GridItem xs={12} sm={6}>
-                <CustomInput
-                  labelText="Street Address"
-                  id="street"
-                  formControlProps={{
-                    fullWidth: true,
-                    className: classes.shippingInput,
-                  }}
-                  inputProps={{
-                    value: shippingAddress.street,
-                    onChange: handleShippingChange('street'),
-                    startAdornment: <Home style={{ color: '#4d455d' }} />,
-                  }}
-                />
-              </GridItem>
-              <GridItem xs={12} sm={6}>
-                <CustomInput
-                  labelText="City"
-                  id="city"
-                  formControlProps={{
-                    fullWidth: true,
-                    className: classes.shippingInput,
-                  }}
-                  inputProps={{
-                    value: shippingAddress.city,
-                    onChange: handleShippingChange('city'),
-                    startAdornment: <LocationCity style={{ color: '#4d455d' }} />,
-                  }}
-                />
-              </GridItem>
-              <GridItem xs={12} sm={6}>
-                <CustomInput
-                  labelText="State/Province"
-                  id="state"
-                  formControlProps={{
-                    fullWidth: true,
-                    className: classes.shippingInput,
-                  }}
-                  inputProps={{
-                    value: shippingAddress.state,
-                    onChange: handleShippingChange('state'),
-                    startAdornment: <PinDrop style={{ color: '#4d455d' }} />,
-                  }}
-                />
-              </GridItem>
-              <GridItem xs={12} sm={6}>
-                <CustomInput
-                  labelText="ZIP/Postal Code"
-                  id="zip"
-                  formControlProps={{
-                    fullWidth: true,
-                    className: classes.shippingInput,
-                  }}
-                  inputProps={{
-                    value: shippingAddress.zip,
-                    onChange: handleShippingChange('zip'),
-                    startAdornment: <PinDrop style={{ color: '#4d455d' }} />,
-                  }}
-                />
-              </GridItem>
-              <GridItem xs={12}>
-                <CustomInput
-                  labelText="Country"
-                  id="country"
-                  formControlProps={{
-                    fullWidth: true,
-                    className: classes.shippingInput,
-                  }}
-                  inputProps={{
-                    value: shippingAddress.country,
-                    onChange: handleShippingChange('country'),
-                    startAdornment: <PublicOutlined style={{ color: '#4d455d' }} />,
-                  }}
-                />
-              </GridItem>
               <GridItem xs={12} style={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <CustomDropdown
                   buttonText={`Pay with ${paymentCurrency}`}
@@ -631,7 +662,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
     </div>
   ));
 
-  const mobileShippingForm = (
+  const mobileShippingForm = hasRWI ? (
     <GridContainer className={classes.formContainer} spacing={2}>
       <GridItem xs={12}>
         <CustomInput
@@ -708,6 +739,31 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           }}
         />
       </GridItem>
+      <GridItem xs={12} style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <CustomDropdown
+          buttonText={`Pay with ${paymentCurrency}`}
+          buttonProps={{
+            color: "rose",
+            round: true,
+            className: classes.paymentDropdown
+          }}
+          dropdownList={["USDC", "SOL"]}
+          onClick={handlePaymentSelect}
+        />
+      </GridItem>
+      <GridItem xs={12} style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <Button 
+          color="rose" 
+          round 
+          className={classes.completePurchaseButton}
+          onClick={handleCheckout}
+        >
+          Complete Purchase <KeyboardArrowRight />
+        </Button>
+      </GridItem>
+    </GridContainer>
+  ) : (
+    <GridContainer className={classes.formContainer} spacing={2}>
       <GridItem xs={12} style={{ display: 'flex', justifyContent: 'flex-start' }}>
         <CustomDropdown
           buttonText={`Pay with ${paymentCurrency}`}
