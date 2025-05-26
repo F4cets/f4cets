@@ -15,6 +15,9 @@ import PinDrop from "@mui/icons-material/PinDrop";
 import PublicOutlined from "@mui/icons-material/PublicOutlined";
 import CheckCircle from "@mui/icons-material/CheckCircle";
 import Error from "@mui/icons-material/Error";
+import CircularProgress from "@mui/material/CircularProgress";
+import Backdrop from "@mui/material/Backdrop";
+import Typography from "@mui/material/Typography";
 import Header from "/components/Header/Header.js";
 import HeaderLinks from "/components/Header/HeaderLinks.js";
 import Parallax from "/components/Parallax/Parallax.js";
@@ -189,6 +192,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
   const [checkoutStatus, setCheckoutStatus] = useState(null); // null, 'success', 'error'
   const [checkoutMessage, setCheckoutMessage] = useState('');
   const [transactionId, setTransactionId] = useState(null);
+  const [processing, setProcessing] = useState(false); // For spinner
 
   useEffect(() => {
     setIsConnected(connected);
@@ -317,7 +321,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
 
         if (newQuantity > availableQuantity) {
           console.log(`Cannot add more of ${item.name}. Only ${availableQuantity} units available.`);
-          return; // Silently block the increment
+          return;
         }
       }
 
@@ -380,6 +384,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       return;
     }
 
+    setProcessing(true); // Show spinner
     try {
       const checkoutData = {
         walletId,
@@ -429,6 +434,8 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       console.error("Checkout error:", err);
       setCheckoutStatus('error');
       setCheckoutMessage(`Checkout failed: ${err.message}`);
+    } finally {
+      setProcessing(false); // Hide spinner
     }
   };
 
@@ -618,8 +625,9 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                   round 
                   className={classes.completePurchaseButton}
                   onClick={handleCheckout}
+                  disabled={processing}
                 >
-                  Complete Purchase <KeyboardArrowRight />
+                  {processing ? "Processing..." : "Complete Purchase"} <KeyboardArrowRight />
                 </Button>
               </GridItem>
             </GridContainer>
@@ -763,8 +771,9 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           round 
           className={classes.completePurchaseButton}
           onClick={handleCheckout}
+          disabled={processing}
         >
-          Complete Purchase <KeyboardArrowRight />
+          {processing ? "Processing..." : "Complete Purchase"} <KeyboardArrowRight />
         </Button>
       </GridItem>
     </GridContainer>
@@ -788,8 +797,9 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           round 
           className={classes.completePurchaseButton}
           onClick={handleCheckout}
+          disabled={processing}
         >
-          Complete Purchase <KeyboardArrowRight />
+          {processing ? "Processing..." : "Complete Purchase"} <KeyboardArrowRight />
         </Button>
       </GridItem>
     </GridContainer>
@@ -901,7 +911,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                         Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
                       </div>
                       <div className={classes.mobileTotal}>
-                        Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
+                        Grand Total: <small>$</small> {totalAmount.toLocaleString()} <motion.span
                           animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
                           transition={{ duration: 0.8 }}
                         >
@@ -1091,6 +1101,15 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                   </Button>
                 </DialogActions>
               </Dialog>
+              <Backdrop
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1, flexDirection: 'column' }}
+                open={processing}
+              >
+                <CircularProgress color="inherit" size={60} />
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                  Processing Checkout, please wait...
+                </Typography>
+              </Backdrop>
             </CardBody>
           </Card>
         </div>
@@ -1107,7 +1126,7 @@ export async function getServerSideProps(context) {
     const flash = (now % 15000) < 500;
     return {
       props: {
-        solPrice: solPrice || 200, // Fallback to 200 if solPrice is undefined
+        solPrice: solPrice || 200,
         flash,
       },
     };
