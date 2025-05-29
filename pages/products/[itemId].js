@@ -11,7 +11,7 @@ import MenuItem from "@mui/material/MenuItem";
 import ShoppingCart from "@mui/icons-material/ShoppingCart";
 import LocalShipping from "@mui/icons-material/LocalShipping";
 import VerifiedUser from "@mui/icons-material/VerifiedUser";
-import Favorite from "@mui/icons-material/Favorite";
+import AddShoppingCart from "@mui/icons-material/AddShoppingCart";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
@@ -432,8 +432,8 @@ export default function ProductPage(props) {
               <GridContainer>
                 <GridItem md={4} sm={4}>
                   <InfoArea
-                    title="2 Days Delivery"
-                    description="Fast shipping ensures your item arrives within 2 days."
+                    title="Fast Delivery by Sellers"
+                    description="Fast shipping so items arrive in days."
                     icon={LocalShipping}
                     iconColor="info"
                     vertical
@@ -441,8 +441,8 @@ export default function ProductPage(props) {
                 </GridItem>
                 <GridItem md={4} sm={4}>
                   <InfoArea
-                    title="Refundable Policy"
-                    description="Return within 30 days if not satisfied."
+                    title="Escrow Payment Protection"
+                    description="Funds are held in escrow until item arrives."
                     icon={VerifiedUser}
                     iconColor="success"
                     vertical
@@ -450,9 +450,9 @@ export default function ProductPage(props) {
                 </GridItem>
                 <GridItem md={4} sm={4}>
                   <InfoArea
-                    title="Popular Item"
-                    description="One of our top picks this season."
-                    icon={Favorite}
+                    title="Secure Shopping"
+                    description="Shopping cart secured by Solana blockchain."
+                    icon={AddShoppingCart}
                     iconColor="rose"
                     vertical
                   />
