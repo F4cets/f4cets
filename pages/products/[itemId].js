@@ -11,7 +11,7 @@ import MenuItem from "@mui/material/MenuItem";
 import ShoppingCart from "@mui/icons-material/ShoppingCart";
 import LocalShipping from "@mui/icons-material/LocalShipping";
 import VerifiedUser from "@mui/icons-material/VerifiedUser";
-import Favorite from "@mui/icons-material/AddShoppingCart";
+import Favorite from "@mui/icons-material/Favorite";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
@@ -29,7 +29,6 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase";
 import productStyle from "/styles/jss/nextjs-material-kit-pro/pages/productStyle.js";
-import { AddShoppingCart, CalendarMonth } from "@mui/icons-material";
 
 const useStyles = makeStyles((theme) => ({
   ...productStyle,
@@ -433,8 +432,8 @@ export default function ProductPage(props) {
               <GridContainer>
                 <GridItem md={4} sm={4}>
                   <InfoArea
-                    title="Fast Delivery by Sellers"
-                    description="Fast shipping so items arrive in days."
+                    title="2 Days Delivery"
+                    description="Fast shipping ensures your item arrives within 2 days."
                     icon={LocalShipping}
                     iconColor="info"
                     vertical
@@ -442,8 +441,8 @@ export default function ProductPage(props) {
                 </GridItem>
                 <GridItem md={4} sm={4}>
                   <InfoArea
-                    title="Escrow Payment Protection"
-                    description="Funds are held in escrow until item arrives."
+                    title="Refundable Policy"
+                    description="Return within 30 days if not satisfied."
                     icon={VerifiedUser}
                     iconColor="success"
                     vertical
@@ -451,9 +450,9 @@ export default function ProductPage(props) {
                 </GridItem>
                 <GridItem md={4} sm={4}>
                   <InfoArea
-                    title="Secure Shopping on F4cet"
-                    description="Shopping cart secured by Solana blockchain."
-                    icon={AddShoppingCart}
+                    title="Popular Item"
+                    description="One of our top picks this season."
+                    icon={Favorite}
                     iconColor="rose"
                     vertical
                   />
