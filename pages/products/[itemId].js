@@ -451,7 +451,7 @@ export default function ProductPage(props) {
                 </GridItem>
                 <GridItem md={4} sm={4}>
                   <InfoArea
-                    title="Secure Shopping"
+                    title="Secure Shopping on F4cet"
                     description="Shopping cart secured by Solana blockchain."
                     icon={AddShoppingCart}
                     iconColor="rose"
