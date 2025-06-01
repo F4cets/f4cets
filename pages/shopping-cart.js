@@ -40,7 +40,10 @@ import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppin
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/router';
-import { Connection, Transaction } from '@solana/web3.js';
+import dynamic from 'next/dynamic';
+
+// Dynamically import Solana dependencies to avoid constructor issues
+const { Connection, Transaction } = dynamic(() => import('@solana/web3.js'), { ssr: false });
 
 const useStyles = makeStyles({
   ...shoppingCartStyle,
@@ -548,7 +551,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
               Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
             </div>
             <div className={classes.shippingTotal}>
-              Grand Total: <small>$</small> {totalAmount.toLocaleString()} <motion.span
+              Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
                 animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
                 transition={{ duration: 0.8 }}
               >
@@ -939,7 +942,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                         Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
                       </div>
                       <div className={classes.mobileTotal}>
-                        Grand Total: <small>$</small> {totalAmount.toLocaleString()} <motion.span
+                        Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
                           animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
                           transition={{ duration: 0.8 }}
                         >
