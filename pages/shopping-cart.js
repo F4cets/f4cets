@@ -34,16 +34,13 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection, Transaction, PublicKey } from '@solana/web3.js';
 import { collection, query, getDocs, doc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppingCartStyle.js";
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/router';
-import dynamic from 'next/dynamic';
-
-// Dynamically import Solana dependencies to avoid constructor issues
-const { Connection, Transaction } = dynamic(() => import('@solana/web3.js'), { ssr: false });
 
 const useStyles = makeStyles({
   ...shoppingCartStyle,
@@ -385,23 +382,15 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       };
       console.log("Checkout payment data:", JSON.stringify(checkoutData, null, 2));
 
-      // Step 1: Process payment with retry
-      let paymentResponse, paymentResult;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          paymentResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(checkoutData),
-          });
-          paymentResult = await paymentResponse.json();
-          if (paymentResponse.ok) break;
-          if (attempt === 3) throw new Error(paymentResult.error || 'Payment failed');
-          console.log(`Payment attempt ${attempt} failed, retrying...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        } catch (err) {
-          if (attempt === 3) throw err;
-        }
+      // Step 1: Process payment
+      const paymentResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkoutData),
+      });
+      const paymentResult = await paymentResponse.json();
+      if (!paymentResponse.ok) {
+        throw new Error(paymentResult.error || 'Payment failed');
       }
 
       // Log seller discounts
@@ -418,18 +407,24 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       }
 
       // Sign and send payment transaction
-      const { transaction, lastValidBlockHeight } = paymentResult;
-      const connection = new Connection(process.env.NEXT_PUBLIC_QUICKNODE_RPC, 'confirmed');
       let tx;
       try {
-        tx = Transaction.from(Buffer.from(transaction, 'base64'));
+        tx = Transaction.from(Buffer.from(paymentResult.transaction, 'base64'));
       } catch (err) {
         console.error('Failed to parse payment transaction:', err);
-        throw new Error('Invalid payment transaction data');
+        throw new Error(`Invalid transaction data: ${err.message}`);
       }
+      const connection = new Connection(process.env.NEXT_PUBLIC_QUICKNODE_RPC || 'https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
       const signedTx = await signTransaction(tx);
-      const paymentSignature = await connection.sendRawTransaction(signedTx.serialize());
-      await connection.confirmTransaction({ signature: paymentSignature, lastValidBlockHeight }, 'confirmed');
+      const paymentSignature = await connection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+      });
+      await connection.confirmTransaction({
+        signature: paymentSignature,
+        lastValidBlockHeight: paymentResult.lastValidBlockHeight,
+        blockhash: tx.recentBlockhash,
+      }, 'confirmed');
       console.log("Payment transaction confirmed:", paymentSignature);
 
       // Step 2: Process cNFT transfers
@@ -437,22 +432,14 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       checkoutData.paymentSignature = paymentSignature;
       console.log("Checkout transfer data:", JSON.stringify(checkoutData, null, 2));
 
-      let transferResponse, transferResult;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          transferResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(checkoutData),
-          });
-          transferResult = await transferResponse.json();
-          if (transferResponse.ok) break;
-          if (attempt === 3) throw new Error(transferResult.error || 'cNFT transfer failed');
-          console.log(`Transfer attempt ${attempt} failed, retrying...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        } catch (err) {
-          if (attempt === 3) throw err;
-        }
+      const transferResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkoutData),
+      });
+      const transferResult = await transferResponse.json();
+      if (!transferResponse.ok) {
+        throw new Error(transferResult.error || 'cNFT transfer failed');
       }
 
       setCartItems([]);
