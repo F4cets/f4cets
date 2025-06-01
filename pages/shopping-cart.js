@@ -192,7 +192,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
   const [checkoutStatus, setCheckoutStatus] = useState(null); // null, 'success', 'error'
   const [checkoutMessage, setCheckoutMessage] = useState('');
   const [transactionId, setTransactionId] = useState(null);
-  const [processing, setProcessing] = useState(false); // For spinner
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     setIsConnected(connected);
@@ -247,17 +247,16 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       const cartQuery = query(cartRef);
       const cartSnapshot = await getDocs(cartQuery);
       console.log("Cart items found:", cartSnapshot.docs.length);
-      const items = cartSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const items = await Promise.all(cartSnapshot.docs.map(async (docSnap) => {
+        const itemData = docSnap.data();
+        const productRef = doc(db, "products", itemData.productId);
+        const productDoc = await getDoc(productRef);
+        const type = productDoc.exists() ? productDoc.data().type : 'digital';
+        return { id: docSnap.id, ...itemData, type };
+      }));
       setCartItems(items);
       console.log("Cart items:", items);
-
-      // Check if any item is RWI
-      const itemChecks = await Promise.all(items.map(async item => {
-        const productRef = doc(db, "products", item.productId);
-        const productDoc = await getDoc(productRef);
-        return productDoc.exists() && productDoc.data().type === "rwi";
-      }));
-      setHasRWI(itemChecks.some(isRWI => isRWI));
+      setHasRWI(items.some(item => item.type === "rwi"));
     } catch (err) {
       console.error("Error fetching cart items:", err);
       setError(`Failed to load cart: ${err.message}`);
@@ -268,21 +267,12 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
     let shippingTotal = 0;
     for (const item of cartItems) {
       try {
-        const productRef = doc(db, "products", item.productId);
-        const productDoc = await getDoc(productRef);
-        if (!productDoc.exists()) {
-          console.warn(`Product ${item.productId} not found`);
-          continue;
-        }
-        const productData = productDoc.data();
-        if (productData.type === "digital") {
-          continue;
-        }
+        if (item.type !== "rwi") continue;
         const isDomestic = shippingAddress.country.toLowerCase().includes('united states') || shippingAddress.country.toLowerCase() === 'us';
         const itemShipping = isDomestic ? 14 : 40;
         shippingTotal += itemShipping * item.quantity;
       } catch (err) {
-        console.error(`Error fetching product ${item.productId}:`, err);
+        console.error(`Error calculating shipping for item ${item.id}:`, err);
       }
     }
     setTotalShipping(shippingTotal);
@@ -302,7 +292,6 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
 
       const newQuantity = Math.max(1, item.quantity + delta);
       if (delta > 0) {
-        // Check inventory for increments
         const productRef = doc(db, "products", item.productId);
         const productDoc = await getDoc(productRef);
         if (!productDoc.exists()) {
@@ -332,15 +321,6 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           item.id === itemId ? { ...item, quantity: newQuantity } : item
         )
       );
-
-      // Re-check if any item is RWI after quantity change
-      const itemChecks = await Promise.all(cartItems.map(async item => {
-        const productRef = doc(db, "products", item.productId);
-        const productDoc = await getDoc(productRef);
-        return productDoc.exists() && productDoc.data().type === "rwi";
-      }));
-      setHasRWI(itemChecks.some(isRWI => isRWI));
-
       console.log("Updated quantity for item:", itemId, newQuantity);
     } catch (err) {
       console.error("Error updating quantity:", err);
@@ -354,16 +334,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       await deleteDoc(cartRef);
       setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
       console.log("Removed item from cart:", itemId);
-
-      // Re-check if any item is RWI after removal
-      const itemChecks = await Promise.all(cartItems
-        .filter(item => item.id !== itemId)
-        .map(async item => {
-          const productRef = doc(db, "products", item.productId);
-          const productDoc = await getDoc(productRef);
-          return productDoc.exists() && productDoc.data().type === "rwi";
-        }));
-      setHasRWI(itemChecks.some(isRWI => isRWI));
+      setHasRWI(cartItems.filter(item => item.id !== itemId).some(item => item.type === "rwi"));
     } catch (err) {
       console.error("Error removing item:", err);
       setError(`Failed to remove item: ${err.message}`);
@@ -377,7 +348,6 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       return;
     }
 
-    // Validate shipping address for RWI items
     if (hasRWI && (!shippingAddress.street || !shippingAddress.city || !shippingAddress.zip || !shippingAddress.country)) {
       setCheckoutStatus('error');
       setCheckoutMessage("Please provide a complete shipping address for physical items.");
@@ -390,28 +360,45 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       const checkoutData = {
         walletId,
         cartItems: cartItems.map(item => ({
-          ...item,
-          quantities: Array(item.quantity).fill(1)
+          id: item.id,
+          productId: item.productId,
+          storeId: item.storeId,
+          sellerId: item.sellerId,
+          name: item.name,
+          priceUsdc: item.priceUsdc,
+          quantity: item.quantity,
+          quantities: Array(item.quantity).fill(1),
+          type: item.type,
+          size: item.size || null,
+          color: item.color || null,
+          imageUrl: item.imageUrl,
         })),
         shippingAddress: hasRWI ? shippingAddress : {},
         currency: paymentCurrency,
         f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53',
         solPrice,
-        grandTotal, // Include grand total
-        step: 'payment'
+        grandTotal,
+        step: 'payment',
       };
       console.log("Checkout payment data:", JSON.stringify(checkoutData, null, 2));
 
-      // Step 1: Process payment
-      const paymentResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(checkoutData)
-      });
-
-      const paymentResult = await paymentResponse.json();
-      if (!paymentResponse.ok) {
-        throw new Error(paymentResult.error || 'Payment failed');
+      // Step 1: Process payment with retry
+      let paymentResponse, paymentResult;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          paymentResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(checkoutData),
+          });
+          paymentResult = await paymentResponse.json();
+          if (paymentResponse.ok) break;
+          if (attempt === 3) throw new Error(paymentResult.error || 'Payment failed');
+          console.log(`Payment attempt ${attempt} failed, retrying...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (err) {
+          if (attempt === 3) throw err;
+        }
       }
 
       // Log seller discounts
@@ -429,7 +416,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
 
       // Sign and send payment transaction
       const { transaction, lastValidBlockHeight } = paymentResult;
-      const connection = new Connection('https://orbital-floral-market.solana-mainnet.quiknode.pro/e7e...', 'confirmed');
+      const connection = new Connection(process.env.NEXT_PUBLIC_QUICKNODE_RPC, 'confirmed');
       let tx;
       try {
         tx = Transaction.from(Buffer.from(transaction, 'base64'));
@@ -447,18 +434,24 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       checkoutData.paymentSignature = paymentSignature;
       console.log("Checkout transfer data:", JSON.stringify(checkoutData, null, 2));
 
-      const transferResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(checkoutData)
-      });
-
-      const transferResult = await transferResponse.json();
-      if (!transferResponse.ok) {
-        throw new Error(transferResult.error || 'cNFT transfer failed');
+      let transferResponse, transferResult;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          transferResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(checkoutData),
+          });
+          transferResult = await transferResponse.json();
+          if (transferResponse.ok) break;
+          if (attempt === 3) throw new Error(transferResult.error || 'cNFT transfer failed');
+          console.log(`Transfer attempt ${attempt} failed, retrying...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (err) {
+          if (attempt === 3) throw err;
+        }
       }
 
-      // Clear cart and update UI
       setCartItems([]);
       setTotalShipping(0);
       setHasRWI(false);
@@ -555,7 +548,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
               Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
             </div>
             <div className={classes.shippingTotal}>
-              Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
+              Grand Total: <small>$</small> {totalAmount.toLocaleString()} <motion.span
                 animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
                 transition={{ duration: 0.8 }}
               >
@@ -946,7 +939,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                         Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
                       </div>
                       <div className={classes.mobileTotal}>
-                        Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
+                        Grand Total: <small>$</small> {totalAmount.toLocaleString()} <motion.span
                           animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
                           transition={{ duration: 0.8 }}
                         >
