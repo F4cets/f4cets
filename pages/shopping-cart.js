@@ -384,7 +384,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       return;
     }
 
-    setProcessing(true); // Show spinner
+    setProcessing(true);
     try {
       const checkoutData = {
         walletId,
@@ -395,47 +395,80 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
         shippingAddress: hasRWI ? shippingAddress : {},
         currency: paymentCurrency,
         f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53',
-        solPrice
+        solPrice,
+        step: 'payment'
       };
-      console.log("Checkout data:", JSON.stringify(checkoutData, null, 2));
+      console.log("Checkout payment data:", JSON.stringify(checkoutData, null, 2));
 
-      const response = await fetch('https://process-checkout-232592911911.us-central1.run.app', {
+      // Step 1: Process payment
+      const paymentResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(checkoutData)
       });
 
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Checkout failed');
+      const paymentResult = await paymentResponse.json();
+      if (!paymentResponse.ok) {
+        throw new Error(paymentResult.error || 'Payment failed');
       }
 
-      // Sign and send the payment transaction
-      const { transaction, lastValidBlockHeight, transactionIds } = result;
-      const connection = new Connection('https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
+      // Log seller discounts
+      if (paymentResult.sellerFees) {
+        paymentResult.sellerFees.forEach(fee => {
+          if (fee.discount === 0.5) {
+            console.log(`Seller ${fee.sellerId} Discount Applied: 2% F4cets Fee`);
+          } else if (fee.discount === 0.25) {
+            console.log(`Seller ${fee.sellerId} Discount Applied: 3% F4cets Fee`);
+          } else {
+            console.log(`Seller ${fee.sellerId}: No Discount, 4% F4cets Fee`);
+          }
+        });
+      }
+
+      // Sign and send payment transaction
+      const { transaction, lastValidBlockHeight } = paymentResult;
+      const connection = new Connection('https://orbital-floral-market.solana-mainnet.quiknode.pro/e7e...', 'confirmed');
       let tx;
       try {
         tx = Transaction.from(Buffer.from(transaction, 'base64'));
       } catch (err) {
-        console.error('Failed to parse transaction:', err);
-        throw new Error('Invalid transaction data');
+        console.error('Failed to parse payment transaction:', err);
+        throw new Error('Invalid payment transaction data');
       }
       const signedTx = await signTransaction(tx);
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
-      await connection.confirmTransaction({ signature, lastValidBlockHeight }, 'confirmed');
+      const paymentSignature = await connection.sendRawTransaction(signedTx.serialize());
+      await connection.confirmTransaction({ signature: paymentSignature, lastValidBlockHeight }, 'confirmed');
+      console.log("Payment transaction confirmed:", paymentSignature);
 
+      // Step 2: Process cNFT transfers
+      checkoutData.step = 'transfer';
+      checkoutData.paymentSignature = paymentSignature;
+      console.log("Checkout transfer data:", JSON.stringify(checkoutData, null, 2));
+
+      const transferResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(checkoutData)
+      });
+
+      const transferResult = await transferResponse.json();
+      if (!transferResponse.ok) {
+        throw new Error(transferResult.error || 'cNFT transfer failed');
+      }
+
+      // Clear cart and update UI
       setCartItems([]);
       setTotalShipping(0);
       setHasRWI(false);
       setCheckoutStatus('success');
       setCheckoutMessage('Checkout completed successfully!');
-      setTransactionId(transactionIds && transactionIds.length > 0 ? transactionIds[0] : null);
+      setTransactionId(transferResult.transactionIds && transferResult.transactionIds.length > 0 ? transferResult.transactionIds[0] : null);
     } catch (err) {
       console.error("Checkout error:", err);
       setCheckoutStatus('error');
       setCheckoutMessage(`Checkout failed: ${err.message}`);
     } finally {
-      setProcessing(false); // Hide spinner
+      setProcessing(false);
     }
   };
 
