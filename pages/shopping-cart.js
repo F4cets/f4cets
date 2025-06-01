@@ -386,6 +386,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
 
     setProcessing(true);
     try {
+      const grandTotal = totalAmount + totalShipping;
       const checkoutData = {
         walletId,
         cartItems: cartItems.map(item => ({
@@ -396,6 +397,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
         currency: paymentCurrency,
         f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53',
         solPrice,
+        grandTotal, // Include grand total
         step: 'payment'
       };
       console.log("Checkout payment data:", JSON.stringify(checkoutData, null, 2));
@@ -944,7 +946,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                         Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
                       </div>
                       <div className={classes.mobileTotal}>
-                        Grand Total: <small>$</small> {totalAmount.toLocaleString()} <motion.span
+                        Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
                           animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
                           transition={{ duration: 0.8 }}
                         >
