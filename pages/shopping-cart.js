@@ -189,7 +189,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
   const [solPrice, setSolPrice] = useState(initialSolPrice);
   const [flash, setFlash] = useState(initialFlash);
   const [paymentCurrency, setPaymentCurrency] = useState('SOL');
-  const [checkoutStatus, setCheckoutStatus] = useState(null); // null, 'success', 'error'
+  const [checkoutStatus, setCheckoutStatus] = useState(null);
   const [checkoutMessage, setCheckoutMessage] = useState('');
   const [transactionId, setTransactionId] = useState(null);
   const [processing, setProcessing] = useState(false);
@@ -305,7 +305,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           availableQuantity = productData.quantity || 0;
         } else if (productData.type === "rwi") {
           const variant = productData.variants?.find(v => v.size === item.size && v.color === item.color);
-          availableQuantity = variant ? variant.quantity || 0 : 0;
+          availableQuantity = variant ? parseInt(v.quantity) || 0 : 0;
         }
 
         if (newQuantity > availableQuantity) {
@@ -372,6 +372,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
           size: item.size || null,
           color: item.color || null,
           imageUrl: item.imageUrl,
+          nftId: item.type === 'rwi' ? `${item.productId}-${item.size}-${item.color}-1` : null,
         })),
         shippingAddress: hasRWI ? shippingAddress : {},
         currency: paymentCurrency,
@@ -383,12 +384,12 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       console.log("Checkout payment data:", JSON.stringify(checkoutData, null, 2));
 
       // Step 1: Process payment
-      const paymentResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
+      let paymentResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(checkoutData),
       });
-      const paymentResult = await paymentResponse.json();
+      let paymentResult = await paymentResponse.json();
       if (!paymentResponse.ok) {
         throw new Error(paymentResult.error || 'Payment failed');
       }
@@ -407,24 +408,18 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       }
 
       // Sign and send payment transaction
+      const { transaction, lastValidBlockHeight } = paymentResult;
+      const connection = new Connection(process.env.NEXT_PUBLIC_QUICKNODE_RPC || 'https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
       let tx;
       try {
-        tx = Transaction.from(Buffer.from(paymentResult.transaction, 'base64'));
+        tx = Transaction.from(Buffer.from(transaction, 'base64'));
       } catch (err) {
         console.error('Failed to parse payment transaction:', err);
-        throw new Error(`Invalid transaction data: ${err.message}`);
+        throw new Error('Invalid payment transaction data');
       }
-      const connection = new Connection(process.env.NEXT_PUBLIC_QUICKNODE_RPC || 'https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
       const signedTx = await signTransaction(tx);
-      const paymentSignature = await connection.sendRawTransaction(signedTx.serialize(), {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed',
-      });
-      await connection.confirmTransaction({
-        signature: paymentSignature,
-        lastValidBlockHeight: paymentResult.lastValidBlockHeight,
-        blockhash: tx.recentBlockhash,
-      }, 'confirmed');
+      const paymentSignature = await connection.sendRawTransaction(signedTx.serialize());
+      await connection.confirmTransaction({ signature: paymentSignature, lastValidBlockHeight }, 'confirmed');
       console.log("Payment transaction confirmed:", paymentSignature);
 
       // Step 2: Process cNFT transfers
@@ -432,12 +427,12 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       checkoutData.paymentSignature = paymentSignature;
       console.log("Checkout transfer data:", JSON.stringify(checkoutData, null, 2));
 
-      const transferResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
+      let transferResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(checkoutData),
       });
-      const transferResult = await transferResponse.json();
+      let transferResult = await transferResponse.json();
       if (!transferResponse.ok) {
         throw new Error(transferResult.error || 'cNFT transfer failed');
       }
