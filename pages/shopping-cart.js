@@ -1,6 +1,7 @@
 /*eslint-disable*/
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
+import dynamic from "next/dynamic";
 import classNames from "classnames";
 import makeStyles from '@mui/styles/makeStyles';
 import Tooltip from "@mui/material/Tooltip";
@@ -34,13 +35,15 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, Transaction, PublicKey } from '@solana/web3.js';
 import { collection, query, getDocs, doc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppingCartStyle.js";
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/router';
+
+// Dynamically import Solana web3.js to avoid SSR issues
+const SolanaWeb3 = dynamic(() => import('@solana/web3.js'), { ssr: false });
 
 const useStyles = makeStyles({
   ...shoppingCartStyle,
@@ -356,24 +359,49 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
 
     setProcessing(true);
     try {
+      // Validate variant quantities
+      for (const item of cartItems) {
+        const productRef = doc(db, "products", item.productId);
+        const productDoc = await getDoc(productRef);
+        if (!productDoc.exists()) {
+          throw new Error(`Product ${item.productId} not found`);
+        }
+        const productData = productDoc.data();
+        if (item.type === "rwi") {
+          const variant = productData.variants?.find(v => v.size === item.size && v.color === item.color);
+          if (!variant || parseInt(variant.quantity) < item.quantity) {
+            throw new Error(`Insufficient inventory for ${item.name} (Size: ${item.size}, Color: ${item.color})`);
+          }
+        } else if (item.type === "digital") {
+          if (productData.quantity < item.quantity) {
+            throw new Error(`Insufficient inventory for ${item.name}`);
+          }
+        }
+      }
+
       const grandTotal = totalAmount + totalShipping;
       const checkoutData = {
         walletId,
-        cartItems: cartItems.map(item => ({
-          id: item.id,
-          productId: item.productId,
-          storeId: item.storeId,
-          sellerId: item.sellerId,
-          name: item.name,
-          priceUsdc: item.priceUsdc,
-          quantity: item.quantity,
-          quantities: Array(item.quantity).fill(1),
-          type: item.type,
-          size: item.size || null,
-          color: item.color || null,
-          imageUrl: item.imageUrl,
-          nftId: item.type === 'rwi' ? `${item.productId}-${item.size}-${item.color}-1` : null,
-        })),
+        cartItems: cartItems.flatMap(item => {
+          const items = [];
+          for (let i = 0; i < item.quantity; i++) {
+            items.push({
+              id: item.id,
+              productId: item.productId,
+              storeId: item.storeId,
+              sellerId: item.sellerId,
+              name: item.name,
+              priceUsdc: item.priceUsdc,
+              quantity: 1,
+              type: item.type,
+              size: item.size || null,
+              color: item.color || null,
+              imageUrl: item.imageUrl,
+              nftId: item.type === 'rwi' ? `${item.productId}-${item.size}-${item.color}-${i + 1}` : null,
+            });
+          }
+          return items;
+        }),
         shippingAddress: hasRWI ? shippingAddress : {},
         currency: paymentCurrency,
         f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53',
@@ -409,6 +437,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
 
       // Sign and send payment transaction
       const { transaction, lastValidBlockHeight } = paymentResult;
+      const { Transaction, Connection, PublicKey } = await SolanaWeb3;
       const connection = new Connection(process.env.NEXT_PUBLIC_QUICKNODE_RPC || 'https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
       let tx;
       try {
