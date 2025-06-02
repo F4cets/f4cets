@@ -1,7 +1,6 @@
 /*eslint-disable*/
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
-import dynamic from "next/dynamic";
 import classNames from "classnames";
 import makeStyles from '@mui/styles/makeStyles';
 import Tooltip from "@mui/material/Tooltip";
@@ -35,15 +34,14 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection, PublicKey, Transaction } from "@solana/web3.js";
 import { collection, query, getDocs, doc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import shoppingCartStyle from "/styles/jss/nextjs-material-kit-pro/pages/shoppingCartStyle.js";
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/router';
-
-// Dynamically import Solana web3.js to avoid SSR issues
-const SolanaWeb3 = dynamic(() => import('@solana/web3.js'), { ssr: false });
+import { useUser } from "/contexts/UserContext";
 
 const useStyles = makeStyles({
   ...shoppingCartStyle,
@@ -170,11 +168,20 @@ const useStyles = makeStyles({
     fontSize: '18px',
     marginBottom: '20px',
   },
+  discountText: {
+    fontFamily: '"Quicksand", sans-serif',
+    fontSize: '16px',
+    fontWeight: 500,
+    color: '#6fcba9',
+    textAlign: 'right',
+    margin: '10px 0',
+  },
 });
 
 export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: initialFlash }) {
   const classes = useStyles();
   const { connected, publicKey, signTransaction } = useWallet();
+  const { user, loading } = useUser();
   const router = useRouter();
   const [walletId, setWalletId] = useState(null);
   const [isConnected, setIsConnected] = useState(null);
@@ -196,6 +203,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
   const [checkoutMessage, setCheckoutMessage] = useState('');
   const [transactionId, setTransactionId] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [buyerDiscount, setBuyerDiscount] = useState(0);
 
   useEffect(() => {
     setIsConnected(connected);
@@ -209,8 +217,23 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       setCartItems([]);
       setTotalShipping(0);
       setHasRWI(false);
+      setBuyerDiscount(0);
     }
   }, [connected, publicKey]);
+
+  useEffect(() => {
+    if (loading) {
+      console.log('UserContext: Loading user data...');
+      return;
+    }
+    if (user && user.nfts && Array.isArray(user.nfts) && user.nfts.length > 0 && user.nfts[0].buyerDiscount != null) {
+      setBuyerDiscount(user.nfts[0].buyerDiscount);
+      console.log(`Buyer discount set from UserContext for ${walletId}: ${user.nfts[0].buyerDiscount * 100}%`);
+    } else {
+      setBuyerDiscount(0);
+      console.log(`No buyer discount in UserContext for ${walletId}`);
+    }
+  }, [user, loading, walletId]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -307,8 +330,8 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
         if (productData.type === "digital") {
           availableQuantity = productData.quantity || 0;
         } else if (productData.type === "rwi") {
-          const variant = productData.variants?.find(v => v.size === item.size && v.color === item.color);
-          availableQuantity = variant ? parseInt(v.quantity) || 0 : 0;
+          const variant = productData.variants?.find(variant => variant.size === item.size && variant.color === item.color);
+          availableQuantity = variant ? parseInt(variant.quantity) || 0 : 0;
         }
 
         if (newQuantity > availableQuantity) {
@@ -368,7 +391,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
         }
         const productData = productDoc.data();
         if (item.type === "rwi") {
-          const variant = productData.variants?.find(v => v.size === item.size && v.color === item.color);
+          const variant = productData.variants?.find(variant => variant.size === item.size && variant.color === item.color);
           if (!variant || parseInt(variant.quantity) < item.quantity) {
             throw new Error(`Insufficient inventory for ${item.name} (Size: ${item.size}, Color: ${item.color})`);
           }
@@ -379,34 +402,32 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
         }
       }
 
-      const grandTotal = totalAmount + totalShipping;
+      const subtotal = totalAmount;
+      const grandTotal = (subtotal + totalShipping) * (1 - buyerDiscount);
       const checkoutData = {
         walletId,
-        cartItems: cartItems.flatMap(item => {
-          const items = [];
-          for (let i = 0; i < item.quantity; i++) {
-            items.push({
-              id: item.id,
-              productId: item.productId,
-              storeId: item.storeId,
-              sellerId: item.sellerId,
-              name: item.name,
-              priceUsdc: item.priceUsdc,
-              quantity: 1,
-              type: item.type,
-              size: item.size || null,
-              color: item.color || null,
-              imageUrl: item.imageUrl,
-              nftId: item.type === 'rwi' ? `${item.productId}-${item.size}-${item.color}-${i + 1}` : null,
-            });
-          }
-          return items;
-        }),
+        cartItems: cartItems.flatMap(item => 
+          Array(item.quantity).fill().map((_, i) => ({
+            id: item.id,
+            productId: item.productId,
+            storeId: item.storeId,
+            sellerId: item.sellerId,
+            name: item.name,
+            priceUsdc: item.priceUsdc,
+            quantity: 1,
+            type: item.type,
+            size: item.size || null,
+            color: item.color || null,
+            imageUrl: item.imageUrl,
+            nftId: item.type === 'rwi' ? `${item.productId}-${item.size}-${item.color}-${i + 1}` : null,
+          }))
+        ),
         shippingAddress: hasRWI ? shippingAddress : {},
         currency: paymentCurrency,
         f4cetWallet: '2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53',
         solPrice,
         grandTotal,
+        buyerDiscount,
         step: 'payment',
       };
       console.log("Checkout payment data:", JSON.stringify(checkoutData, null, 2));
@@ -436,19 +457,17 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       }
 
       // Sign and send payment transaction
-      const { transaction, lastValidBlockHeight } = paymentResult;
-      const { Transaction, Connection, PublicKey } = await SolanaWeb3;
       const connection = new Connection(process.env.NEXT_PUBLIC_QUICKNODE_RPC || 'https://maximum-delicate-butterfly.solana-mainnet.quiknode.pro/0d01db8053770d711e1250f720db6ffe7b81956c/', 'confirmed');
       let tx;
       try {
-        tx = Transaction.from(Buffer.from(transaction, 'base64'));
+        tx = Transaction.from(Buffer.from(paymentResult.transaction, 'base64'));
       } catch (err) {
         console.error('Failed to parse payment transaction:', err);
         throw new Error('Invalid payment transaction data');
       }
       const signedTx = await signTransaction(tx);
       const paymentSignature = await connection.sendRawTransaction(signedTx.serialize());
-      await connection.confirmTransaction({ signature: paymentSignature, lastValidBlockHeight }, 'confirmed');
+      await connection.confirmTransaction({ signature: paymentSignature, lastValidBlockHeight: paymentResult.lastValidBlockHeight }, 'confirmed');
       console.log("Payment transaction confirmed:", paymentSignature);
 
       // Step 2: Process cNFT transfers
@@ -495,7 +514,8 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
     (sum, item) => sum + item.priceUsdc * item.quantity,
     0
   );
-  const grandTotal = totalAmount + totalShipping;
+  const subtotal = totalAmount;
+  const grandTotal = (subtotal + totalShipping) * (1 - buyerDiscount);
   const grandTotalSol = solPrice ? (grandTotal / solPrice).toFixed(4) : 'N/A';
 
   const tableData = cartItems.map((item) => [
@@ -556,11 +576,16 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
         text: (
           <>
             <div className={classes.shippingTotal}>
-              Items Total: <small>$</small> {totalAmount.toLocaleString()}
+              Items Total: <small>$</small> {subtotal.toLocaleString()}
             </div>
             <div className={classes.shippingTotal}>
               Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
             </div>
+            {buyerDiscount > 0 && (
+              <div className={classes.discountText}>
+                Buyer Discount: {(buyerDiscount * 100).toFixed(0)}% Off
+              </div>
+            )}
             <div className={classes.shippingTotal}>
               Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
                 animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
@@ -912,7 +937,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                 <div className={classes.textCenter}>
                   <h4>Error: {error}</h4>
                 </div>
-              ) : isConnected === null ? (
+              ) : isConnected === null || loading ? (
                 <div className={classes.textCenter}>
                   <h4>Loading...</h4>
                 </div>
@@ -947,11 +972,16 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
                     <div className={classes.mobileView}>
                       {mobileCartView}
                       <div className={classes.mobileTotal}>
-                        Items Total: <small>$</small> {totalAmount.toLocaleString()}
+                        Items Total: <small>$</small> {subtotal.toLocaleString()}
                       </div>
                       <div className={classes.mobileTotal}>
                         Estimated Shipping: <small>$</small> {totalShipping.toLocaleString()}
                       </div>
+                      {buyerDiscount > 0 && (
+                        <div className={classes.discountText}>
+                          Buyer Discount: {(buyerDiscount * 100).toFixed(0)}% Off
+                        </div>
+                      )}
                       <div className={classes.mobileTotal}>
                         Grand Total: <small>$</small> {grandTotal.toLocaleString()} <motion.span
                           animate={flash ? { scale: [1, 1.3, 1], color: ['#555', '#6FCBA9', '#555'] } : {}}
