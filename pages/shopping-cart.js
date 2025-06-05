@@ -419,7 +419,8 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
             size: item.size || null,
             color: item.color || null,
             imageUrl: item.imageUrl,
-            nftId: item.type === 'rwi' ? `${item.productId}-${item.size}-${item.color}-${i + 1}` : null,
+            imageExt: item.imageUrl.split('.').pop().toLowerCase() || 'webp',
+            nftId: item.type === 'rwi' ? `${item.productId}-${item.size || 'N/A'}-${item.color || 'N/A'}-${i + 1}` : null,
           }))
         ),
         shippingAddress: hasRWI ? shippingAddress : {},
@@ -433,7 +434,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       console.log("Checkout payment data:", JSON.stringify(checkoutData, null, 2));
 
       // Step 1: Process payment
-      let paymentResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
+      let paymentResponse = await fetch('https://processcheckoutandmint-232592911911.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(checkoutData),
@@ -470,27 +471,33 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       await connection.confirmTransaction({ signature: paymentSignature, lastValidBlockHeight: paymentResult.lastValidBlockHeight }, 'confirmed');
       console.log("Payment transaction confirmed:", paymentSignature);
 
-      // Step 2: Process cNFT transfers
-      checkoutData.step = 'transfer';
+      // Step 2: Trigger cNFT minting in background
+      checkoutData.step = 'mint';
       checkoutData.paymentSignature = paymentSignature;
-      console.log("Checkout transfer data:", JSON.stringify(checkoutData, null, 2));
+      console.log("Checkout mint data:", JSON.stringify(checkoutData, null, 2));
 
-      let transferResponse = await fetch('https://process-cnft-checkout-232592911911.us-central1.run.app', {
+      // Fire-and-forget minting request
+      fetch('https://processcheckoutandmint-232592911911.us-central1.run.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(checkoutData),
+      }).then(async (mintResponse) => {
+        if (!mintResponse.ok) {
+          console.error('Minting failed:', await mintResponse.text());
+          return;
+        }
+        const mintResult = await mintResponse.json();
+        console.log("Minting completed:", mintResult);
+      }).catch(err => {
+        console.error("Minting error:", err.message);
       });
-      let transferResult = await transferResponse.json();
-      if (!transferResponse.ok) {
-        throw new Error(transferResult.error || 'cNFT transfer failed');
-      }
 
       setCartItems([]);
       setTotalShipping(0);
       setHasRWI(false);
       setCheckoutStatus('success');
       setCheckoutMessage('Checkout completed successfully!');
-      setTransactionId(transferResult.transactionIds && transferResult.transactionIds.length > 0 ? transferResult.transactionIds[0] : null);
+      setTransactionId(uuidv4()); // Temporary ID for UI; actual IDs logged server-side
     } catch (err) {
       console.error("Checkout error:", err);
       setCheckoutStatus('error');
