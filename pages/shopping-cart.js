@@ -419,7 +419,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
             size: item.size || null,
             color: item.color || null,
             imageUrl: item.imageUrl,
-            imageExt: item.imageUrl.split('.').pop().toLowerCase() || 'webp',
+            imageExt: item.imageUrl.match(/\.([a-zA-Z0-9]+)(\?|$)/)?.[1] || 'webp',
             nftId: item.type === 'rwi' ? `${item.productId}-${item.size || 'N/A'}-${item.color || 'N/A'}-${i + 1}` : null,
           }))
         ),
@@ -497,7 +497,7 @@ export default function ShoppingCartPage({ solPrice: initialSolPrice, flash: ini
       setHasRWI(false);
       setCheckoutStatus('success');
       setCheckoutMessage('Checkout completed successfully!');
-      setTransactionId(uuidv4()); // Temporary ID for UI; actual IDs logged server-side
+      setTransactionId(paymentResult.transactionIds && paymentResult.transactionIds.length > 0 ? paymentResult.transactionIds[0] : uuidv4());
     } catch (err) {
       console.error("Checkout error:", err);
       setCheckoutStatus('error');
