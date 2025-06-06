@@ -750,7 +750,7 @@ export default function PresentationPage() {
                           <h3 className={classes.cardTitleWhite}>Own Your Purchases</h3>
                         </a>
                         <h3 className={classes.cardDescriptionWhite}>
-                          Every purchase comes with a dynamic MetaPlex Core NFT receipt, securely managed by F4cet, proving ownership. Metaplex Preferred protocol provider on F4cets.market
+                          Every purchase comes with a dynamic MetaPlex cNFT receipt, securely managed by F4cet, proving ownership. Metaplex Preferred protocol provider on F4cets.market
                         </h3>
                         <Button simple color="white" href="/marketplace">
                           <Subject /> Check it out
