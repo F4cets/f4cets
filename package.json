@@ -23,6 +23,7 @@
     "next": "12.3.4",
     "nouislider": "15.4.0",
     "prop-types": "15.8.1",
+    "qrcode": "^1.5.4",
     "react": "18.2.0",
     "react-animate-on-scroll": "2.1.5",
     "react-datetime": "3.2.0",
