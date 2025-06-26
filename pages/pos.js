@@ -1,5 +1,5 @@
 /*eslint-disable*/
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import classNames from "classnames";
 import makeStyles from "@mui/styles/makeStyles";
 import Header from "/components/Header/Header.js";
@@ -23,12 +23,12 @@ import { motion } from "framer-motion";
 import QRCode from "qrcode";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/ecommerceStyle.js";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useUser } from "/contexts/UserContext";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { Connection, PublicKey, TransactionSignature } from "@solana/web3.js";
 
 const useStyles = makeStyles({
   ...styles,
@@ -68,10 +68,16 @@ const useStyles = makeStyles({
     marginTop: "16px",
     textAlign: "center",
   },
+  successMessage: {
+    color: "green",
+    marginTop: "16px",
+  },
 });
 
 const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC token address on Solana
 const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53"; // F4cets wallet
+const QUICKNODE_RPC = process.env.NEXT_PUBLIC_QUICKNODE_RPC || "https://api.mainnet-beta.solana.com";
+const connection = new Connection(QUICKNODE_RPC, "confirmed");
 
 export default function Pos() {
   const classes = useStyles();
@@ -88,6 +94,9 @@ export default function Pos() {
   const [selectedVariant, setSelectedVariant] = useState({ color: "", size: "", quantity: 0 });
   const [flash, setFlash] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [transactionSignature, setTransactionSignature] = useState(null);
+  const wsRef = useRef(null);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -153,8 +162,21 @@ export default function Pos() {
   }, [solPrice]);
 
   useEffect(() => {
-    generateQRCode(); // Regenerate QR code on cart, currency, or price changes
-  }, [cart, paymentCurrency, solPrice]);
+    generateQRCode();
+    // Set up WebSocket to listen for transaction confirmation
+    wsRef.current = connection.onAccountChange(
+      new PublicKey(F4CETS_WALLET),
+      (accountInfo, context) => {
+        if (context.slot > 0 && transactionSignature) {
+          handlePaymentConfirmation(transactionSignature);
+        }
+      },
+      "confirmed"
+    );
+    return () => {
+      if (wsRef.current) connection.removeAccountChangeListener(wsRef.current);
+    };
+  }, [cart, paymentCurrency, solPrice, transactionSignature]);
 
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
@@ -199,18 +221,15 @@ export default function Pos() {
   const generateQRCode = async () => {
     if (!cartItems.length) {
       setQrCodeUrl(null);
+      setTransactionSignature(null);
       return;
     }
 
     try {
       const f4cetsPublicKey = new PublicKey(F4CETS_WALLET);
-
       const itemCount = cartItems.length;
       const totalUsdc = cartTotal;
-      const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
       const totalSol = totalUsdc / solPrice;
-      const feeSol = fee / solPrice;
-      const sellerAmountSol = sellerAmount / solPrice;
 
       const paymentAmount = paymentCurrency === "USDC" ? totalUsdc : totalSol;
       let amountInUnits;
@@ -223,7 +242,7 @@ export default function Pos() {
         amountInUnits = paymentAmount; // SOL in SOL units
       }
 
-      const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
+      const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
       const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${amountInUnits.toString()}&label=Payment%20for%20F4cetsPOS&message=${encodeURIComponent(memo)}${tokenAddress ? `&spl-token=${tokenAddress}` : ""}`;
 
       QRCode.toDataURL(deepLink, (err, url) => {
@@ -233,6 +252,37 @@ export default function Pos() {
     } catch (err) {
       console.error("Error generating QR code:", err);
       setError("Failed to generate QR code. Please try again.");
+    }
+  };
+
+  const handlePaymentConfirmation = async (signature) => {
+    try {
+      const response = await fetch('https://us-central1-f4cet-marketplace.cloudfunctions.net/processpospayment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sellerWallet: walletId,
+          totalAmount: cartTotal,
+          itemCount: cartItems.length,
+          currency: paymentCurrency,
+          memo: `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}${paymentCurrency}|Fee:${calculateFees(cartTotal, cartItems.length).fee.toFixed(2)}${paymentCurrency}|Seller:${calculateFees(cartTotal, cartItems.length).sellerAmount.toFixed(2)}${paymentCurrency}|Items:${cartItems.length}`,
+          signature,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setSuccess(true);
+        setCart({});
+        setQrCodeUrl(null);
+        setTransactionSignature(null);
+        setTimeout(() => setSuccess(false), 5000); // Show success for 5 seconds
+      } else {
+        setError(`Payment processing failed: ${result.error}`);
+      }
+    } catch (err) {
+      console.error("Error processing payment:", err);
+      setError("Failed to process payment. Please try again.");
     }
   };
 
@@ -374,7 +424,8 @@ export default function Pos() {
                   {qrCodeUrl ? (
                     <div className={classes.qrCode}>
                       <img src={qrCodeUrl} alt="Payment QR Code" />
-                      <p>Scan to pay with your Solana wallet. Payment will be split by F4cets.</p>
+                      <p>Scan to pay with your Solana wallet. Payment will be split by F4cets after submission.</p>
+                      {success && <p className={classes.successMessage}>Payment submitted successfully! Cart cleared.</p>}
                     </div>
                   ) : (
                     <Button color="success" fullWidth style={{ marginTop: "16px" }} onClick={generateQRCode} disabled={cartItems.length === 0}>
