@@ -404,7 +404,7 @@ export default function Pos() {
   const cartItems = Object.entries(cart).flatMap(([productId, variants]) =>
     Object.entries(variants).map(([variantKey, quantity]) => {
       const product = products.find(p => p.id === productId);
-      const [color, size] = variantKey.split('-';
+      const [color, size] = variantKey.split('-');
       return { ...product, quantity, color, size };
     })
   );
