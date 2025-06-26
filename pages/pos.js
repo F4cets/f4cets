@@ -23,12 +23,12 @@ import { motion } from "framer-motion";
 import QRCode from "qrcode";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/ecommerceStyle.js";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useUser } from "/contexts/UserContext";
+import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 const useStyles = makeStyles({
   ...styles,
@@ -71,8 +71,10 @@ const useStyles = makeStyles({
 });
 
 const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53";
-const PROCESS_POS_PAYMENT_URL = "https://processpospayment-232592911911.us-central1.run.app";
-const CONFIRM_PAYMENT_URL = "https://processpospayment-232592911911.us-central1.run.app/confirm";
+const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+const SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
+const connection = new Connection(SOLANA_RPC_URL, "confirmed");
+const PROCESS_POS_SPLIT_URL = "https://processpospayment-232592911911.us-central1.run.app/split";
 
 export default function Pos() {
   const classes = useStyles();
@@ -90,6 +92,7 @@ export default function Pos() {
   const [flash, setFlash] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [transactionId, setTransactionId] = useState(null);
+  const [checkingTransaction, setCheckingTransaction] = useState(false);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -154,6 +157,10 @@ export default function Pos() {
     return () => clearInterval(interval);
   }, [solPrice]);
 
+  useEffect(() => {
+    generateQRCode(); // Regenerate QR code on cart, currency, or price changes
+  }, [cart, paymentCurrency, solPrice]);
+
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
       const variantKey = `${selectedVariant.color}-${selectedVariant.size}`;
@@ -202,54 +209,85 @@ export default function Pos() {
     }
 
     try {
-      const totalUsdc = cartTotal;
+      const f4cetsPublicKey = new PublicKey(F4CETS_WALLET);
       const itemCount = cartItems.length;
+      const totalUsdc = cartTotal;
       const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
       const totalSol = totalUsdc / solPrice;
       const feeSol = fee / solPrice;
       const sellerAmountSol = sellerAmount / solPrice;
 
       const paymentAmount = paymentCurrency === "USDC" ? totalUsdc : totalSol;
-      const f4cetsPublicKey = new PublicKey(F4CETS_WALLET);
-
+      const label = `Payment for ${storeId} POS`;
       const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
-      const label = "F4cets POS Payment";
-      const message = "Scan to pay at F4cets POS";
 
-      const paymentRequest = {
-        recipient: f4cetsPublicKey.toBase58(),
-        amount: paymentAmount,
-        currency: paymentCurrency,
-        memo,
-        label,
-        message,
-      };
+      let deepLink;
+      if (paymentCurrency === "USDC") {
+        deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${paymentAmount}&label=${encodeURIComponent(label)}&memo=${encodeURIComponent(memo)}&spl-token=${USDC_MINT_ADDRESS}`;
+      } else {
+        deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${paymentAmount}&label=${encodeURIComponent(label)}&memo=${encodeURIComponent(memo)}`;
+      }
 
-      const qrCodeData = `solana:${paymentRequest.recipient}?amount=${paymentRequest.amount}&label=${encodeURIComponent(paymentRequest.label)}&message=${encodeURIComponent(paymentRequest.message)}&memo=${encodeURIComponent(paymentRequest.memo)}`;
-      const qrCodeUrlGenerated = await QRCode.toDataURL(qrCodeData);
-      setQrCodeUrl(qrCodeUrlGenerated);
-      setTransactionId(null); // Will be set after confirmation
-      setCart({}); // Clear cart immediately
-      setError(null);
+      const qrCodeDataUrl = await QRCode.toDataURL(deepLink);
+      setQrCodeUrl(qrCodeDataUrl);
+      setTransactionId(null); // Reset until confirmed
+      setCheckingTransaction(true);
 
-      // Poll for transaction confirmation (simplified; replace with real listener)
-      const checkTransaction = async () => {
-        const response = await fetch(`${CONFIRM_PAYMENT_URL}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ signature: "pending" }), // Placeholder; update with real signature
-        });
-        const result = await response.json();
-        if (result.success && result.signature) {
-          setTransactionId(result.signature);
+      // Poll for transaction submission
+      const checkTransaction = setInterval(async () => {
+        if (transactionId) {
+          clearInterval(checkTransaction);
+          setCheckingTransaction(false);
+          await splitPayment();
+        } else {
+          const signatures = await connection.getSignaturesForAddress(f4cetsPublicKey, { limit: 10 });
+          const recentSignature = signatures[0]?.signature;
+          if (recentSignature && !transactionId) {
+            setTransactionId(recentSignature);
+            clearInterval(checkTransaction);
+            setCheckingTransaction(false);
+            await splitPayment();
+          }
         }
-      };
-      setTimeout(checkTransaction, 5000); // Check after 5 seconds (adjust as needed)
+      }, 2000); // Check every 2 seconds
     } catch (err) {
       console.error("Error generating QR code:", err);
       setError("Failed to generate QR code. Please try again.");
       setQrCodeUrl(null);
       setTransactionId(null);
+      setCheckingTransaction(false);
+    }
+  };
+
+  const splitPayment = async () => {
+    if (!transactionId) return;
+
+    try {
+      const payload = {
+        sellerWallet: walletId,
+        transactionId,
+        totalAmount: cartTotal,
+        itemCount: cartItems.length,
+        currency: paymentCurrency,
+        memo: `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}${paymentCurrency}|SplitProcessed`,
+      };
+
+      const response = await fetch(PROCESS_POS_SPLIT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setCart({}); // Clear cart on success
+        setError(null); // Clear any previous errors
+      } else {
+        throw new Error(result.error || "Failed to split payment");
+      }
+    } catch (err) {
+      console.error("Error splitting payment:", err);
+      setError("Failed to split payment. Please contact support.");
     }
   };
 
@@ -391,8 +429,9 @@ export default function Pos() {
                   {qrCodeUrl ? (
                     <div className={classes.qrCode}>
                       <img src={qrCodeUrl} alt="Payment QR Code" />
-                      <p>Scan to pay with your Solana wallet. Awaiting confirmation...</p>
-                      <Button color="info" onClick={() => { setQrCodeUrl(null); setTransactionId(null); setCart({}); }} style={{ marginTop: "8px" }}>
+                      <p>Scan to pay with your Solana wallet. Awaiting submission...</p>
+                      {checkingTransaction && <p>Checking transaction...</p>}
+                      <Button color="info" onClick={() => { setQrCodeUrl(null); setTransactionId(null); setCart({}); setCheckingTransaction(false); }} style={{ marginTop: "8px" }}>
                         New Transaction
                       </Button>
                     </div>
@@ -473,7 +512,7 @@ export default function Pos() {
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert onClose={() => setTransactionId(null)} severity="success" sx={{ width: "100%" }}>
-          Payment processed! Transaction ID: {transactionId}
+          Payment submitted! Transaction ID: {transactionId}
         </Alert>
       </Snackbar>
       <Footer theme="dark" content={<div />} />
