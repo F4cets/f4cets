@@ -70,8 +70,9 @@ const useStyles = makeStyles({
   },
 });
 
-const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC token address on Solana
-const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53"; // F4cets wallet
+const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53";
+const PROCESS_POS_PAYMENT_URL = "https://processpospayment-232592911911.us-central1.run.app";
 
 export default function Pos() {
   const classes = useStyles();
@@ -88,6 +89,7 @@ export default function Pos() {
   const [selectedVariant, setSelectedVariant] = useState({ color: "", size: "", quantity: 0 });
   const [flash, setFlash] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
+  const [transactionId, setTransactionId] = useState(null);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -199,6 +201,7 @@ export default function Pos() {
   const generateQRCode = async () => {
     if (!cartItems.length) {
       setQrCodeUrl(null);
+      setTransactionId(null);
       return;
     }
 
@@ -217,22 +220,41 @@ export default function Pos() {
       let tokenAddress = null;
 
       if (paymentCurrency === "USDC") {
-        amountInUnits = paymentAmount; // USD, wallet converts to micro-USDC
+        amountInUnits = paymentAmount * 1000000; // Convert to micro-USDC (6 decimals)
         tokenAddress = USDC_MINT_ADDRESS;
       } else {
-        amountInUnits = paymentAmount; // SOL in SOL units
+        amountInUnits = paymentAmount * LAMPORTS_PER_SOL; // Convert to lamports
       }
 
       const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
-      const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${amountInUnits.toString()}&label=Payment%20for%20F4cetsPOS&message=${encodeURIComponent(memo)}${tokenAddress ? `&spl-token=${tokenAddress}` : ""}`;
+      const payload = {
+        sellerWallet: walletId,
+        totalAmount: paymentAmount,
+        itemCount,
+        currency: paymentCurrency,
+        memo,
+      };
 
-      QRCode.toDataURL(deepLink, (err, url) => {
-        if (err) throw err;
-        setQrCodeUrl(url);
+      const response = await fetch(PROCESS_POS_PAYMENT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+
+      const result = await response.json();
+      if (result.success && result.signature) {
+        setTransactionId(result.signature);
+        setQrCodeUrl(`https://explorer.solana.com/tx/${result.signature}`);
+        setCart({}); // Clear cart on success
+        setError(null); // Clear any previous errors
+      } else {
+        throw new Error(result.error || "Failed to process payment");
+      }
     } catch (err) {
       console.error("Error generating QR code:", err);
       setError("Failed to generate QR code. Please try again.");
+      setQrCodeUrl(null);
+      setTransactionId(null);
     }
   };
 
@@ -374,7 +396,10 @@ export default function Pos() {
                   {qrCodeUrl ? (
                     <div className={classes.qrCode}>
                       <img src={qrCodeUrl} alt="Payment QR Code" />
-                      <p>Scan to pay with your Solana wallet. Payment will be split by F4cets.</p>
+                      <p>Scan to pay with your Solana wallet. Transaction ID: {transactionId}</p>
+                      <Button color="info" onClick={() => { setQrCodeUrl(null); setTransactionId(null); setCart({}); }} style={{ marginTop: "8px" }}>
+                        New Transaction
+                      </Button>
                     </div>
                   ) : (
                     <Button color="success" fullWidth style={{ marginTop: "16px" }} onClick={generateQRCode} disabled={cartItems.length === 0}>
@@ -444,6 +469,16 @@ export default function Pos() {
       >
         <Alert onClose={() => setError(null)} severity="error" sx={{ width: "100%" }}>
           {error}
+        </Alert>
+      </Snackbar>
+      <Snackbar
+        open={!!transactionId}
+        autoHideDuration={6000}
+        onClose={() => setTransactionId(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setTransactionId(null)} severity="success" sx={{ width: "100%" }}>
+          Payment processed! Transaction ID: {transactionId}
         </Alert>
       </Snackbar>
       <Footer theme="dark" content={<div />} />
