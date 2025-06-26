@@ -70,9 +70,9 @@ const useStyles = makeStyles({
   },
 });
 
-const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53";
 const PROCESS_POS_PAYMENT_URL = "https://processpospayment-232592911911.us-central1.run.app";
+const CONFIRM_PAYMENT_URL = "https://processpospayment-232592911911.us-central1.run.app/confirm";
 
 export default function Pos() {
   const classes = useStyles();
@@ -154,10 +154,6 @@ export default function Pos() {
     return () => clearInterval(interval);
   }, [solPrice]);
 
-  useEffect(() => {
-    generateQRCode(); // Regenerate QR code on cart, currency, or price changes
-  }, [cart, paymentCurrency, solPrice]);
-
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
       const variantKey = `${selectedVariant.color}-${selectedVariant.size}`;
@@ -206,40 +202,49 @@ export default function Pos() {
     }
 
     try {
-      const itemCount = cartItems.length;
       const totalUsdc = cartTotal;
+      const itemCount = cartItems.length;
       const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
       const totalSol = totalUsdc / solPrice;
       const feeSol = fee / solPrice;
       const sellerAmountSol = sellerAmount / solPrice;
 
       const paymentAmount = paymentCurrency === "USDC" ? totalUsdc : totalSol;
-      const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
+      const f4cetsPublicKey = new PublicKey(F4CETS_WALLET);
 
-      const payload = {
-        sellerWallet: walletId,
-        totalAmount: paymentAmount,
-        itemCount,
+      const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
+      const label = "F4cets POS Payment";
+      const message = "Scan to pay at F4cets POS";
+
+      const paymentRequest = {
+        recipient: f4cetsPublicKey.toBase58(),
+        amount: paymentAmount,
         currency: paymentCurrency,
         memo,
+        label,
+        message,
       };
 
-      const response = await fetch(PROCESS_POS_PAYMENT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const qrCodeData = `solana:${paymentRequest.recipient}?amount=${paymentRequest.amount}&label=${encodeURIComponent(paymentRequest.label)}&message=${encodeURIComponent(paymentRequest.message)}&memo=${encodeURIComponent(paymentRequest.memo)}`;
+      const qrCodeUrlGenerated = await QRCode.toDataURL(qrCodeData);
+      setQrCodeUrl(qrCodeUrlGenerated);
+      setTransactionId(null); // Will be set after confirmation
+      setCart({}); // Clear cart immediately
+      setError(null);
 
-      const result = await response.json();
-      if (result.success && result.transaction) {
-        const qrData = `solana:${result.transaction.recipient}?amount=${paymentAmount}&label=Pay%20to%20${encodeURIComponent(storeId)}&memo=${encodeURIComponent(memo)}`;
-        setQrCodeUrl(qrData);
-        setTransactionId(result.transaction.signature);
-        setCart({}); // Clear cart on success
-        setError(null); // Clear any previous errors
-      } else {
-        throw new Error(result.error || "Failed to process payment");
-      }
+      // Poll for transaction confirmation (simplified; replace with real listener)
+      const checkTransaction = async () => {
+        const response = await fetch(`${CONFIRM_PAYMENT_URL}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ signature: "pending" }), // Placeholder; update with real signature
+        });
+        const result = await response.json();
+        if (result.success && result.signature) {
+          setTransactionId(result.signature);
+        }
+      };
+      setTimeout(checkTransaction, 5000); // Check after 5 seconds (adjust as needed)
     } catch (err) {
       console.error("Error generating QR code:", err);
       setError("Failed to generate QR code. Please try again.");
@@ -383,17 +388,18 @@ export default function Pos() {
                     <br />
                     Seller: {paymentCurrency === "USDC" ? `$${calculateFees(cartTotal, cartItems.length).sellerAmount.toFixed(2)}` : `${(calculateFees(cartTotal, cartItems.length).sellerAmount / solPrice).toFixed(4)} SOL`}
                   </div>
-                  <Button color="success" fullWidth style={{ marginTop: "16px" }} onClick={generateQRCode} disabled={cartItems.length === 0}>
-                    Checkout
-                  </Button>
-                  {qrCodeUrl && (
+                  {qrCodeUrl ? (
                     <div className={classes.qrCode}>
-                      <img src={await QRCode.toDataURL(qrCodeUrl)} alt="Payment QR Code" />
-                      <p>Scan to pay with your Solana wallet. Transaction ID: {transactionId}</p>
+                      <img src={qrCodeUrl} alt="Payment QR Code" />
+                      <p>Scan to pay with your Solana wallet. Awaiting confirmation...</p>
                       <Button color="info" onClick={() => { setQrCodeUrl(null); setTransactionId(null); setCart({}); }} style={{ marginTop: "8px" }}>
                         New Transaction
                       </Button>
                     </div>
+                  ) : (
+                    <Button color="success" fullWidth style={{ marginTop: "16px" }} onClick={generateQRCode} disabled={cartItems.length === 0}>
+                      Generate QR Code
+                    </Button>
                   )}
                 </>
               ) : (
