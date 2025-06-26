@@ -76,8 +76,8 @@ const useStyles = makeStyles({
     marginTop: "16px",
     textAlign: "center",
   },
-  errorMessage: {
-    color: "red",
+  statusMessage: {
+    color: "#555",
     marginTop: "16px",
     textAlign: "center",
   },
@@ -107,7 +107,7 @@ export default function Pos() {
   const [transactionSignature, setTransactionSignature] = useState(null);
   const [loading, setLoading] = useState(false);
   const [referenceKey, setReferenceKey] = useState(Keypair.generate());
-  const [pollingError, setPollingError] = useState(null);
+  const [statusMessage, setStatusMessage] = useState("Waiting for payment...");
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -177,10 +177,10 @@ export default function Pos() {
       console.log(`Checking for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
       const signatures = await connection.getSignaturesForAddress(
         new PublicKey(F4CETS_WALLET),
-        { limit: 10 },
+        { limit: 15 },
         "confirmed"
       );
-      console.log("Signatures fetched:", signatures);
+      console.log("Signatures fetched:", signatures.map(sig => sig.signature));
 
       for (const sigInfo of signatures) {
         const signature = sigInfo.signature;
@@ -188,14 +188,13 @@ export default function Pos() {
           commitment: "confirmed",
           maxSupportedTransactionVersion: 0,
         });
-        console.log("Transaction details:", JSON.stringify(tx, null, 2));
 
         if (tx && tx.meta && tx.meta.logMessages) {
           const memoLog = tx.meta.logMessages.find(log => log.includes("Memo (len"));
           if (memoLog) {
             const memoMatch = memoLog.match(/Memo \(len \d+\): "(.+?)"/);
             if (memoMatch && memoMatch[1]) {
-              const memo = memoMatch[1];
+              const memo = decodeURIComponent(memoMatch[1].trim());
               const expectedReference = referenceKey.publicKey.toBase58();
               console.log("Memo found:", memo);
               console.log("Expected reference:", expectedReference);
@@ -203,6 +202,7 @@ export default function Pos() {
               if (memo.includes(expectedReference)) {
                 console.log("Detected valid transaction:", signature);
                 setTransactionSignature(signature);
+                setStatusMessage("Processing payment...");
                 await handlePaymentSubmission(signature);
                 return true; // Stop after finding a valid transaction
               }
@@ -210,11 +210,11 @@ export default function Pos() {
           }
         }
       }
-      setPollingError("No matching transaction found. Please try again or scan the QR code.");
+      setStatusMessage("Waiting for payment...");
       return false;
     } catch (err) {
       console.error("Error checking transactions:", err);
-      setPollingError("Failed to check transaction. Please try again.");
+      setError("Failed to check transaction. Please try again.");
       return false;
     }
   };
@@ -232,7 +232,7 @@ export default function Pos() {
         if (Date.now() - startTime > timeoutMs) {
           console.log("Polling timed out");
           clearInterval(interval);
-          setPollingError("Payment detection timed out. Please try again or confirm manually.");
+          setStatusMessage("Payment not detected. Please confirm manually or try again.");
           return;
         }
         const found = await checkTransaction();
@@ -295,6 +295,7 @@ export default function Pos() {
     if (!cartItems.length || !referenceKey) {
       setQrCodeUrl(null);
       setTransactionSignature(null);
+      setStatusMessage("Waiting for payment...");
       return;
     }
 
@@ -323,6 +324,7 @@ export default function Pos() {
       QRCode.toDataURL(deepLink, (err, url) => {
         if (err) throw err;
         setQrCodeUrl(url);
+        setStatusMessage("Waiting for payment...");
       });
     } catch (err) {
       console.error("Error generating QR code:", err);
@@ -332,6 +334,7 @@ export default function Pos() {
 
   const handlePaymentSubmission = async (signature) => {
     setLoading(true);
+    setStatusMessage("Processing payment...");
     try {
       const { fee, sellerAmount } = calculateFees(cartTotal, cartItems.length);
       const response = await fetch('https://us-central1-f4cet-marketplace.cloudfunctions.net/processpospayment', {
@@ -354,16 +357,16 @@ export default function Pos() {
         setCart({});
         setQrCodeUrl(null);
         setTransactionSignature(null);
-        setReferenceKey(Keypair.generate()); // Generate new reference key for next transaction
-        setPollingError(null);
+        setReferenceKey(Keypair.generate());
+        setStatusMessage(null);
         setTimeout(() => setSuccess(false), 5000);
       } else {
         console.error("Payment split failed:", result.error);
-        setPollingError(`Payment split failed: ${result.error}`);
+        setStatusMessage(`Payment failed: ${result.error}`);
       }
     } catch (err) {
       console.error("Error processing payment split:", err);
-      setPollingError("Failed to process payment split. Please try again.");
+      setStatusMessage("Failed to process payment. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -510,7 +513,7 @@ export default function Pos() {
                       <p>Scan to pay with your Solana wallet. Payment will be split by F4cets after submission.</p>
                       {loading && <p className={classes.loading}>Processing payment...</p>}
                       {success && <p className={classes.successMessage}>Payment submitted successfully! Cart cleared.</p>}
-                      {pollingError && <p className={classes.errorMessage}>{pollingError}</p>}
+                      {statusMessage && <p className={classes.statusMessage}>{statusMessage}</p>}
                       <Button
                         color="info"
                         fullWidth
