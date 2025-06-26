@@ -168,19 +168,34 @@ export default function Pos() {
 
   useEffect(() => {
     generateQRCode();
-    // Set up WebSocket to listen for transaction submission
-    wsRef.current = connection.onSignature(
-      F4CETS_WALLET,
-      (signatureResult, context) => {
-        const signature = signatureResult.signature;
-        console.log("Detected transaction submission:", signature);
-        setTransactionSignature(signature);
-        handlePaymentSubmission(signature);
-      },
-      "processed" // Listen for submission, not confirmation
-    );
+    if (cartItems.length > 0) {
+      // Monitor F4cets wallet for incoming transactions
+      wsRef.current = connection.onAccountChange(
+        new PublicKey(F4CETS_WALLET),
+        async (accountInfo, context) => {
+          try {
+            // Fetch recent transactions for the wallet
+            const signatures = await connection.getSignaturesForAddress(
+              new PublicKey(F4CETS_WALLET),
+              { limit: 1 },
+              "confirmed"
+            );
+            if (signatures.length > 0) {
+              const signature = signatures[0].signature;
+              console.log("Detected transaction:", signature);
+              setTransactionSignature(signature);
+              handlePaymentSubmission(signature);
+            }
+          } catch (err) {
+            console.error("Error fetching transaction signatures:", err);
+            setError("Failed to process transaction. Please try again.");
+          }
+        },
+        "processed"
+      );
+    }
     return () => {
-      if (wsRef.current) connection.removeSignatureListener(wsRef.current);
+      if (wsRef.current) connection.removeAccountChangeListener(wsRef.current);
     };
   }, [cart, paymentCurrency, solPrice]);
 
