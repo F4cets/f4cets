@@ -23,12 +23,12 @@ import { motion } from "framer-motion";
 import QRCode from "qrcode";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/ecommerceStyle.js";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useUser } from "/contexts/UserContext";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import { Connection, PublicKey, TransactionSignature } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 
 const useStyles = makeStyles({
   ...styles,
@@ -168,21 +168,19 @@ export default function Pos() {
 
   useEffect(() => {
     generateQRCode();
-    // Set up WebSocket to listen for transaction logs
-    wsRef.current = connection.onLogs(
-      new PublicKey(F4CETS_WALLET),
-      (logs, context) => {
-        console.log("Transaction log:", logs);
-        if (logs.logs && logs.logs.length > 0 && !transactionSignature) {
-          const signature = context.signature;
-          setTransactionSignature(signature);
-          handlePaymentConfirmation(signature);
-        }
+    // Set up WebSocket to listen for transaction submission
+    wsRef.current = connection.onSignature(
+      F4CETS_WALLET,
+      (signatureResult, context) => {
+        const signature = signatureResult.signature;
+        console.log("Detected transaction submission:", signature);
+        setTransactionSignature(signature);
+        handlePaymentSubmission(signature);
       },
-      "confirmed"
+      "processed" // Listen for submission, not confirmation
     );
     return () => {
-      if (wsRef.current) connection.removeOnLogsListener(wsRef.current);
+      if (wsRef.current) connection.removeSignatureListener(wsRef.current);
     };
   }, [cart, paymentCurrency, solPrice]);
 
@@ -244,14 +242,15 @@ export default function Pos() {
       let tokenAddress = null;
 
       if (paymentCurrency === "USDC") {
-        amountInUnits = paymentAmount; // USD, wallet converts to micro-USDC
+        amountInUnits = paymentAmount; // USDC (decimal handled by wallet)
         tokenAddress = USDC_MINT_ADDRESS;
       } else {
         amountInUnits = paymentAmount; // SOL in SOL units
       }
 
-      const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
-      const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${amountInUnits.toString()}&label=Payment%20for%20F4cetsPOS&message=${encodeURIComponent(memo)}${tokenAddress ? `&spl-token=${tokenAddress}` : ""}`;
+      const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
+      const memo = `F4cetsPOS|Store:${storeId}|Total:${totalUsdc.toFixed(2)}|Fee:${fee.toFixed(2)}|Seller:${sellerAmount.toFixed(2)}|SellerWallet:${walletId}|Items:${itemCount}`;
+      const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${amountInUnits.toFixed(6)}&label=F4cetsPOS&memo=${encodeURIComponent(memo)}${tokenAddress ? `&spl-token=${tokenAddress}` : ""}`;
 
       QRCode.toDataURL(deepLink, (err, url) => {
         if (err) throw err;
@@ -263,9 +262,10 @@ export default function Pos() {
     }
   };
 
-  const handlePaymentConfirmation = async (signature) => {
+  const handlePaymentSubmission = async (signature) => {
     setLoading(true);
     try {
+      const { fee, sellerAmount } = calculateFees(cartTotal, cartItems.length);
       const response = await fetch('https://us-central1-f4cet-marketplace.cloudfunctions.net/processpospayment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -274,7 +274,7 @@ export default function Pos() {
           totalAmount: cartTotal,
           itemCount: cartItems.length,
           currency: paymentCurrency,
-          memo: `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}${paymentCurrency}|Fee:${calculateFees(cartTotal, cartItems.length).fee.toFixed(2)}${paymentCurrency}|Seller:${calculateFees(cartTotal, cartItems.length).sellerAmount.toFixed(2)}${paymentCurrency}|Items:${cartItems.length}`,
+          memo: `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}|Fee:${fee.toFixed(2)}|Seller:${sellerAmount.toFixed(2)}|SellerWallet:${walletId}|Items:${cartItems.length}`,
           signature,
         }),
       });
@@ -285,13 +285,13 @@ export default function Pos() {
         setCart({});
         setQrCodeUrl(null);
         setTransactionSignature(null);
-        setTimeout(() => setSuccess(false), 5000); // Show success for 5 seconds
+        setTimeout(() => setSuccess(false), 5000);
       } else {
-        setError(`Payment processing failed: ${result.error}`);
+        setError(`Payment split failed: ${result.error}`);
       }
     } catch (err) {
-      console.error("Error processing payment:", err);
-      setError("Failed to process payment. Please try again.");
+      console.error("Error processing payment split:", err);
+      setError("Failed to process payment split. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -403,7 +403,7 @@ export default function Pos() {
                   {cartItems.map(item => {
                     const total = item.price * item.quantity;
                     const solTotal = total / solPrice;
-                    const { fee, sellerAmount } = calculateFees(total, 1); // 1 item per line
+                    const { fee, sellerAmount } = calculateFees(total, 1);
                     const solFee = fee / solPrice;
                     const solSellerAmount = sellerAmount / solPrice;
                     return (
