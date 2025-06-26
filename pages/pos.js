@@ -104,7 +104,6 @@ export default function Pos() {
   const [transactionSignature, setTransactionSignature] = useState(null);
   const [loading, setLoading] = useState(false);
   const [referenceKey, setReferenceKey] = useState(Keypair.generate());
-  const pollingStartTimeRef = useRef(null);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -185,7 +184,7 @@ export default function Pos() {
           commitment: "confirmed",
           maxSupportedTransactionVersion: 0,
         });
-        console.log("Transaction details:", JSON.stringify(tx, null, 2));
+        console.log("Transaction details:", tx);
 
         if (tx && tx.meta && tx.meta.logMessages) {
           const memoLog = tx.meta.logMessages.find(log => log.includes("Memo (len"));
@@ -197,50 +196,10 @@ export default function Pos() {
               const expectedReference = referenceKey.publicKey.toBase58();
               console.log("Memo found:", memo);
               if (memo.startsWith(expectedMemoPrefix) && memo.includes(expectedReference)) {
-                // Verify currency and amount
-                let isValid = false;
-                if (paymentCurrency === "USDC") {
-                  const usdcTokenAccount = await getAssociatedTokenAddress(
-                    new PublicKey(USDC_MINT_ADDRESS),
-                    new PublicKey(F4CETS_WALLET)
-                  );
-                  console.log("USDC Token Account:", usdcTokenAccount.toBase58());
-                  const transferInstruction = [
-                    ...tx.transaction.message.instructions,
-                    ...(tx.meta.innerInstructions || []).flatMap(inner => inner.instructions),
-                  ].find(
-                    inst => inst.programId.equals(TOKEN_PROGRAM_ID) && inst.parsed?.type === "transfer"
-                  );
-                  console.log("Transfer Instruction:", JSON.stringify(transferInstruction, null, 2));
-                  if (transferInstruction && transferInstruction.parsed?.info) {
-                    const transferredAmount = parseFloat(transferInstruction.parsed.info.amount) / 1000000; // USDC has 6 decimals
-                    console.log("USDC Transferred Amount:", transferredAmount);
-                    if (Math.abs(transferredAmount - cartTotal) < 0.01) {
-                      isValid = true;
-                    }
-                  }
-                } else if (paymentCurrency === "SOL") {
-                  const transferInstruction = tx.transaction.message.instructions.find(
-                    inst => inst.programId.equals(SystemProgram.programId) && inst.parsed?.type === "transfer"
-                  );
-                  console.log("Transfer Instruction:", JSON.stringify(transferInstruction, null, 2));
-                  if (
-                    transferInstruction &&
-                    transferInstruction.parsed?.info?.destination === F4CETS_WALLET &&
-                    Math.abs(transferInstruction.parsed.info.lamports / 1000000000 - cartTotal / solPrice) < 0.0001
-                  ) {
-                    isValid = true;
-                  }
-                }
-
-                if (isValid) {
-                  console.log("Detected valid transaction:", signature);
-                  setTransactionSignature(signature);
-                  await handlePaymentSubmission(signature);
-                  return true; // Signal success to stop polling
-                } else {
-                  console.log("Transaction invalid: currency or amount mismatch");
-                }
+                console.log("Detected valid transaction:", signature);
+                setTransactionSignature(signature);
+                await handlePaymentSubmission(signature);
+                return true; // Stop after finding a valid transaction
               }
             }
           }
@@ -249,7 +208,7 @@ export default function Pos() {
       return false;
     } catch (err) {
       console.error("Error checking transactions:", err);
-      setError("Failed to process transaction. Please try again.");
+      setError("Failed to check transaction. Please try again.");
       return false;
     }
   };
@@ -260,19 +219,11 @@ export default function Pos() {
 
     let interval;
     if (cartItems.length > 0 && referenceKey) {
-      pollingStartTimeRef.current = Date.now();
       console.log(`Starting polling for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
       interval = setInterval(async () => {
-        // Stop polling after 5 minutes (300,000 ms)
-        if (Date.now() - pollingStartTimeRef.current > 300000) {
-          console.log("Polling timeout reached, stopping");
-          setError("Payment not detected within 5 minutes. Please try again.");
-          clearInterval(interval);
-          return;
-        }
-
-        const success = await checkTransaction();
-        if (success) {
+        const found = await checkTransaction();
+        if (found) {
+          console.log("Stopping polling");
           clearInterval(interval);
         }
       }, 5000); // Poll every 5 seconds
