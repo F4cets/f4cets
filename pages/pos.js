@@ -23,13 +23,13 @@ import { motion } from "framer-motion";
 import QRCode from "qrcode";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/ecommerceStyle.js";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useUser } from "/contexts/UserContext";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import { Connection, PublicKey, TransactionSignature } from "@solana/web3.js";
-import { useEnv } from '/contexts/EnvContext'; // Assuming EnvContext for NEXT_PUBLIC_QUICKNODE_RPC
+import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { getProcessPosPaymentUrl } from "../lib/config"; // Assuming config for RPC
 
 const useStyles = makeStyles({
   ...styles,
@@ -73,14 +73,13 @@ const useStyles = makeStyles({
 
 const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53";
 const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-const SPLIT_PAYMENT_URL = "https://processpospayment-232592911911.us-central1.run.app/split";
+const PROCESS_POS_PAYMENT_URL = getProcessPosPaymentUrl(); // Dynamic from config
 
 export default function Pos() {
   const classes = useStyles();
   const { publicKey, disconnect } = useWallet();
   const { user } = useUser();
   const walletId = publicKey?.toBase58();
-  const { env } = useEnv(); // Access NEXT_PUBLIC_QUICKNODE_RPC from EnvContext
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState({});
   const [storeId, setStoreId] = useState(null);
@@ -92,7 +91,9 @@ export default function Pos() {
   const [flash, setFlash] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [transactionId, setTransactionId] = useState(null);
-  const connection = new Connection(env.NEXT_PUBLIC_QUICKNODE_RPC || "https://api.mainnet-beta.solana.com", "confirmed");
+  const [paymentSubmitted, setPaymentSubmitted] = useState(false);
+
+  const connection = new Connection(process.env.NEXT_PUBLIC_QUICKNODE_RPC || "https://api.mainnet-beta.solana.com", "confirmed");
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -158,8 +159,14 @@ export default function Pos() {
   }, [solPrice]);
 
   useEffect(() => {
-    generateQRCode();
+    generateQRCode(); // Regenerate QR code on cart, currency, or price changes
   }, [cart, paymentCurrency, solPrice]);
+
+  useEffect(() => {
+    if (paymentSubmitted && transactionId) {
+      splitPaymentAfterSubmission();
+    }
+  }, [paymentSubmitted, transactionId]);
 
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
@@ -205,13 +212,13 @@ export default function Pos() {
     if (!cartItems.length) {
       setQrCodeUrl(null);
       setTransactionId(null);
+      setPaymentSubmitted(false);
       return;
     }
 
     try {
-      const f4cetsPublicKey = new PublicKey(F4CETS_WALLET);
-      const itemCount = cartItems.length;
       const totalUsdc = cartTotal;
+      const itemCount = cartItems.length;
       const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
       const totalSol = totalUsdc / solPrice;
       const feeSol = fee / solPrice;
@@ -220,71 +227,69 @@ export default function Pos() {
       const paymentAmount = paymentCurrency === "USDC" ? totalUsdc : totalSol;
       const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
 
-      const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${paymentAmount.toFixed(2)}&label=F4cetsPOS&message=${encodeURIComponent(memo)}`;
-      const qrCode = await QRCode.toDataURL(deepLink);
-      setQrCodeUrl(qrCode);
+      const deepLink = `solana:${F4CETS_WALLET}?amount=${paymentAmount}&label=F4cets%20POS%20Payment&message=${encodeURIComponent(memo)}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(deepLink);
+      setQrCodeUrl(qrCodeDataUrl);
+      setPaymentSubmitted(false); // Reset until payment is detected
     } catch (err) {
       console.error("Error generating QR code:", err);
       setError("Failed to generate QR code. Please try again.");
       setQrCodeUrl(null);
+      setTransactionId(null);
     }
   };
 
-  const checkTransactionStatus = async (signature) => {
+  const splitPaymentAfterSubmission = async () => {
     try {
-      const status = await connection.getSignatureStatus(signature);
-      if (status && status.value && status.value.confirmationStatus === "confirmed") {
-        await splitPayment(signature);
-        setTransactionId(signature);
-        setCart({}); // Clear cart on submission
-        setError(null);
+      const totalUsdc = cartTotal;
+      const itemCount = cartItems.length;
+      const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
+      const totalSol = totalUsdc / solPrice;
+      const feeSol = fee / solPrice;
+      const sellerAmountSol = sellerAmount / solPrice;
+
+      const payload = {
+        sellerWallet: walletId,
+        totalAmount: paymentCurrency === "USDC" ? totalUsdc : totalSol,
+        itemCount,
+        currency: paymentCurrency,
+        transactionId,
+        memo: `F4cetsPOS|Store:${storeId}|Total:${(paymentCurrency === "USDC" ? totalUsdc : totalSol).toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`,
+      };
+
+      const response = await fetch(PROCESS_POS_PAYMENT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || "Payment split failed");
       }
+      setError(null); // Clear any previous errors on success
     } catch (err) {
-      console.error("Error checking transaction status:", err);
-    }
-  };
-
-  const splitPayment = async (signature) => {
-    const itemCount = cartItems.length;
-    const totalUsdc = cartTotal;
-    const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
-    const totalSol = totalUsdc / solPrice;
-    const feeSol = fee / solPrice;
-    const sellerAmountSol = sellerAmount / solPrice;
-
-    const payload = {
-      transactionId: signature,
-      sellerWallet: walletId,
-      totalAmount: paymentCurrency === "USDC" ? totalUsdc : totalSol,
-      itemCount,
-      currency: paymentCurrency,
-      fee: paymentCurrency === "USDC" ? fee : feeSol,
-      sellerAmount: paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol,
-    };
-
-    const response = await fetch(SPLIT_PAYMENT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      console.error("Error splitting payment:", err);
+      setError("Failed to split payment. Please contact support.");
     }
   };
 
   useEffect(() => {
-    if (qrCodeUrl && !transactionId) {
-      const interval = setInterval(async () => {
-        const signatures = await connection.getSignaturesForAddress(new PublicKey(F4CETS_WALLET), { limit: 10 });
-        const recentSignature = signatures[0]?.signature;
-        if (recentSignature && !transactionId) {
-          await checkTransactionStatus(recentSignature);
-        }
-      }, 5000); // Poll every 5 seconds
-      return () => clearInterval(interval);
+    let subscriptionId = null;
+    if (qrCodeUrl && !paymentSubmitted) {
+      subscriptionId = connection.onAccountChange(
+        new PublicKey(F4CETS_WALLET),
+        (accountInfo, context) => {
+          console.log("Account change detected:", context.slot);
+          setPaymentSubmitted(true); // Trigger split after submission
+        },
+        "confirmed"
+      );
     }
-  }, [qrCodeUrl, transactionId]);
+    return () => {
+      if (subscriptionId) connection.removeAccountChangeListener(subscriptionId);
+    };
+  }, [qrCodeUrl, paymentSubmitted]);
 
   const cartTotal = Object.entries(cart).reduce((total, [productId, variants]) => {
     const product = products.find(p => p.id === productId);
@@ -425,6 +430,9 @@ export default function Pos() {
                     <div className={classes.qrCode}>
                       <img src={qrCodeUrl} alt="Payment QR Code" />
                       <p>Scan to pay with your Solana wallet. Awaiting confirmation...</p>
+                      <Button color="info" onClick={() => { setQrCodeUrl(null); setTransactionId(null); setPaymentSubmitted(false); setCart({}); }} style={{ marginTop: "8px" }}>
+                        New Transaction
+                      </Button>
                     </div>
                   ) : (
                     <Button color="success" fullWidth style={{ marginTop: "16px" }} onClick={generateQRCode} disabled={cartItems.length === 0}>
