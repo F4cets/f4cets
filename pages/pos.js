@@ -76,6 +76,11 @@ const useStyles = makeStyles({
     marginTop: "16px",
     textAlign: "center",
   },
+  errorMessage: {
+    color: "red",
+    marginTop: "16px",
+    textAlign: "center",
+  },
 });
 
 const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC token address on Solana
@@ -102,7 +107,7 @@ export default function Pos() {
   const [transactionSignature, setTransactionSignature] = useState(null);
   const [loading, setLoading] = useState(false);
   const [referenceKey, setReferenceKey] = useState(Keypair.generate());
-  const [pollingTimeout, setPollingTimeout] = useState(null);
+  const [pollingError, setPollingError] = useState(null);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -172,7 +177,7 @@ export default function Pos() {
       console.log(`Checking for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
       const signatures = await connection.getSignaturesForAddress(
         new PublicKey(F4CETS_WALLET),
-        { limit: 5 },
+        { limit: 10 },
         "confirmed"
       );
       console.log("Signatures fetched:", signatures);
@@ -191,35 +196,31 @@ export default function Pos() {
             const memoMatch = memoLog.match(/Memo \(len \d+\): "(.+?)"/);
             if (memoMatch && memoMatch[1]) {
               const memo = memoMatch[1];
-              const expectedMemoPrefix = `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}`;
               const expectedReference = referenceKey.publicKey.toBase58();
               console.log("Memo found:", memo);
-              console.log("Expected memo prefix:", expectedMemoPrefix);
-              console.log("Memo match:", memo.startsWith(expectedMemoPrefix));
+              console.log("Expected reference:", expectedReference);
               console.log("Reference match:", memo.includes(expectedReference));
-              if (memo.startsWith(expectedMemoPrefix) && memo.includes(expectedReference)) {
+              if (memo.includes(expectedReference)) {
                 console.log("Detected valid transaction:", signature);
                 setTransactionSignature(signature);
                 await handlePaymentSubmission(signature);
                 return true; // Stop after finding a valid transaction
-              } else {
-                console.log("Memo validation failed");
               }
             }
           }
         }
       }
-      setError("No matching transaction found. Please try again.");
+      setPollingError("No matching transaction found. Please try again or scan the QR code.");
       return false;
     } catch (err) {
       console.error("Error checking transactions:", err);
-      setError("Failed to check transaction. Please try again.");
+      setPollingError("Failed to check transaction. Please try again.");
       return false;
     }
   };
 
   useEffect(() => {
-    // Only generate new QR code when cart or paymentCurrency changes
+    // Generate new QR code when cart or paymentCurrency changes
     generateQRCode();
 
     let interval;
@@ -231,7 +232,7 @@ export default function Pos() {
         if (Date.now() - startTime > timeoutMs) {
           console.log("Polling timed out");
           clearInterval(interval);
-          setError("Payment detection timed out. Please try again or confirm manually.");
+          setPollingError("Payment detection timed out. Please try again or confirm manually.");
           return;
         }
         const found = await checkTransaction();
@@ -354,14 +355,15 @@ export default function Pos() {
         setQrCodeUrl(null);
         setTransactionSignature(null);
         setReferenceKey(Keypair.generate()); // Generate new reference key for next transaction
+        setPollingError(null);
         setTimeout(() => setSuccess(false), 5000);
       } else {
         console.error("Payment split failed:", result.error);
-        setError(`Payment split failed: ${result.error}`);
+        setPollingError(`Payment split failed: ${result.error}`);
       }
     } catch (err) {
       console.error("Error processing payment split:", err);
-      setError("Failed to process payment split. Please try again.");
+      setPollingError("Failed to process payment split. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -508,6 +510,7 @@ export default function Pos() {
                       <p>Scan to pay with your Solana wallet. Payment will be split by F4cets after submission.</p>
                       {loading && <p className={classes.loading}>Processing payment...</p>}
                       {success && <p className={classes.successMessage}>Payment submitted successfully! Cart cleared.</p>}
+                      {pollingError && <p className={classes.errorMessage}>{pollingError}</p>}
                       <Button
                         color="info"
                         fullWidth
