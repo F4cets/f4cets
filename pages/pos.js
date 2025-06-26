@@ -179,7 +179,7 @@ export default function Pos() {
         try {
           console.log(`Polling for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
           const signatures = await connection.getSignaturesForAddress(
-            new PublicKey(referenceKey.publicKey),
+            new PublicKey(F4CETS_WALLET),
             { limit: 5 },
             "confirmed"
           );
@@ -216,14 +216,22 @@ export default function Pos() {
                       );
                       if (
                         transferInstruction &&
-                        tx.meta.postTokenBalances &&
-                        tx.meta.postTokenBalances.some(
-                          b => b.mint === USDC_MINT_ADDRESS &&
-                              b.owner === F4CETS_WALLET &&
-                              Math.abs((b.uiTokenAmount.uiAmount || 0) - cartTotal) < 0.01
-                        )
+                        tx.meta.preTokenBalances &&
+                        tx.meta.postTokenBalances
                       ) {
-                        isValid = true;
+                        const preBalance = tx.meta.preTokenBalances.find(
+                          b => b.mint === USDC_MINT_ADDRESS && b.owner === F4CETS_WALLET
+                        );
+                        const postBalance = tx.meta.postTokenBalances.find(
+                          b => b.mint === USDC_MINT_ADDRESS && b.owner === F4CETS_WALLET
+                        );
+                        if (preBalance && postBalance) {
+                          const transferredAmount = (postBalance.uiTokenAmount.uiAmount || 0) - (preBalance.uiTokenAmount.uiAmount || 0);
+                          console.log("USDC Transferred Amount:", transferredAmount);
+                          if (Math.abs(transferredAmount - cartTotal) < 0.01) {
+                            isValid = true;
+                          }
+                        }
                       }
                     } else if (paymentCurrency === "SOL") {
                       const transferInstruction = tx.transaction.message.instructions.find(
@@ -245,6 +253,8 @@ export default function Pos() {
                       await handlePaymentSubmission(signature);
                       clearInterval(interval); // Stop polling after success
                       break;
+                    } else {
+                      console.log("Transaction invalid: currency or amount mismatch");
                     }
                   }
                 }
@@ -332,7 +342,7 @@ export default function Pos() {
 
       const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
       const memo = `F4cetsPOS|Store:${storeId}|Total:${totalUsdc.toFixed(2)}|Fee:${fee.toFixed(2)}|Seller:${sellerAmount.toFixed(2)}|SellerWallet:${walletId}|Items:${itemCount}|Ref:${referenceKey.publicKey.toBase58()}`;
-      const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${amountInUnits.toFixed(6)}&label=F4cetsPOS&memo=${encodeURIComponent(memo)}&reference=${referenceKey.publicKey.toBase58()}${tokenAddress ? `&spl-token=${tokenAddress}` : ""}`;
+      const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${amountInUnits.toFixed(6)}&label=F4cetsPOS&memo=${encodeURIComponent(memo)}${tokenAddress ? `&spl-token=${tokenAddress}` : ""}`;
 
       console.log("Generated QR code with memo:", memo);
       QRCode.toDataURL(deepLink, (err, url) => {
@@ -394,7 +404,7 @@ export default function Pos() {
   const cartItems = Object.entries(cart).flatMap(([productId, variants]) =>
     Object.entries(variants).map(([variantKey, quantity]) => {
       const product = products.find(p => p.id === productId);
-      const [color, size] = variantKey.split('-');
+      const [color, size] = variantKey.split('-';
       return { ...product, quantity, color, size };
     })
   );
