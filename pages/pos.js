@@ -206,8 +206,6 @@ export default function Pos() {
     }
 
     try {
-      const f4cetsPublicKey = new PublicKey(F4CETS_WALLET);
-
       const itemCount = cartItems.length;
       const totalUsdc = cartTotal;
       const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
@@ -216,17 +214,8 @@ export default function Pos() {
       const sellerAmountSol = sellerAmount / solPrice;
 
       const paymentAmount = paymentCurrency === "USDC" ? totalUsdc : totalSol;
-      let amountInUnits;
-      let tokenAddress = null;
-
-      if (paymentCurrency === "USDC") {
-        amountInUnits = paymentAmount * 1000000; // Convert to micro-USDC (6 decimals)
-        tokenAddress = USDC_MINT_ADDRESS;
-      } else {
-        amountInUnits = paymentAmount * LAMPORTS_PER_SOL; // Convert to lamports
-      }
-
       const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
+
       const payload = {
         sellerWallet: walletId,
         totalAmount: paymentAmount,
@@ -242,9 +231,10 @@ export default function Pos() {
       });
 
       const result = await response.json();
-      if (result.success && result.signature) {
-        setTransactionId(result.signature);
-        setQrCodeUrl(`https://explorer.solana.com/tx/${result.signature}`);
+      if (result.success && result.transaction) {
+        const qrData = `solana:${result.transaction.recipient}?amount=${paymentAmount}&label=Pay%20to%20${encodeURIComponent(storeId)}&memo=${encodeURIComponent(memo)}`;
+        setQrCodeUrl(qrData);
+        setTransactionId(result.transaction.signature);
         setCart({}); // Clear cart on success
         setError(null); // Clear any previous errors
       } else {
@@ -393,18 +383,17 @@ export default function Pos() {
                     <br />
                     Seller: {paymentCurrency === "USDC" ? `$${calculateFees(cartTotal, cartItems.length).sellerAmount.toFixed(2)}` : `${(calculateFees(cartTotal, cartItems.length).sellerAmount / solPrice).toFixed(4)} SOL`}
                   </div>
-                  {qrCodeUrl ? (
+                  <Button color="success" fullWidth style={{ marginTop: "16px" }} onClick={generateQRCode} disabled={cartItems.length === 0}>
+                    Checkout
+                  </Button>
+                  {qrCodeUrl && (
                     <div className={classes.qrCode}>
-                      <img src={qrCodeUrl} alt="Payment QR Code" />
+                      <img src={await QRCode.toDataURL(qrCodeUrl)} alt="Payment QR Code" />
                       <p>Scan to pay with your Solana wallet. Transaction ID: {transactionId}</p>
                       <Button color="info" onClick={() => { setQrCodeUrl(null); setTransactionId(null); setCart({}); }} style={{ marginTop: "8px" }}>
                         New Transaction
                       </Button>
                     </div>
-                  ) : (
-                    <Button color="success" fullWidth style={{ marginTop: "16px" }} onClick={generateQRCode} disabled={cartItems.length === 0}>
-                      Generate QR Code
-                    </Button>
                   )}
                 </>
               ) : (
