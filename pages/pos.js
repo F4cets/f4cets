@@ -211,26 +211,20 @@ export default function Pos() {
                         new PublicKey(F4CETS_WALLET)
                       );
                       console.log("USDC Token Account:", usdcTokenAccount.toBase58());
-                      const transferInstruction = tx.transaction.message.instructions.find(
-                        inst => inst.programId.equals(TOKEN_PROGRAM_ID)
+                      const transferInstruction = [
+                        ...tx.transaction.message.instructions,
+                        ...(tx.meta.innerInstructions || []).flatMap(inner => inner.instructions),
+                      ].find(
+                        inst => inst.programId.equals(TOKEN_PROGRAM_ID) && inst.parsed?.type === "transfer"
                       );
-                      if (
-                        transferInstruction &&
-                        tx.meta.preTokenBalances &&
-                        tx.meta.postTokenBalances
-                      ) {
-                        const preBalance = tx.meta.preTokenBalances.find(
-                          b => b.mint === USDC_MINT_ADDRESS && b.owner === F4CETS_WALLET
-                        );
-                        const postBalance = tx.meta.postTokenBalances.find(
-                          b => b.mint === USDC_MINT_ADDRESS && b.owner === F4CETS_WALLET
-                        );
-                        if (preBalance && postBalance) {
-                          const transferredAmount = (postBalance.uiTokenAmount.uiAmount || 0) - (preBalance.uiTokenAmount.uiAmount || 0);
-                          console.log("USDC Transferred Amount:", transferredAmount);
-                          if (Math.abs(transferredAmount - cartTotal) < 0.01) {
-                            isValid = true;
-                          }
+                      if (transferInstruction && transferInstruction.parsed?.info) {
+                        const transferredAmount = parseFloat(transferInstruction.parsed.info.amount) / 1000000; // USDC has 6 decimals
+                        console.log("USDC Transferred Amount:", transferredAmount);
+                        if (
+                          transferInstruction.parsed.info.destination === usdcTokenAccount.toBase58() &&
+                          Math.abs(transferredAmount - cartTotal) < 0.01
+                        ) {
+                          isValid = true;
                         }
                       }
                     } else if (paymentCurrency === "SOL") {
@@ -255,6 +249,7 @@ export default function Pos() {
                       break;
                     } else {
                       console.log("Transaction invalid: currency or amount mismatch");
+                      console.log("Transfer Instruction:", transferInstruction);
                     }
                   }
                 }
@@ -274,7 +269,7 @@ export default function Pos() {
         clearInterval(interval);
       }
     };
-  }, [cart, paymentCurrency, solPrice]);
+  }, [cart, paymentCurrency]); // Removed solPrice from dependencies
 
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
