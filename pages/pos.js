@@ -104,6 +104,7 @@ export default function Pos() {
   const [transactionSignature, setTransactionSignature] = useState(null);
   const [loading, setLoading] = useState(false);
   const [referenceKey, setReferenceKey] = useState(Keypair.generate());
+  const pollingStartTimeRef = useRef(null);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -168,97 +169,111 @@ export default function Pos() {
     return () => clearInterval(interval);
   }, [solPrice]);
 
+  const checkTransaction = async () => {
+    try {
+      console.log(`Checking for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
+      const signatures = await connection.getSignaturesForAddress(
+        new PublicKey(F4CETS_WALLET),
+        { limit: 5 },
+        "confirmed"
+      );
+      console.log("Signatures fetched:", signatures);
+
+      for (const sigInfo of signatures) {
+        const signature = sigInfo.signature;
+        const tx = await connection.getParsedTransaction(signature, {
+          commitment: "confirmed",
+          maxSupportedTransactionVersion: 0,
+        });
+        console.log("Transaction details:", JSON.stringify(tx, null, 2));
+
+        if (tx && tx.meta && tx.meta.logMessages) {
+          const memoLog = tx.meta.logMessages.find(log => log.includes("Memo (len"));
+          if (memoLog) {
+            const memoMatch = memoLog.match(/Memo \(len \d+\): "(.+?)"/);
+            if (memoMatch && memoMatch[1]) {
+              const memo = memoMatch[1];
+              const expectedMemoPrefix = `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}`;
+              const expectedReference = referenceKey.publicKey.toBase58();
+              console.log("Memo found:", memo);
+              if (memo.startsWith(expectedMemoPrefix) && memo.includes(expectedReference)) {
+                // Verify currency and amount
+                let isValid = false;
+                if (paymentCurrency === "USDC") {
+                  const usdcTokenAccount = await getAssociatedTokenAddress(
+                    new PublicKey(USDC_MINT_ADDRESS),
+                    new PublicKey(F4CETS_WALLET)
+                  );
+                  console.log("USDC Token Account:", usdcTokenAccount.toBase58());
+                  const transferInstruction = [
+                    ...tx.transaction.message.instructions,
+                    ...(tx.meta.innerInstructions || []).flatMap(inner => inner.instructions),
+                  ].find(
+                    inst => inst.programId.equals(TOKEN_PROGRAM_ID) && inst.parsed?.type === "transfer"
+                  );
+                  console.log("Transfer Instruction:", JSON.stringify(transferInstruction, null, 2));
+                  if (transferInstruction && transferInstruction.parsed?.info) {
+                    const transferredAmount = parseFloat(transferInstruction.parsed.info.amount) / 1000000; // USDC has 6 decimals
+                    console.log("USDC Transferred Amount:", transferredAmount);
+                    if (Math.abs(transferredAmount - cartTotal) < 0.01) {
+                      isValid = true;
+                    }
+                  }
+                } else if (paymentCurrency === "SOL") {
+                  const transferInstruction = tx.transaction.message.instructions.find(
+                    inst => inst.programId.equals(SystemProgram.programId) && inst.parsed?.type === "transfer"
+                  );
+                  console.log("Transfer Instruction:", JSON.stringify(transferInstruction, null, 2));
+                  if (
+                    transferInstruction &&
+                    transferInstruction.parsed?.info?.destination === F4CETS_WALLET &&
+                    Math.abs(transferInstruction.parsed.info.lamports / 1000000000 - cartTotal / solPrice) < 0.0001
+                  ) {
+                    isValid = true;
+                  }
+                }
+
+                if (isValid) {
+                  console.log("Detected valid transaction:", signature);
+                  setTransactionSignature(signature);
+                  await handlePaymentSubmission(signature);
+                  return true; // Signal success to stop polling
+                } else {
+                  console.log("Transaction invalid: currency or amount mismatch");
+                }
+              }
+            }
+          }
+        }
+      }
+      return false;
+    } catch (err) {
+      console.error("Error checking transactions:", err);
+      setError("Failed to process transaction. Please try again.");
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Only generate new QR code when cart or paymentCurrency changes
     generateQRCode();
 
     let interval;
     if (cartItems.length > 0 && referenceKey) {
+      pollingStartTimeRef.current = Date.now();
       console.log(`Starting polling for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
       interval = setInterval(async () => {
-        try {
-          console.log(`Polling for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
-          const signatures = await connection.getSignaturesForAddress(
-            new PublicKey(F4CETS_WALLET),
-            { limit: 5 },
-            "confirmed"
-          );
-          console.log("Signatures fetched:", signatures);
+        // Stop polling after 5 minutes (300,000 ms)
+        if (Date.now() - pollingStartTimeRef.current > 300000) {
+          console.log("Polling timeout reached, stopping");
+          setError("Payment not detected within 5 minutes. Please try again.");
+          clearInterval(interval);
+          return;
+        }
 
-          for (const sigInfo of signatures) {
-            const signature = sigInfo.signature;
-            const tx = await connection.getParsedTransaction(signature, {
-              commitment: "confirmed",
-              maxSupportedTransactionVersion: 0,
-            });
-            console.log("Transaction details:", tx);
-
-            if (tx && tx.meta && tx.meta.logMessages) {
-              const memoLog = tx.meta.logMessages.find(log => log.includes("Memo (len"));
-              if (memoLog) {
-                const memoMatch = memoLog.match(/Memo \(len \d+\): "(.+?)"/);
-                if (memoMatch && memoMatch[1]) {
-                  const memo = memoMatch[1];
-                  const expectedMemoPrefix = `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}`;
-                  const expectedReference = referenceKey.publicKey.toBase58();
-                  console.log("Memo found:", memo);
-                  if (memo.startsWith(expectedMemoPrefix) && memo.includes(expectedReference)) {
-                    // Verify currency and amount
-                    let isValid = false;
-                    if (paymentCurrency === "USDC") {
-                      const usdcTokenAccount = await getAssociatedTokenAddress(
-                        new PublicKey(USDC_MINT_ADDRESS),
-                        new PublicKey(F4CETS_WALLET)
-                      );
-                      console.log("USDC Token Account:", usdcTokenAccount.toBase58());
-                      const transferInstruction = [
-                        ...tx.transaction.message.instructions,
-                        ...(tx.meta.innerInstructions || []).flatMap(inner => inner.instructions),
-                      ].find(
-                        inst => inst.programId.equals(TOKEN_PROGRAM_ID) && inst.parsed?.type === "transfer"
-                      );
-                      if (transferInstruction && transferInstruction.parsed?.info) {
-                        const transferredAmount = parseFloat(transferInstruction.parsed.info.amount) / 1000000; // USDC has 6 decimals
-                        console.log("USDC Transferred Amount:", transferredAmount);
-                        if (
-                          transferInstruction.parsed.info.destination === usdcTokenAccount.toBase58() &&
-                          Math.abs(transferredAmount - cartTotal) < 0.01
-                        ) {
-                          isValid = true;
-                        }
-                      }
-                    } else if (paymentCurrency === "SOL") {
-                      const transferInstruction = tx.transaction.message.instructions.find(
-                        inst => inst.programId.equals(SystemProgram.programId)
-                      );
-                      if (
-                        transferInstruction &&
-                        transferInstruction.parsed?.type === "transfer" &&
-                        transferInstruction.parsed.info.destination === F4CETS_WALLET &&
-                        Math.abs(transferInstruction.parsed.info.lamports / 1000000000 - cartTotal / solPrice) < 0.0001
-                      ) {
-                        isValid = true;
-                      }
-                    }
-
-                    if (isValid) {
-                      console.log("Detected valid transaction:", signature);
-                      setTransactionSignature(signature);
-                      await handlePaymentSubmission(signature);
-                      clearInterval(interval); // Stop polling after success
-                      break;
-                    } else {
-                      console.log("Transaction invalid: currency or amount mismatch");
-                      console.log("Transfer Instruction:", transferInstruction);
-                    }
-                  }
-                }
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Error polling transactions:", err);
-          setError("Failed to process transaction. Please try again.");
+        const success = await checkTransaction();
+        if (success) {
+          clearInterval(interval);
         }
       }, 5000); // Poll every 5 seconds
     }
@@ -269,7 +284,7 @@ export default function Pos() {
         clearInterval(interval);
       }
     };
-  }, [cart, paymentCurrency]); // Removed solPrice from dependencies
+  }, [cart, paymentCurrency]);
 
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
@@ -529,6 +544,15 @@ export default function Pos() {
                       <p>Scan to pay with your Solana wallet. Payment will be split by F4cets after submission.</p>
                       {loading && <p className={classes.loading}>Processing payment...</p>}
                       {success && <p className={classes.successMessage}>Payment submitted successfully! Cart cleared.</p>}
+                      <Button
+                        color="info"
+                        fullWidth
+                        style={{ marginTop: "16px" }}
+                        onClick={checkTransaction}
+                        disabled={loading}
+                      >
+                        Confirm Payment
+                      </Button>
                     </div>
                   ) : (
                     <Button color="success" fullWidth style={{ marginTop: "16px" }} onClick={generateQRCode} disabled={cartItems.length === 0}>
