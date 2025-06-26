@@ -28,7 +28,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useUser } from "/contexts/UserContext";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import { Connection, PublicKey, Keypair } from "@solana/web3.js";
+import { Connection, PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 
 const useStyles = makeStyles({
@@ -81,6 +81,7 @@ const useStyles = makeStyles({
 
 const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC token address on Solana
 const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53"; // F4cets wallet
+const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 const QUICKNODE_RPC = process.env.NEXT_PUBLIC_QUICKNODE_RPC || "https://api.mainnet-beta.solana.com";
 const connection = new Connection(QUICKNODE_RPC, "confirmed");
 
@@ -102,7 +103,7 @@ export default function Pos() {
   const [success, setSuccess] = useState(false);
   const [transactionSignature, setTransactionSignature] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [referenceKey, setReferenceKey] = useState(null);
+  const [referenceKey, setReferenceKey] = useState(Keypair.generate());
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -168,26 +169,29 @@ export default function Pos() {
   }, [solPrice]);
 
   useEffect(() => {
-    // Generate a new reference keypair for transaction correlation
-    setReferenceKey(Keypair.generate());
+    // Only generate new QR code when cart or paymentCurrency changes
     generateQRCode();
 
     let interval;
     if (cartItems.length > 0 && referenceKey) {
+      console.log(`Starting polling for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
       interval = setInterval(async () => {
         try {
           console.log(`Polling for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
           const signatures = await connection.getSignaturesForAddress(
-            new PublicKey(F4CETS_WALLET),
+            new PublicKey(referenceKey.publicKey),
             { limit: 5 },
             "confirmed"
           );
+          console.log("Signatures fetched:", signatures);
+
           for (const sigInfo of signatures) {
             const signature = sigInfo.signature;
             const tx = await connection.getParsedTransaction(signature, {
               commitment: "confirmed",
               maxSupportedTransactionVersion: 0,
             });
+            console.log("Transaction details:", tx);
 
             if (tx && tx.meta && tx.meta.logMessages) {
               const memoLog = tx.meta.logMessages.find(log => log.includes("Memo (len"));
@@ -197,6 +201,7 @@ export default function Pos() {
                   const memo = memoMatch[1];
                   const expectedMemoPrefix = `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}`;
                   const expectedReference = referenceKey.publicKey.toBase58();
+                  console.log("Memo found:", memo);
                   if (memo.startsWith(expectedMemoPrefix) && memo.includes(expectedReference)) {
                     // Verify currency and amount
                     let isValid = false;
@@ -205,16 +210,18 @@ export default function Pos() {
                         new PublicKey(USDC_MINT_ADDRESS),
                         new PublicKey(F4CETS_WALLET)
                       );
+                      console.log("USDC Token Account:", usdcTokenAccount.toBase58());
                       const transferInstruction = tx.transaction.message.instructions.find(
-                        inst => inst.programId.equals(new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
+                        inst => inst.programId.equals(TOKEN_PROGRAM_ID)
                       );
                       if (
                         transferInstruction &&
-                        tx.meta.preTokenBalances &&
                         tx.meta.postTokenBalances &&
-                        tx.meta.preTokenBalances.some(b => b.mint === USDC_MINT_ADDRESS && b.accountIndex === transferInstruction.accounts[0]) &&
-                        tx.meta.postTokenBalances.some(b => b.mint === USDC_MINT_ADDRESS && b.accountIndex === transferInstruction.accounts[1] && b.owner === F4CETS_WALLET) &&
-                        Math.abs((tx.meta.postTokenBalances.find(b => b.mint === USDC_MINT_ADDRESS && b.owner === F4CETS_WALLET)?.uiTokenAmount.uiAmount || 0) - cartTotal) < 0.01
+                        tx.meta.postTokenBalances.some(
+                          b => b.mint === USDC_MINT_ADDRESS &&
+                              b.owner === F4CETS_WALLET &&
+                              Math.abs((b.uiTokenAmount.uiAmount || 0) - cartTotal) < 0.01
+                        )
                       ) {
                         isValid = true;
                       }
@@ -252,9 +259,12 @@ export default function Pos() {
     }
 
     return () => {
-      if (interval) clearInterval(interval);
+      if (interval) {
+        console.log("Stopping polling");
+        clearInterval(interval);
+      }
     };
-  }, [cart, paymentCurrency, solPrice, referenceKey]);
+  }, [cart, paymentCurrency, solPrice]);
 
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
@@ -322,8 +332,9 @@ export default function Pos() {
 
       const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
       const memo = `F4cetsPOS|Store:${storeId}|Total:${totalUsdc.toFixed(2)}|Fee:${fee.toFixed(2)}|Seller:${sellerAmount.toFixed(2)}|SellerWallet:${walletId}|Items:${itemCount}|Ref:${referenceKey.publicKey.toBase58()}`;
-      const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${amountInUnits.toFixed(6)}&label=F4cetsPOS&memo=${encodeURIComponent(memo)}${tokenAddress ? `&spl-token=${tokenAddress}` : ""}`;
+      const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${amountInUnits.toFixed(6)}&label=F4cetsPOS&memo=${encodeURIComponent(memo)}&reference=${referenceKey.publicKey.toBase58()}${tokenAddress ? `&spl-token=${tokenAddress}` : ""}`;
 
+      console.log("Generated QR code with memo:", memo);
       QRCode.toDataURL(deepLink, (err, url) => {
         if (err) throw err;
         setQrCodeUrl(url);
@@ -353,13 +364,15 @@ export default function Pos() {
 
       const result = await response.json();
       if (result.success) {
+        console.log("Payment split successful, clearing cart");
         setSuccess(true);
         setCart({});
         setQrCodeUrl(null);
         setTransactionSignature(null);
-        setReferenceKey(null);
+        setReferenceKey(Keypair.generate()); // Generate new reference key for next transaction
         setTimeout(() => setSuccess(false), 5000);
       } else {
+        console.error("Payment split failed:", result.error);
         setError(`Payment split failed: ${result.error}`);
       }
     } catch (err) {
