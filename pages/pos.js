@@ -83,8 +83,8 @@ const useStyles = makeStyles({
   },
 });
 
-const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC token address on Solana
 const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53"; // F4cets wallet
+const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC token address on Solana
 const QUICKNODE_RPC = process.env.NEXT_PUBLIC_QUICKNODE_RPC || "https://api.mainnet-beta.solana.com";
 const connection = new Connection(QUICKNODE_RPC, "confirmed");
 
@@ -177,7 +177,7 @@ export default function Pos() {
       console.log(`Checking for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
       const signatures = await connection.getSignaturesForAddress(
         new PublicKey(F4CETS_WALLET),
-        { limit: 15 },
+        { limit: 5 },
         "confirmed"
       );
       console.log("Signatures fetched:", signatures.map(sig => sig.signature));
@@ -194,12 +194,13 @@ export default function Pos() {
           if (memoLog) {
             const memoMatch = memoLog.match(/Memo \(len \d+\): "(.+?)"/);
             if (memoMatch && memoMatch[1]) {
-              const memo = decodeURIComponent(memoMatch[1].trim());
+              const memo = memoMatch[1];
+              const expectedMemoPrefix = `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}`;
               const expectedReference = referenceKey.publicKey.toBase58();
               console.log("Memo found:", memo);
-              console.log("Expected reference:", expectedReference);
+              console.log("Expected memo prefix:", expectedMemoPrefix);
               console.log("Reference match:", memo.includes(expectedReference));
-              if (memo.includes(expectedReference)) {
+              if (memo.startsWith(expectedMemoPrefix) && memo.includes(expectedReference)) {
                 console.log("Detected valid transaction:", signature);
                 setTransactionSignature(signature);
                 setStatusMessage("Processing payment...");
