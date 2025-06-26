@@ -29,7 +29,7 @@ import { useUser } from "/contexts/UserContext";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import { Connection, PublicKey, Keypair } from "@solana/web3.js";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
+import { getAssociatedTokenAddress } from "@solana/spl-token";
 
 const useStyles = makeStyles({
   ...styles,
@@ -103,8 +103,6 @@ export default function Pos() {
   const [transactionSignature, setTransactionSignature] = useState(null);
   const [loading, setLoading] = useState(false);
   const [referenceKey, setReferenceKey] = useState(null);
-  const solWsRef = useRef(null);
-  const usdcWsRef = useRef(null);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -174,89 +172,89 @@ export default function Pos() {
     setReferenceKey(Keypair.generate());
     generateQRCode();
 
-    if (cartItems.length > 0) {
-      // Monitor SOL transactions
-      solWsRef.current = connection.onAccountChange(
-        new PublicKey(F4CETS_WALLET),
-        async (accountInfo, context) => {
-          await processTransaction("SOL");
-        },
-        "processed"
-      );
-
-      // Monitor USDC transactions
-      const monitorUsdc = async () => {
+    let interval;
+    if (cartItems.length > 0 && referenceKey) {
+      interval = setInterval(async () => {
         try {
-          const usdcTokenAccount = await getAssociatedTokenAddress(
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-            TOKEN_PROGRAM_ID,
-            new PublicKey(USDC_MINT_ADDRESS),
-            new PublicKey(F4CETS_WALLET)
+          console.log(`Polling for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
+          const signatures = await connection.getSignaturesForAddress(
+            new PublicKey(F4CETS_WALLET),
+            { limit: 5 },
+            "confirmed"
           );
-          usdcWsRef.current = connection.onProgramAccountChange(
-            TOKEN_PROGRAM_ID,
-            async (keyedAccountInfo, context) => {
-              if (keyedAccountInfo.accountId.equals(usdcTokenAccount)) {
-                await processTransaction("USDC");
-              }
-            },
-            "processed",
-            [
-              { dataSize: 165 }, // Token account size
-              { memcmp: { offset: 0, bytes: usdcTokenAccount.toBase58() } },
-            ]
-          );
-        } catch (err) {
-          console.error("Error setting up USDC monitor:", err);
-          setError("Failed to monitor USDC payments. Please try again.");
-        }
-      };
-      monitorUsdc();
-    }
+          for (const sigInfo of signatures) {
+            const signature = sigInfo.signature;
+            const tx = await connection.getParsedTransaction(signature, {
+              commitment: "confirmed",
+              maxSupportedTransactionVersion: 0,
+            });
 
-    return () => {
-      if (solWsRef.current) connection.removeAccountChangeListener(solWsRef.current);
-      if (usdcWsRef.current) connection.removeProgramAccountChangeListener(usdcWsRef.current);
-    };
-  }, [cart, paymentCurrency, solPrice]);
+            if (tx && tx.meta && tx.meta.logMessages) {
+              const memoLog = tx.meta.logMessages.find(log => log.includes("Memo (len"));
+              if (memoLog) {
+                const memoMatch = memoLog.match(/Memo \(len \d+\): "(.+?)"/);
+                if (memoMatch && memoMatch[1]) {
+                  const memo = memoMatch[1];
+                  const expectedMemoPrefix = `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}`;
+                  const expectedReference = referenceKey.publicKey.toBase58();
+                  if (memo.startsWith(expectedMemoPrefix) && memo.includes(expectedReference)) {
+                    // Verify currency and amount
+                    let isValid = false;
+                    if (paymentCurrency === "USDC") {
+                      const usdcTokenAccount = await getAssociatedTokenAddress(
+                        new PublicKey(USDC_MINT_ADDRESS),
+                        new PublicKey(F4CETS_WALLET)
+                      );
+                      const transferInstruction = tx.transaction.message.instructions.find(
+                        inst => inst.programId.equals(new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"))
+                      );
+                      if (
+                        transferInstruction &&
+                        tx.meta.preTokenBalances &&
+                        tx.meta.postTokenBalances &&
+                        tx.meta.preTokenBalances.some(b => b.mint === USDC_MINT_ADDRESS && b.accountIndex === transferInstruction.accounts[0]) &&
+                        tx.meta.postTokenBalances.some(b => b.mint === USDC_MINT_ADDRESS && b.accountIndex === transferInstruction.accounts[1] && b.owner === F4CETS_WALLET) &&
+                        Math.abs((tx.meta.postTokenBalances.find(b => b.mint === USDC_MINT_ADDRESS && b.owner === F4CETS_WALLET)?.uiTokenAmount.uiAmount || 0) - cartTotal) < 0.01
+                      ) {
+                        isValid = true;
+                      }
+                    } else if (paymentCurrency === "SOL") {
+                      const transferInstruction = tx.transaction.message.instructions.find(
+                        inst => inst.programId.equals(SystemProgram.programId)
+                      );
+                      if (
+                        transferInstruction &&
+                        transferInstruction.parsed?.type === "transfer" &&
+                        transferInstruction.parsed.info.destination === F4CETS_WALLET &&
+                        Math.abs(transferInstruction.parsed.info.lamports / 1000000000 - cartTotal / solPrice) < 0.0001
+                      ) {
+                        isValid = true;
+                      }
+                    }
 
-  const processTransaction = async (currency) => {
-    try {
-      const signatures = await connection.getSignaturesForAddress(
-        new PublicKey(F4CETS_WALLET),
-        { limit: 1 },
-        "confirmed"
-      );
-      if (signatures.length > 0) {
-        const signature = signatures[0].signature;
-        const tx = await connection.getParsedTransaction(signature, {
-          commitment: "confirmed",
-          maxSupportedTransactionVersion: 0,
-        });
-
-        // Verify transaction
-        if (tx && tx.meta && tx.meta.logMessages) {
-          const memoLog = tx.meta.logMessages.find(log => log.includes("Memo (len"));
-          if (memoLog) {
-            const memoMatch = memoLog.match(/Memo \(len \d+\): "(.+?)"/);
-            if (memoMatch && memoMatch[1]) {
-              const memo = memoMatch[1];
-              const expectedMemoPrefix = `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}`;
-              const expectedReference = referenceKey.publicKey.toBase58();
-              if (memo.startsWith(expectedMemoPrefix) && memo.includes(expectedReference)) {
-                console.log("Detected valid transaction:", signature);
-                setTransactionSignature(signature);
-                await handlePaymentSubmission(signature);
+                    if (isValid) {
+                      console.log("Detected valid transaction:", signature);
+                      setTransactionSignature(signature);
+                      await handlePaymentSubmission(signature);
+                      clearInterval(interval); // Stop polling after success
+                      break;
+                    }
+                  }
+                }
               }
             }
           }
+        } catch (err) {
+          console.error("Error polling transactions:", err);
+          setError("Failed to process transaction. Please try again.");
         }
-      }
-    } catch (err) {
-      console.error("Error processing transaction:", err);
-      setError("Failed to process transaction. Please try again.");
+      }, 5000); // Poll every 5 seconds
     }
-  };
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [cart, paymentCurrency, solPrice, referenceKey]);
 
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
