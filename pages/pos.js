@@ -72,6 +72,10 @@ const useStyles = makeStyles({
     color: "green",
     marginTop: "16px",
   },
+  loading: {
+    marginTop: "16px",
+    textAlign: "center",
+  },
 });
 
 const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC token address on Solana
@@ -96,6 +100,7 @@ export default function Pos() {
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [success, setSuccess] = useState(false);
   const [transactionSignature, setTransactionSignature] = useState(null);
+  const [loading, setLoading] = useState(false);
   const wsRef = useRef(null);
 
   React.useEffect(() => {
@@ -163,20 +168,23 @@ export default function Pos() {
 
   useEffect(() => {
     generateQRCode();
-    // Set up WebSocket to listen for transaction confirmation
-    wsRef.current = connection.onAccountChange(
+    // Set up WebSocket to listen for transaction logs
+    wsRef.current = connection.onLogs(
       new PublicKey(F4CETS_WALLET),
-      (accountInfo, context) => {
-        if (context.slot > 0 && transactionSignature) {
-          handlePaymentConfirmation(transactionSignature);
+      (logs, context) => {
+        console.log("Transaction log:", logs);
+        if (logs.logs && logs.logs.length > 0 && !transactionSignature) {
+          const signature = context.signature;
+          setTransactionSignature(signature);
+          handlePaymentConfirmation(signature);
         }
       },
       "confirmed"
     );
     return () => {
-      if (wsRef.current) connection.removeAccountChangeListener(wsRef.current);
+      if (wsRef.current) connection.removeOnLogsListener(wsRef.current);
     };
-  }, [cart, paymentCurrency, solPrice, transactionSignature]);
+  }, [cart, paymentCurrency, solPrice]);
 
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
@@ -256,6 +264,7 @@ export default function Pos() {
   };
 
   const handlePaymentConfirmation = async (signature) => {
+    setLoading(true);
     try {
       const response = await fetch('https://us-central1-f4cet-marketplace.cloudfunctions.net/processpospayment', {
         method: 'POST',
@@ -283,6 +292,8 @@ export default function Pos() {
     } catch (err) {
       console.error("Error processing payment:", err);
       setError("Failed to process payment. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -425,6 +436,7 @@ export default function Pos() {
                     <div className={classes.qrCode}>
                       <img src={qrCodeUrl} alt="Payment QR Code" />
                       <p>Scan to pay with your Solana wallet. Payment will be split by F4cets after submission.</p>
+                      {loading && <p className={classes.loading}>Processing payment...</p>}
                       {success && <p className={classes.successMessage}>Payment submitted successfully! Cart cleared.</p>}
                     </div>
                   ) : (
