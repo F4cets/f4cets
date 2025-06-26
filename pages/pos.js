@@ -177,12 +177,15 @@ export default function Pos() {
       console.log(`Checking for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
       const signatures = await connection.getSignaturesForAddress(
         new PublicKey(F4CETS_WALLET),
-        { limit: 5 },
+        { limit: 10 },
         "confirmed"
       );
-      console.log("Signatures fetched:", signatures.map(sig => sig.signature));
+      console.log("Signatures fetched:", signatures.map(sig => ({ signature: sig.signature, blockTime: sig.blockTime })));
 
-      for (const sigInfo of signatures) {
+      const now = Math.floor(Date.now() / 1000);
+      const recentSignatures = signatures.filter(sig => now - sig.blockTime < 600); // Within 10 minutes
+
+      for (const sigInfo of recentSignatures) {
         const signature = sigInfo.signature;
         const tx = await connection.getParsedTransaction(signature, {
           commitment: "confirmed",
