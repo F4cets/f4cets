@@ -23,13 +23,12 @@ import { motion } from "framer-motion";
 import QRCode from "qrcode";
 import styles from "/styles/jss/nextjs-material-kit-pro/pages/ecommerceStyle.js";
 import { db } from "../firebase";
-import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useUser } from "/contexts/UserContext";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { getProcessPosPaymentUrl } from "../lib/config"; // Assuming config for RPC
+import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 const useStyles = makeStyles({
   ...styles,
@@ -71,9 +70,8 @@ const useStyles = makeStyles({
   },
 });
 
-const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53";
-const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-const PROCESS_POS_PAYMENT_URL = getProcessPosPaymentUrl(); // Dynamic from config
+const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC token address on Solana
+const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53"; // F4cets wallet
 
 export default function Pos() {
   const classes = useStyles();
@@ -90,10 +88,6 @@ export default function Pos() {
   const [selectedVariant, setSelectedVariant] = useState({ color: "", size: "", quantity: 0 });
   const [flash, setFlash] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
-  const [transactionId, setTransactionId] = useState(null);
-  const [paymentSubmitted, setPaymentSubmitted] = useState(false);
-
-  const connection = new Connection(process.env.NEXT_PUBLIC_QUICKNODE_RPC || "https://api.mainnet-beta.solana.com", "confirmed");
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -162,12 +156,6 @@ export default function Pos() {
     generateQRCode(); // Regenerate QR code on cart, currency, or price changes
   }, [cart, paymentCurrency, solPrice]);
 
-  useEffect(() => {
-    if (paymentSubmitted && transactionId) {
-      splitPaymentAfterSubmission();
-    }
-  }, [paymentSubmitted, transactionId]);
-
   const addToCart = (productId) => {
     if (selectedProduct && selectedProduct.id === productId) {
       const variantKey = `${selectedVariant.color}-${selectedVariant.size}`;
@@ -211,85 +199,42 @@ export default function Pos() {
   const generateQRCode = async () => {
     if (!cartItems.length) {
       setQrCodeUrl(null);
-      setTransactionId(null);
-      setPaymentSubmitted(false);
       return;
     }
 
     try {
-      const totalUsdc = cartTotal;
+      const f4cetsPublicKey = new PublicKey(F4CETS_WALLET);
+
       const itemCount = cartItems.length;
+      const totalUsdc = cartTotal;
       const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
       const totalSol = totalUsdc / solPrice;
       const feeSol = fee / solPrice;
       const sellerAmountSol = sellerAmount / solPrice;
 
       const paymentAmount = paymentCurrency === "USDC" ? totalUsdc : totalSol;
-      const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
+      let amountInUnits;
+      let tokenAddress = null;
 
-      const deepLink = `solana:${F4CETS_WALLET}?amount=${paymentAmount}&label=F4cets%20POS%20Payment&message=${encodeURIComponent(memo)}`;
-      const qrCodeDataUrl = await QRCode.toDataURL(deepLink);
-      setQrCodeUrl(qrCodeDataUrl);
-      setPaymentSubmitted(false); // Reset until payment is detected
+      if (paymentCurrency === "USDC") {
+        amountInUnits = paymentAmount; // USD, wallet converts to micro-USDC
+        tokenAddress = USDC_MINT_ADDRESS;
+      } else {
+        amountInUnits = paymentAmount; // SOL in SOL units
+      }
+
+      const memo = `F4cetsPOS|Store:${storeId}|Total:${paymentAmount.toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`;
+      const deepLink = `solana:${f4cetsPublicKey.toBase58()}?amount=${amountInUnits.toString()}&label=Payment%20for%20F4cetsPOS&message=${encodeURIComponent(memo)}${tokenAddress ? `&spl-token=${tokenAddress}` : ""}`;
+
+      QRCode.toDataURL(deepLink, (err, url) => {
+        if (err) throw err;
+        setQrCodeUrl(url);
+      });
     } catch (err) {
       console.error("Error generating QR code:", err);
       setError("Failed to generate QR code. Please try again.");
-      setQrCodeUrl(null);
-      setTransactionId(null);
     }
   };
-
-  const splitPaymentAfterSubmission = async () => {
-    try {
-      const totalUsdc = cartTotal;
-      const itemCount = cartItems.length;
-      const { fee, sellerAmount } = calculateFees(totalUsdc, itemCount);
-      const totalSol = totalUsdc / solPrice;
-      const feeSol = fee / solPrice;
-      const sellerAmountSol = sellerAmount / solPrice;
-
-      const payload = {
-        sellerWallet: walletId,
-        totalAmount: paymentCurrency === "USDC" ? totalUsdc : totalSol,
-        itemCount,
-        currency: paymentCurrency,
-        transactionId,
-        memo: `F4cetsPOS|Store:${storeId}|Total:${(paymentCurrency === "USDC" ? totalUsdc : totalSol).toFixed(2)}${paymentCurrency}|Fee:${(paymentCurrency === "USDC" ? fee : feeSol).toFixed(2)}${paymentCurrency}|Seller:${(paymentCurrency === "USDC" ? sellerAmount : sellerAmountSol).toFixed(2)}${paymentCurrency}|Items:${itemCount}`,
-      };
-
-      const response = await fetch(PROCESS_POS_PAYMENT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || "Payment split failed");
-      }
-      setError(null); // Clear any previous errors on success
-    } catch (err) {
-      console.error("Error splitting payment:", err);
-      setError("Failed to split payment. Please contact support.");
-    }
-  };
-
-  useEffect(() => {
-    let subscriptionId = null;
-    if (qrCodeUrl && !paymentSubmitted) {
-      subscriptionId = connection.onAccountChange(
-        new PublicKey(F4CETS_WALLET),
-        (accountInfo, context) => {
-          console.log("Account change detected:", context.slot);
-          setPaymentSubmitted(true); // Trigger split after submission
-        },
-        "confirmed"
-      );
-    }
-    return () => {
-      if (subscriptionId) connection.removeAccountChangeListener(subscriptionId);
-    };
-  }, [qrCodeUrl, paymentSubmitted]);
 
   const cartTotal = Object.entries(cart).reduce((total, [productId, variants]) => {
     const product = products.find(p => p.id === productId);
@@ -429,10 +374,7 @@ export default function Pos() {
                   {qrCodeUrl ? (
                     <div className={classes.qrCode}>
                       <img src={qrCodeUrl} alt="Payment QR Code" />
-                      <p>Scan to pay with your Solana wallet. Awaiting confirmation...</p>
-                      <Button color="info" onClick={() => { setQrCodeUrl(null); setTransactionId(null); setPaymentSubmitted(false); setCart({}); }} style={{ marginTop: "8px" }}>
-                        New Transaction
-                      </Button>
+                      <p>Scan to pay with your Solana wallet. Payment will be split by F4cets.</p>
                     </div>
                   ) : (
                     <Button color="success" fullWidth style={{ marginTop: "16px" }} onClick={generateQRCode} disabled={cartItems.length === 0}>
@@ -502,16 +444,6 @@ export default function Pos() {
       >
         <Alert onClose={() => setError(null)} severity="error" sx={{ width: "100%" }}>
           {error}
-        </Alert>
-      </Snackbar>
-      <Snackbar
-        open={!!transactionId}
-        autoHideDuration={6000}
-        onClose={() => setTransactionId(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert onClose={() => setTransactionId(null)} severity="success" sx={{ width: "100%" }}>
-          Payment processed! Transaction ID: {transactionId}
         </Alert>
       </Snackbar>
       <Footer theme="dark" content={<div />} />
