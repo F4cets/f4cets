@@ -28,8 +28,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { useUser } from "/contexts/UserContext";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
-import { Connection, PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
-import { getAssociatedTokenAddress } from "@solana/spl-token";
+import { Connection, PublicKey, Keypair } from "@solana/web3.js";
 
 const useStyles = makeStyles({
   ...styles,
@@ -81,7 +80,6 @@ const useStyles = makeStyles({
 
 const USDC_MINT_ADDRESS = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"; // USDC token address on Solana
 const F4CETS_WALLET = "2Wij9XGAEpXeTfDN4KB1ryrizicVkUHE1K5dFqMucy53"; // F4cets wallet
-const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 const QUICKNODE_RPC = process.env.NEXT_PUBLIC_QUICKNODE_RPC || "https://api.mainnet-beta.solana.com";
 const connection = new Connection(QUICKNODE_RPC, "confirmed");
 
@@ -104,6 +102,7 @@ export default function Pos() {
   const [transactionSignature, setTransactionSignature] = useState(null);
   const [loading, setLoading] = useState(false);
   const [referenceKey, setReferenceKey] = useState(Keypair.generate());
+  const [pollingTimeout, setPollingTimeout] = useState(null);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -184,7 +183,7 @@ export default function Pos() {
           commitment: "confirmed",
           maxSupportedTransactionVersion: 0,
         });
-        console.log("Transaction details:", tx);
+        console.log("Transaction details:", JSON.stringify(tx, null, 2));
 
         if (tx && tx.meta && tx.meta.logMessages) {
           const memoLog = tx.meta.logMessages.find(log => log.includes("Memo (len"));
@@ -195,16 +194,22 @@ export default function Pos() {
               const expectedMemoPrefix = `F4cetsPOS|Store:${storeId}|Total:${cartTotal.toFixed(2)}`;
               const expectedReference = referenceKey.publicKey.toBase58();
               console.log("Memo found:", memo);
+              console.log("Expected memo prefix:", expectedMemoPrefix);
+              console.log("Memo match:", memo.startsWith(expectedMemoPrefix));
+              console.log("Reference match:", memo.includes(expectedReference));
               if (memo.startsWith(expectedMemoPrefix) && memo.includes(expectedReference)) {
                 console.log("Detected valid transaction:", signature);
                 setTransactionSignature(signature);
                 await handlePaymentSubmission(signature);
                 return true; // Stop after finding a valid transaction
+              } else {
+                console.log("Memo validation failed");
               }
             }
           }
         }
       }
+      setError("No matching transaction found. Please try again.");
       return false;
     } catch (err) {
       console.error("Error checking transactions:", err);
@@ -220,7 +225,15 @@ export default function Pos() {
     let interval;
     if (cartItems.length > 0 && referenceKey) {
       console.log(`Starting polling for ${paymentCurrency} transaction with reference: ${referenceKey.publicKey.toBase58()}`);
+      const startTime = Date.now();
+      const timeoutMs = 5 * 60 * 1000; // 5 minutes
       interval = setInterval(async () => {
+        if (Date.now() - startTime > timeoutMs) {
+          console.log("Polling timed out");
+          clearInterval(interval);
+          setError("Payment detection timed out. Please try again or confirm manually.");
+          return;
+        }
         const found = await checkTransaction();
         if (found) {
           console.log("Stopping polling");
